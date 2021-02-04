@@ -47,7 +47,8 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
             running_corrects = 0
 
             # Iterate over data.
-            for inputs, labels in dataloaders[phase]:
+            for i, data in enumerate(dataloaders[phase], 0):
+                inputs, labels = data
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
@@ -186,27 +187,25 @@ resnet18, input_size = initialize_model('resnet', 2, False, use_pretrained=True)
 # Print the model we just instantiated
 #print(resnet18)
 
-data_transforms = {
-    'train': transforms.Compose([
+data_transforms_train = transforms.Compose([
         transforms.RandomResizedCrop(input_size),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    ]),
-    'val': transforms.Compose([
+    ])
+data_transforms_test = transforms.Compose([
         transforms.Resize(input_size),
         transforms.CenterCrop(input_size),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    ]),
-}
+    ])
 
 print("Initializing Datasets and Dataloaders...")
 
 trainset = datasets.CIFAR10(root='./data', train=True,
-                                        download=True, transform=data_transforms)
+                                        download=True, transform=data_transforms_train)
 testset = datasets.CIFAR10(root='./data', train=False,
-                                       download=True, transform=data_transforms)
+                                       download=True, transform=data_transforms_test)
 
 cifar_train_labels = np.array(trainset.targets)
 cifar_test_labels = np.array(testset.targets)
@@ -214,28 +213,47 @@ cifar_test_labels = np.array(testset.targets)
 class1_indices = np.argwhere(cifar_train_labels==class1).flatten()
 np.random.shuffle(class1_indices)
 class1_indices = class1_indices[:int(len(class1_indices) * fraction_of_train_samples)]
+for i in range(len(trainset.targets)):
+    if i in class1_indices:
+        trainset.targets[i] = 0
 
 class2_indices = np.argwhere(cifar_train_labels==class2).flatten()
 np.random.shuffle(class2_indices)
 class2_indices = class2_indices[:int(len(class2_indices) * fraction_of_train_samples)]
-
+for i in range(len(trainset.targets)):
+    if i in class2_indices:
+        trainset.targets[i] = 1
+        
 train_indices = np.concatenate([class1_indices, class2_indices]) 
 train_sampler = torch.utils.data.sampler.SubsetRandomSampler(train_indices)
-train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, num_workers=2, sampler=train_sampler)
+train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, num_workers=4, sampler=train_sampler)
 
+    
+class1_indices = np.argwhere(cifar_test_labels==class1).flatten()
+class2_indices = np.argwhere(cifar_test_labels==class2).flatten()
+class1_indices = class1_indices[:int(len(class1_indices) * fraction_of_train_samples)]
+class2_indices = class2_indices[:int(len(class2_indices) * fraction_of_train_samples)]
+for i in range(len(testset.targets)):
+    if i in class1_indices:
+        testset.targets[i] = 0
 
-test_indices = np.concatenate([np.argwhere(cifar_test_labels==class1).flatten(), np.argwhere(cifar_test_labels==class2).flatten()])
+for i in range(len(testset.targets)):
+    if i in class2_indices:
+        testset.targets[i] = 1
+test_indices = np.concatenate([class1_indices, class2_indices]) 
+
+    
 np.random.shuffle(test_indices)
 val_indices = test_indices[int(len(test_indices) * .5):]
 test_indices = test_indices[:int(len(test_indices) * .5)]
 
 val_sampler = torch.utils.data.sampler.SubsetRandomSampler(val_indices)
 val_loader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
-                                         shuffle=False, num_workers=2, sampler=val_sampler)
+                                         shuffle=False, num_workers=4, sampler=val_sampler)
 
 test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_indices)
 test_loader = torch.utils.data.DataLoader(testset, batch_size=batch_size,
-                                         shuffle=False, num_workers=2, sampler=test_sampler)
+                                         shuffle=False, num_workers=4, sampler=test_sampler)
 
 
 # Create training and validation dataloaders
@@ -245,7 +263,13 @@ resnet18 = resnet18.to(device)
 params_to_update = resnet18.parameters()
 optimizer_ft = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
 criterion = nn.CrossEntropyLoss()
+
 resnet18, hist = train_model(resnet18, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs, is_inception=(model_name=="inception"))
+
 '''
 resnet18 = torchvision.models.resnet18()
-resnet18.fc = nn.Linear(512, 2)'''
+resnet18.fc = nn.Linear(512, 2)
+for a, b in train_loader:
+    print(b)
+
+'''
