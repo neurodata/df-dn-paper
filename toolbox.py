@@ -21,18 +21,14 @@ def run_rf_image(
     """
     Peforms multiclass predictions for a random forest classifier
     """
-    num_train_samples = []
-    for cls in classes:
-        num_train_samples.append(
-            int(np.sum(train_labels == cls) * fraction_of_train_samples)
-        )
+    num_train_samples = int(np.sum(train_labels == 0) * fraction_of_train_samples)
 
     # Obtain only train images and labels for selected classes
     image_ls = []
     label_ls = []
     for cls in classes:
-        image_ls.append(train_images[train_labels == cls][: num_train_samples[cls]])
-        label_ls.append(np.repeat(cls, num_train_samples[cls]))
+        image_ls.append(train_images[train_labels == cls][:num_train_samples])
+        label_ls.append(np.repeat(cls, num_train_samples))
 
     train_images = np.concatenate(image_ls)
     train_labels = np.concatenate(label_ls)
