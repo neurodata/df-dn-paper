@@ -42,7 +42,7 @@ def run_rf_image(
     label_ls = []
     for cls in classes:
         image_ls.append(test_images[test_labels == cls])
-        label_ls.append(np.repeat(cls, np.sum(test_labels[cls])))
+        label_ls.append(np.repeat(cls, np.sum(test_labels == cls)))
 
     test_images = np.concatenate(image_ls)
     test_labels = np.concatenate(label_ls)
