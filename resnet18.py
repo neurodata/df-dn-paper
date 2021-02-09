@@ -13,6 +13,15 @@ import copy
 print("PyTorch Version: ",torch.__version__)
 print("Torchvision Version: ",torchvision.__version__)
 
+def run():
+    torch.multiprocessing.freeze_support()
+    print('loop')
+
+if __name__ == '__main__':
+    run()
+       
+    
+    
 data_dir = "./data"
 model_name = 'resnet'
 num_classes = 2
@@ -21,8 +30,8 @@ feature_extract = False
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class1 = 0
 class2 = 2
-fraction_of_train_samples = .005
-num_epochs = 2
+fraction_of_train_samples = 1
+num_epochs = 5
 
 def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False):
     since = time.time()
@@ -73,6 +82,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
                         loss = criterion(outputs, labels)
 
                     _, preds = torch.max(outputs, 1)
+                   #print("preds: ", preds, "labels: ", labels)
 
                     # backward + optimize only if in training phase
                     if phase == 'train':
@@ -81,10 +91,10 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
 
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
-                running_corrects += torch.sum(preds == labels.data)
+                running_corrects += torch.sum(preds == labels)
 
-            epoch_loss = running_loss / len(dataloaders[phase].dataset)
-            epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
+            epoch_loss = running_loss / len(dataloaders[phase].sampler)
+            epoch_acc = running_corrects.double() / len(dataloaders[phase].sampler)
 
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
 
@@ -182,7 +192,7 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
     return model_ft, input_size
 
 # Initialize the model for this run
-resnet18, input_size = initialize_model('resnet', 2, False, use_pretrained=True)
+resnet18, input_size = initialize_model('resnet', 2, False, use_pretrained=False)
 
 # Print the model we just instantiated
 #print(resnet18)
@@ -225,14 +235,13 @@ for i in range(len(trainset.targets)):
         trainset.targets[i] = 1
         
 train_indices = np.concatenate([class1_indices, class2_indices]) 
+np.random.shuffle(train_indices)
 train_sampler = torch.utils.data.sampler.SubsetRandomSampler(train_indices)
 train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, num_workers=4, sampler=train_sampler)
 
     
 class1_indices = np.argwhere(cifar_test_labels==class1).flatten()
 class2_indices = np.argwhere(cifar_test_labels==class2).flatten()
-class1_indices = class1_indices[:int(len(class1_indices) * fraction_of_train_samples)]
-class2_indices = class2_indices[:int(len(class2_indices) * fraction_of_train_samples)]
 for i in range(len(testset.targets)):
     if i in class1_indices:
         testset.targets[i] = 0
