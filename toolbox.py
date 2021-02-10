@@ -8,6 +8,10 @@ import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
 
 def run_rf_image(
     model,
