@@ -130,3 +130,6 @@ dmypy.json
 
 # Mac files
 .DS_Store
+
+# CIFAR datasets
+cifar-10-batches-py/
