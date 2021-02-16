@@ -210,7 +210,7 @@ for class1 in range(10):
         plt.legend()
         
         plt.savefig("cifar_results/" + str(class1) + "_vs_" + str(class2) + "cnn")
-        table2 = pd.read_csv('cifar_results/0_vs_1.csv')
+        table2 = pd.read_csv("cifar_results/" + str(class1) + "_vs_" + str(class2) + '.csv')
         rowname = ['cnn32']
         rowname.extend(cnn32)
         table2.loc[2] = rowname

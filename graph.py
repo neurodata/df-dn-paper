@@ -4,20 +4,21 @@ from matplotlib.pyplot import figure
 import numpy as np
 import pandas as pd
 
-
+names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 xaxis = ['20', '50', '126', '317', '796', '2000']
 figure(num=None, figsize=(10, 7))
 for class1 in range(10):
     for class2 in range(class1 + 1, 10):
         results = pd.read_csv("cifar_results/" + str(class1) + "_vs_" + str(class2) + "cnn.csv", index_col=0)
-        rf_accu = results.iloc[0]
-        res_accu = results.iloc[1]
+        results2 = pd.read_csv("cifar_results/" + str(class1) + "_vs_" + str(class2) + ".csv", index_col=0)
+        rf_accu = results2.iloc[0]
+        res_accu = results2.iloc[1]
         cnn32_accu = results.iloc[2]
         cnn32_2_layer = results.iloc[3]
         plt.clf()
         plt.xlabel('Number of Train Samples')
         plt.ylabel('Accuracies')
-        plt.title('Model Accuracies vs Train Samples')
+        plt.title(names[class1] + ' vs ' + names[class2])
         plt.plot(xaxis, res_accu, label="ResNet18")
         plt.plot(xaxis, rf_accu, label="RF")
         plt.plot(xaxis, cnn32_accu, label="32-Filter CNN")
@@ -33,8 +34,9 @@ rf_cnn32_avg = np.array([0.0] * 6)
 for class1 in range(10):
     for class2 in range(class1 + 1, 10):
         results = pd.read_csv("cifar_results/" + str(class1) + "_vs_" + str(class2) + "cnn.csv", index_col=0)
-        rf_accu = results.iloc[0]
-        res_accu = results.iloc[1]
+        results2 = pd.read_csv("cifar_results/" + str(class1) + "_vs_" + str(class2) + ".csv", index_col=0)
+        rf_accu = results2.iloc[0]
+        res_accu = results2.iloc[1]
         cnn32_2_layer = results.iloc[3]
         
         resnet_rf_avg += np.array(res_accu) - np.array(rf_accu)
