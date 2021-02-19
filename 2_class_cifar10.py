@@ -190,21 +190,11 @@ def initialize_model(model_name, num_classes, use_pretrained=True):
 
 exit()
 
-for class1 in range(10):
-    for class2 in range(class1 + 1, 10):
-        fraction_of_train_samples_space = np.geomspace(0.01, 1, num=8)
-        #resnet18
-        resnet_acc = list()
-        for fraction_of_train_samples in fraction_of_train_samples_space:
-            print("here")
-            resnet18, input_size = initialize_model('resnet', 2, use_pretrained=True)
-            print("here1")
-            best_accuracy = np.mean([run_res(resnet18, cifar_train_labels, cifar_test_labels, fraction_of_train_samples, trainset, testset) for _ in range(1)])
-            resnet_acc.append(best_accuracy)
-            print("Train Fraction:", str(fraction_of_train_samples))
-            print("Accuracy:", str(best_accuracy))
-            
-            
+for class1 in range(1):
+    for class2 in range(class1 + 1, 12):
+        fraction_of_train_samples_space = np.geomspace(1, 1, num=1)
+        
+        
         #naive RF
         rf_acc = list()
         for fraction_of_train_samples in fraction_of_train_samples_space:
@@ -213,6 +203,17 @@ for class1 in range(10):
             rf_acc.append(best_accuracy)
             print("Train Fraction:", str(fraction_of_train_samples))
             print("Accuracy:", str(best_accuracy))
+            
+        #resnet18
+        resnet_acc = list()
+        for fraction_of_train_samples in fraction_of_train_samples_space:
+            resnet18, input_size = initialize_model('resnet', 2, use_pretrained=True)
+            best_accuracy = np.mean([run_res(resnet18, cifar_train_labels, cifar_test_labels, fraction_of_train_samples, trainset, testset) for _ in range(1)])
+            resnet_acc.append(best_accuracy)
+            print("Train Fraction:", str(fraction_of_train_samples))
+            print("Accuracy:", str(best_accuracy))
+            
+            
             
             
         plt.rcParams['figure.figsize'] = 13, 10

@@ -49,7 +49,7 @@ cifar_test_labels = np.array(cifar_testset.targets)
 # transform
 transform = transforms.Compose(
     [transforms.ToTensor(),
-     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 trainset = datasets.CIFAR10(root='./data', train=True,
                                         download=True, transform=transform)
 testset = datasets.CIFAR10(root='./data', train=False,
@@ -69,19 +69,34 @@ class SimpleCNN32Filter(torch.nn.Module):
         x = self.fc1(x)
         return(x)
 
+
+
+
 class SimpleCNN32Filter2Layers(torch.nn.Module):
     
     def __init__(self):
         super(SimpleCNN32Filter2Layers, self).__init__()        
-        self.conv1 = torch.nn.Conv2d(3, 32, kernel_size=5, stride=1)
-        self.conv2 = torch.nn.Conv2d(32, 32, kernel_size=5, stride=2)
-        self.fc1 = torch.nn.Linear(12*12*32, 100)
-        self.fc2 = torch.nn.Linear(100, 10)
+        self.conv1 = torch.nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
+        self.conv2 = torch.nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.conv3 = torch.nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.conv4 = torch.nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        self.conv5 = torch.nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.fc1 = torch.nn.Linear(8192, 200)
+        self.fc2 = torch.nn.Linear(200, 10)
+        self.maxpool = nn.MaxPool2d((2, 2))
+        self.bn = nn.BatchNorm2d(32)
+        self.bn2 = nn.BatchNorm2d(64)
+        self.bn3 = nn.BatchNorm2d(128)
         
     def forward(self, x):
         b = x.shape[0]
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
+        x = F.relu(self.bn(self.conv1(x)))
+        x = F.relu(self.bn(self.conv2(x)))
+        x = self.maxpool(x)
+        x = F.relu(self.bn2(self.conv3(x)))
+        x = F.relu(self.bn2(self.conv4(x)))
+        x = F.relu(self.bn3(self.conv5(x)))
+        x = self.maxpool(x)
         x = x.view(b, -1)
         #print(x.shape)
         x = F.relu(self.fc1(x))
@@ -91,7 +106,7 @@ class SimpleCNN32Filter2Layers(torch.nn.Module):
 
 def run_cnn(cnn_model, cifar_train_labels, cifar_test_labels, fraction_of_train_samples, class1=3, class2=5):
     # set params
-    num_epochs = 10
+    num_epochs = 20
     learning_rate = 0.001
 
     class1_indices = np.argwhere(cifar_train_labels==class1).flatten()
@@ -162,20 +177,20 @@ def run_cnn(cnn_model, cifar_train_labels, cifar_test_labels, fraction_of_train_
                 correct2 += (predicted2 == labels.view(-1)).sum().item()
         accuracy = float(correct) / float(total)
         accuracy2 = float(correct2) / float(total)
-        print("epoch: ", epoch, accuracy, accuracy2)
+        print("epoch: ", epoch, "Simple: ", accuracy, "complicated: ", accuracy2)
     return accuracy, accuracy2
 
 #class1, class2, fraction_of_train_samples = 0, 1, .002
-for class1 in range(10):
-    for class2 in range(class1 + 1, 10):
-        fraction_of_train_samples_space = np.geomspace(0.002, .2, num=6) 
+for class1 in range(1):
+    for class2 in range(class1 + 1, 2):
+        fraction_of_train_samples_space = np.geomspace(1, 1, num=1) 
             
         # accuracy vs num training samples (one layer cnn (32 filters))
         cnn32 = list()
         cnn32_two_layer = list()
         for fraction_of_train_samples in fraction_of_train_samples_space:
             accu_cnn32, accu_cnn32_2 = 0,0
-            trials = 5
+            trials = 1
             for i in range(trials):
                 tempcnn32, tempcnn32_2 = run_cnn(SimpleCNN32Filter, cifar_train_labels, cifar_test_labels, fraction_of_train_samples)
                 accu_cnn32 += tempcnn32
@@ -185,7 +200,9 @@ for class1 in range(10):
             print("Train Fraction:", str(fraction_of_train_samples))
             print("Cnn32 Accuracy:", str(accu_cnn32 / trials), " Cnn 2 layer Accuracy: ", str(accu_cnn32_2 / trials))
                   
+           
             
+           
         plt.rcParams['figure.figsize'] = 13, 10
         plt.rcParams['font.size'] = 25
         plt.rcParams['legend.fontsize'] = 16.5
