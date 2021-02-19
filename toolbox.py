@@ -10,7 +10,47 @@ from sklearn.ensemble import RandomForestClassifier
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
+
+
+class SimpleCNN32Filter(nn.Module):
+    """
+    Defines a simple CNN arhcitecture
+    """
+
+    def __init__(self):
+        super(SimpleCNN32Filter, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=10, stride=2)
+        self.fc1 = nn.Linear(144 * 32, 10)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        x = x.view(-1, 144 * 32)
+        x = self.fc1(x)
+        return x
+
+
+class SimpleCNN32Filter2Layers(nn.Module):
+    """
+    Define a simple CNN arhcitecture with 2 layers
+    """
+
+    def __init__(self):
+        super(SimpleCNN32Filter2Layers, self).__init__()
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=5, stride=1)
+        self.conv2 = nn.Conv2d(32, 32, kernel_size=5, stride=2)
+        self.fc1 = nn.Linear(12 * 12 * 32, 100)
+        self.fc2 = nn.Linear(100, 10)
+
+    def forward(self, x):
+        b = x.shape[0]
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = x.view(b, -1)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
 
 
 def run_rf_image(
