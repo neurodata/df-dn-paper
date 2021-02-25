@@ -53,6 +53,37 @@ class SimpleCNN32Filter2Layers(nn.Module):
         return x
 
 
+class SimpleCNN32Filter5Layers(torch.nn.Module):
+    def __init__(self):
+        super(SimpleCNN32Filter5Layers, self).__init__()
+        self.conv1 = torch.nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
+        self.conv2 = torch.nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.conv3 = torch.nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.conv4 = torch.nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        self.conv5 = torch.nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.fc1 = torch.nn.Linear(8192, 200)
+        self.fc2 = torch.nn.Linear(200, 10)
+        self.maxpool = nn.MaxPool2d((2, 2))
+        self.bn = nn.BatchNorm2d(32)
+        self.bn2 = nn.BatchNorm2d(64)
+        self.bn3 = nn.BatchNorm2d(128)
+
+    def forward(self, x):
+        b = x.shape[0]
+        x = F.relu(self.bn(self.conv1(x)))
+        x = F.relu(self.bn(self.conv2(x)))
+        x = self.maxpool(x)
+        x = F.relu(self.bn2(self.conv3(x)))
+        x = F.relu(self.bn2(self.conv4(x)))
+        x = F.relu(self.bn3(self.conv5(x)))
+        x = self.maxpool(x)
+        x = x.view(b, -1)
+        # print(x.shape)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+
 def run_rf_image(
     model,
     train_images,
