@@ -50,10 +50,8 @@ cifar_test_labels = np.array(cifar_testset.targets)
 transform = transforms.Compose(
     [transforms.ToTensor(),
      transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
-trainset = datasets.CIFAR10(root='./data', train=True,
-                                        download=True, transform=transform)
-testset = datasets.CIFAR10(root='./data', train=False,
-                                       download=True, transform=transform)
+trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
     
 # define a simple CNN arhcitecture
 class SimpleCNN32Filter(torch.nn.Module):

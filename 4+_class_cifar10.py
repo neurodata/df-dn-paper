@@ -21,7 +21,8 @@ plt.rcParams["legend.loc"] = "best"
 plt.rcParams['figure.facecolor'] = 'white'
 #%matplotlib inline
 names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
-
+experiments = [(0, 2, 6, 8), (1, 3, 4, 9), (0, 1, 2, 3), (0, 1, 2, 4), (0, 1, 2, 5), (0, 1, 2, 6)\
+               , (0, 1, 2, 7), (0, 1, 2, 8), (0, 1, 2, 9)]
 # filter python warnings
 def run():
     torch.multiprocessing.freeze_support()
@@ -56,25 +57,31 @@ testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=
   
 
     
-def run_rf(model, train_images, train_labels, test_images, test_labels, fraction_of_train_samples, class1=0, class2=2):
+def run_rf(model, train_images, train_labels, test_images, test_labels, fraction_of_train_samples, classes):
     
-    class1_indices = np.argwhere(train_labels==class1).flatten()
-    np.random.shuffle(class1_indices)
-    class1_indices = class1_indices[:int(len(class1_indices) * fraction_of_train_samples)]
-    
-    class2_indices = np.argwhere(train_labels==class2).flatten()
-    np.random.shuffle(class2_indices)
-    class2_indices = class2_indices[:int(len(class2_indices) * fraction_of_train_samples)]
-
-    train_indices = np.concatenate([class1_indices, class2_indices]) 
+    train_indices = []
+    #iterate through classes and get their indices
+    for i in classes:
+        class_indices = np.argwhere(train_labels==i).flatten()
+        np.random.shuffle(class_indices)
+        class_indices = class_indices[:int(len(class_indices) * fraction_of_train_samples)]
+        train_indices = np.concatenate([train_indices, class_indices])
+        
+        
+    train_indices = train_indices.astype(int)
     np.random.shuffle(train_indices)
     # get only train images and labels for class 1 and class 2
     train_images = train_images[train_indices]
     train_labels = train_labels[train_indices]
     # get only test images and labels for class 1 and class 2
-    class1_indices = np.argwhere(test_labels==class1).flatten()
-    class2_indices = np.argwhere(test_labels==class2).flatten()
-    test_indices = np.concatenate([class1_indices, class2_indices]) 
+    test_indices = []
+    for i in classes:
+        class_indices = np.argwhere(test_labels==i).flatten()
+        np.random.shuffle(class_indices)
+        class_indices = class_indices[:int(len(class_indices) * fraction_of_train_samples)]
+        test_indices = np.concatenate([test_indices, class_indices])
+    
+    test_indices = test_indices.astype(int)
     test_images = test_images[test_indices]
 
     train_images = train_images.reshape(-1, 32*32*3)
@@ -276,20 +283,21 @@ def run_cnn(cnn_model, cifar_train_labels, cifar_test_labels, fraction_of_train_
     return accuracy2
 
 
-for class1 in range(1):
-    for class2 in range(class1 + 1, 12):
-        fraction_of_train_samples_space = np.geomspace(1, 1, num=1)
-        trials = 1
-        
-        #naive RF
-        rf_acc = list()
-        for fraction_of_train_samples in fraction_of_train_samples_space:
-            RF = RandomForestClassifier(n_estimators=100, n_jobs = -1)
-            best_accuracy = np.mean([run_rf(RF, cifar_train_images, cifar_train_labels, cifar_test_images, cifar_test_labels, fraction_of_train_samples) for _ in range(trials)])
-            rf_acc.append(best_accuracy)
-            print("Train Fraction:", str(fraction_of_train_samples))
-            print("Accuracy:", str(best_accuracy))
+for classes in experiments:
+    fraction_of_train_samples_space = np.geomspace(.002, .2, num=3)
+    trials = 1
+    
+    #naive RF
+    rf_acc = list()
+    for fraction_of_train_samples in fraction_of_train_samples_space:
+        RF = RandomForestClassifier(n_estimators=100, n_jobs = -1)
+        best_accuracy = np.mean([run_rf(RF, cifar_train_images, cifar_train_labels, cifar_test_images, cifar_test_labels, fraction_of_train_samples, classes) for _ in range(trials)])
+        rf_acc.append(best_accuracy)
+        print("Train Fraction:", str(fraction_of_train_samples))
+        print("Accuracy:", str(best_accuracy))
+     
             
+        '''
         #resnet18
         resnet_acc = list()
         for fraction_of_train_samples in fraction_of_train_samples_space:
@@ -308,38 +316,45 @@ for class1 in range(1):
              cnn32_two_layer.append(accu_cnn32_2 / trials)
              print("Train Fraction:", str(fraction_of_train_samples))
              print(" Cnn 2 layer Accuracy: ", str(accu_cnn32_2 / trials))
-                   
+          '''         
           
-            
-            
-        plt.rcParams['figure.figsize'] = 13, 10
-        plt.rcParams['font.size'] = 25
-        plt.rcParams['legend.fontsize'] = 16.5
-        plt.rcParams['legend.handlelength'] = 2.5
-        plt.rcParams['figure.titlesize'] = 20
-        plt.rcParams['xtick.labelsize'] = 15
-        plt.rcParams['ytick.labelsize'] = 15
         
-        fig, ax = plt.subplots() # create a new figure with a default 111 subplot
-        ax.plot(fraction_of_train_samples_space*10000, rf_acc, marker='X', markerfacecolor='red', markersize=8, color='green', linewidth=3, linestyle=":", label="RF")
-        ax.plot(fraction_of_train_samples_space*10000, resnet_acc, marker='X', markerfacecolor='red', markersize=8, color='green', linewidth=3, linestyle="--", label="Resnet18")
-        ax.plot(fraction_of_train_samples_space*10000, cnn32_two_layer, marker='X', markerfacecolor='red', markersize=8, color='green', linewidth=3, label="CNN")
+        
+    plt.rcParams['figure.figsize'] = 13, 10
+    plt.rcParams['font.size'] = 25
+    plt.rcParams['legend.fontsize'] = 16.5
+    plt.rcParams['legend.handlelength'] = 2.5
+    plt.rcParams['figure.titlesize'] = 20
+    plt.rcParams['xtick.labelsize'] = 15
+    plt.rcParams['ytick.labelsize'] = 15
+    
+    fig, ax = plt.subplots() # create a new figure with a default 111 subplot
+    ax.plot(fraction_of_train_samples_space*10000, rf_acc, marker='X', markerfacecolor='red', markersize=8, color='green', linewidth=3, linestyle=":", label="RF")
+    #ax.plot(fraction_of_train_samples_space*10000, resnet_acc, marker='X', markerfacecolor='red', markersize=8, color='green', linewidth=3, linestyle="--", label="Resnet18")
+    #ax.plot(fraction_of_train_samples_space*10000, cnn32_two_layer, marker='X', markerfacecolor='red', markersize=8, color='green', linewidth=3, label="CNN")
 
-        ax.set_xlabel('Number of Train Samples', fontsize=18)
-        ax.set_xscale('log')
-        ax.set_xticks([i*10000 for i in list(np.geomspace(0.01, 1, num=8))])
-        ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-        
-        ax.set_ylabel('Accuracy', fontsize=18)
-        
-        ax.set_title(str(class1) + " (" + names[class1] + ") vs " + str(class2) + "(" + names[class2] + ") classification", fontsize=18)
-        plt.legend()
-        plt.savefig("cifar_results2/" + str(class1) + "_vs_" + str(class2))
-        table = pd.DataFrame(np.concatenate(([rf_acc], [resnet_acc], [cnn32_two_layer]), axis=0))
-        algos = ['RF', 'resnet', 'CNN']
-        table['algos'] = algos
-        cols = table.columns.tolist()
-        cols = [cols[-1]] + cols[:-1]
-        cols = pd.Index(cols)
-        table = table[cols]
-        table.to_csv("cifar_results/" + str(class1) + "_vs_" + str(class2) + ".csv", index=False)
+    ax.set_xlabel('Number of Train Samples', fontsize=18)
+    ax.set_xscale('log')
+    ax.set_xticks([i*10000 for i in list(fraction_of_train_samples_space)])
+    ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+    
+    ax.set_ylabel('Accuracy', fontsize=18)
+    
+    graph_title = str(classes[0]) + " (" + names[classes[0]] + ") "
+    file_title = str(classes[0])
+    for j in range(1, len(classes)):
+        graph_title = graph_title + " vs " + str(classes[j]) + names[classes[j]]
+        file_title = file_title + "-" + str(classes[j])
+    ax.set_title(graph_title, fontsize=18)
+    plt.legend()
+    plt.savefig("cifar_results_4+/" + file_title)
+    #table = pd.DataFrame(np.concatenate(([rf_acc], [resnet_acc], [cnn32_two_layer]), axis=0))
+    table = pd.DataFrame([rf_acc])
+    #algos = ['RF', 'resnet', 'CNN']
+    algos = ['RF']
+    table['algos'] = algos
+    cols = table.columns.tolist()
+    cols = [cols[-1]] + cols[:-1]
+    cols = pd.Index(cols)
+    table = table[cols]
+    table.to_csv("cifar_results_4+/" + file_title + ".csv", index=False)
