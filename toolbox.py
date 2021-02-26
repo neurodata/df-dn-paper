@@ -102,11 +102,16 @@ def run_rf_image(
     image_ls = []
     label_ls = []
     for cls in classes:
-        image_ls.append(train_images[train_labels == cls][:num_train_samples])
+        cls_images = train_images[train_labels == cls]
+        np.random.shuffle(cls_images)
+        image_ls.append(cls_images[:num_train_samples])
         label_ls.append(np.repeat(cls, num_train_samples))
 
     train_images = np.concatenate(image_ls)
     train_labels = np.concatenate(label_ls)
+    perm = np.random.permutation(train_images.shape[0])
+    train_images = train_images[perm]
+    train_labels = train_labels[perm]
 
     # Obtain only test images and labels for selected classes
     image_ls = []
