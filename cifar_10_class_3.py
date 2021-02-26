@@ -34,6 +34,19 @@ def load_result(filename):
 
 # prepare CIFAR data
 def main():
+    names = [
+        "airplane",
+        "automobile",
+        "bird",
+        "cat",
+        "deer",
+        "dog",
+        "frog",
+        "horse",
+        "ship",
+        "truck",
+    ]
+
     # normalize
     scale = np.mean(np.arange(0, 256))
     normalize = lambda x: (x - scale) / scale
@@ -54,19 +67,6 @@ def main():
 
     cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
     cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
-
-    names = [
-        "airplane",
-        "automobile",
-        "bird",
-        "cat",
-        "deer",
-        "dog",
-        "frog",
-        "horse",
-        "ship",
-        "truck",
-    ]
 
     naive_rf_acc_vs_n = list()
     for class3 in range(2, 10):
