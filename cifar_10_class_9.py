@@ -69,11 +69,11 @@ def main():
     cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
 
     naive_rf_acc_vs_n = list()
-    for class3 in range(2, 10):
+    for class9 in range(8, 10):
 
         # accuracy vs num training samples (naive_rf)
-        classes = [0, 1]
-        classes.append(class3)
+        classes = [0, 1, 2, 3, 4, 5, 6, 7]
+        classes.append(class9)
         fraction_of_train_samples_space = np.geomspace(0.01, 1, num=8)
         for fraction_of_train_samples in fraction_of_train_samples_space:
             RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
@@ -94,7 +94,7 @@ def main():
             naive_rf_acc_vs_n.append(mean_accuracy)
 
     print("naive_rf finished")
-    write_result("3_class/naive_rf.txt", naive_rf_acc_vs_n)
+    write_result("9_class/naive_rf.txt", naive_rf_acc_vs_n)
 
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
@@ -113,11 +113,11 @@ def main():
     cifar_test_labels = np.array(cifar_testset.targets)
 
     cnn32_acc_vs_n = list()
-    for class3 in range(2, 3):
+    for class9 in range(8, 10):
 
         # accuracy vs num training samples (cnn32)
-        classes = [0, 1]
-        classes.append(class3)
+        classes = [0, 1, 2, 3, 4, 5, 6, 7]
+        classes.append(class9)
         fraction_of_train_samples_space = np.geomspace(0.01, 1, num=8)
         for fraction_of_train_samples in fraction_of_train_samples_space:
             cnn32 = SimpleCNN32Filter()
@@ -140,14 +140,14 @@ def main():
             cnn32_acc_vs_n.append(mean_accuracy)
 
     print("cnn32 finished")
-    write_result("3_class/cnn32.txt", cnn32_acc_vs_n)
+    write_result("9_class/cnn32.txt", cnn32_acc_vs_n)
 
     cnn32_2l_acc_vs_n = list()
-    for class3 in range(2, 3):
+    for class9 in range(8, 10):
 
         # accuracy vs num training samples (cnn32_2l)
-        classes = [0, 1]
-        classes.append(class3)
+        classes = [0, 1, 2, 3, 4, 5, 6, 7]
+        classes.append(class9)
         fraction_of_train_samples_space = np.geomspace(0.01, 1, num=8)
         for fraction_of_train_samples in fraction_of_train_samples_space:
             cnn32_2l = SimpleCNN32Filter2Layers()
@@ -170,14 +170,14 @@ def main():
             cnn32_2l_acc_vs_n.append(mean_accuracy)
 
     print("cnn32_2l finished")
-    write_result("3_class/cnn32_2l.txt", cnn32_2l_acc_vs_n)
+    write_result("9_class/cnn32_2l.txt", cnn32_2l_acc_vs_n)
 
     cnn32_5l_acc_vs_n = list()
-    for class3 in range(2, 10):
+    for class9 in range(8, 10):
 
         # accuracy vs num training samples (cnn32_2l)
-        classes = [0, 1]
-        classes.append(class3)
+        classes = [0, 1, 2, 3, 4, 5, 6, 7]
+        classes.append(class9)
         fraction_of_train_samples_space = np.geomspace(0.01, 1, num=8)
         for fraction_of_train_samples in fraction_of_train_samples_space:
             cnn32_5l = SimpleCNN32Filter5Layers()
@@ -200,7 +200,7 @@ def main():
             cnn32_5l_acc_vs_n.append(mean_accuracy)
 
     print("cnn32_5l finished")
-    write_result("3_class/cnn32_5l.txt", cnn32_5l_acc_vs_n)
+    write_result("9_class/cnn32_5l.txt", cnn32_5l_acc_vs_n)
 
     # prepare CIFAR data
     data_transforms = transforms.Compose(
@@ -223,11 +223,11 @@ def main():
     cifar_test_labels = np.array(cifar_testset.targets)
 
     resnet18_acc_vs_n = list()
-    for class3 in range(2, 3):
+    for class9 in range(8, 10):
 
         # accuracy vs num training samples (resnet18)
-        classes = [0, 1]
-        classes.append(class3)
+        classes = [0, 1, 2, 3, 4, 5, 6, 7]
+        classes.append(class9)
         fraction_of_train_samples_space = np.geomspace(0.01, 1, num=8)
         for fraction_of_train_samples in fraction_of_train_samples_space:
             res = models.resnet18(pretrained=True)
@@ -249,16 +249,16 @@ def main():
             resnet18_acc_vs_n.append(mean_accuracy)
 
     print("resnet18 finished")
-    write_result("3_class/resnet18.txt", resnet18_acc_vs_n)
+    write_result("9_class/resnet18.txt", resnet18_acc_vs_n)
 
-    # naive_rf_acc_vs_n = load_result("3_class/naive_rf.txt")
-    # cnn32_acc_vs_n = load_result("3_class/cnn32.txt")
-    # cnn32_2l_acc_vs_n = load_result("3_class/cnn32_2l.txt")
-    # cnn32_5l_acc_vs_n = load_result("3_class/cnn32_5l.txt")
-    # resnet18_acc_vs_n = load_result("3_class/resnet18.txt")
+    # naive_rf_acc_vs_n = load_result("9_class/naive_rf.txt")
+    # cnn32_acc_vs_n = load_result("9_class/cnn32.txt")
+    # cnn32_2l_acc_vs_n = load_result("9_class/cnn32_2l.txt")
+    # cnn32_5l_acc_vs_n = load_result("9_class/cnn32_5l.txt")
+    # resnet18_acc_vs_n = load_result("9_class/resnet18.txt")
 
     fraction_of_train_samples_space = np.geomspace(0.01, 1, num=8)
-    for i in range(8):
+    for i in range(2):
         plt.rcParams["figure.figsize"] = 13, 10
         plt.rcParams["font.size"] = 25
         plt.rcParams["legend.fontsize"] = 16.5
@@ -269,7 +269,7 @@ def main():
 
         fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
         ax.plot(
-            fraction_of_train_samples_space * 15000,
+            fraction_of_train_samples_space * 45000,
             naive_rf_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
             markerfacecolor="red",
@@ -280,7 +280,7 @@ def main():
             label="RF",
         )
         ax.plot(
-            fraction_of_train_samples_space * 15000,
+            fraction_of_train_samples_space * 45000,
             cnn32_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
             markerfacecolor="blue",
@@ -291,7 +291,7 @@ def main():
             label="CNN32",
         )
         ax.plot(
-            fraction_of_train_samples_space * 15000,
+            fraction_of_train_samples_space * 45000,
             cnn32_2l_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
             markerfacecolor="cyan",
@@ -302,7 +302,7 @@ def main():
             label="CNN32_2l",
         )
         ax.plot(
-            fraction_of_train_samples_space * 15000,
+            fraction_of_train_samples_space * 45000,
             cnn32_5l_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
             markerfacecolor="orange",
@@ -313,7 +313,7 @@ def main():
             label="CNN32_5l",
         )
         ax.plot(
-            fraction_of_train_samples_space * 15000,
+            fraction_of_train_samples_space * 45000,
             resnet18_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
             markerfacecolor="purple",
@@ -326,24 +326,18 @@ def main():
 
         ax.set_xlabel("Number of Train Samples", fontsize=18)
         ax.set_xscale("log")
-        ax.set_xticks([i * 15000 for i in list(np.geomspace(0.01, 1, num=8))])
+        ax.set_xticks([i * 45000 for i in list(np.geomspace(0.01, 1, num=8))])
         ax.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
 
         ax.set_ylabel("Accuracy", fontsize=18)
 
         ax.set_title(
-            names[0] + " vs " + names[1] + " vs " + names[i + 2] + " classification",
+            names[0] + " vs ... vs " + names[i + 8] + " classification",
             fontsize=18,
         )
         plt.legend()
         plt.savefig(
-            "3_class/"
-            + names[0]
-            + " vs "
-            + names[1]
-            + " vs "
-            + names[i + 2]
-            + " classification"
+            "9_class/" + names[i + 8] + " classification"
         )
 
 

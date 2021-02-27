@@ -34,6 +34,19 @@ def load_result(filename):
 
 # prepare CIFAR data
 def main():
+    names = [
+        "airplane",
+        "automobile",
+        "bird",
+        "cat",
+        "deer",
+        "dog",
+        "frog",
+        "horse",
+        "ship",
+        "truck",
+    ]
+
     # normalize
     scale = np.mean(np.arange(0, 256))
     normalize = lambda x: (x - scale) / scale
@@ -54,19 +67,6 @@ def main():
 
     cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
     cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
-
-    names = [
-        "airplane",
-        "automobile",
-        "bird",
-        "cat",
-        "deer",
-        "dog",
-        "frog",
-        "horse",
-        "ship",
-        "truck",
-    ]
 
     naive_rf_acc_vs_n = list()
     for class8 in range(7, 10):
@@ -173,7 +173,7 @@ def main():
     write_result("8_class/cnn32_2l.txt", cnn32_2l_acc_vs_n)
 
     cnn32_5l_acc_vs_n = list()
-    for class8 in range(2, 10):
+    for class8 in range(7, 10):
 
         # accuracy vs num training samples (cnn32_2l)
         classes = [0, 1, 2, 3, 4, 5, 6]
@@ -269,7 +269,7 @@ def main():
 
         fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
         ax.plot(
-            fraction_of_train_samples_space * 15000,
+            fraction_of_train_samples_space * 40000,
             naive_rf_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
             markerfacecolor="red",
@@ -280,7 +280,7 @@ def main():
             label="RF",
         )
         ax.plot(
-            fraction_of_train_samples_space * 15000,
+            fraction_of_train_samples_space * 40000,
             cnn32_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
             markerfacecolor="blue",
@@ -291,7 +291,7 @@ def main():
             label="CNN32",
         )
         ax.plot(
-            fraction_of_train_samples_space * 15000,
+            fraction_of_train_samples_space * 40000,
             cnn32_2l_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
             markerfacecolor="cyan",
@@ -302,7 +302,7 @@ def main():
             label="CNN32_2l",
         )
         ax.plot(
-            fraction_of_train_samples_space * 15000,
+            fraction_of_train_samples_space * 40000,
             cnn32_5l_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
             markerfacecolor="orange",
@@ -313,10 +313,10 @@ def main():
             label="CNN32_5l",
         )
         ax.plot(
-            fraction_of_train_samples_space * 15000,
+            fraction_of_train_samples_space * 40000,
             resnet18_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
-            markerfacecolor="red",
+            markerfacecolor="purple",
             markersize=8,
             color="green",
             linewidth=3,
@@ -326,7 +326,7 @@ def main():
 
         ax.set_xlabel("Number of Train Samples", fontsize=18)
         ax.set_xscale("log")
-        ax.set_xticks([i * 15000 for i in list(np.geomspace(0.01, 1, num=8))])
+        ax.set_xticks([i * 40000 for i in list(np.geomspace(0.01, 1, num=8))])
         ax.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
 
         ax.set_ylabel("Accuracy", fontsize=18)
@@ -337,11 +337,10 @@ def main():
         )
         plt.legend()
         plt.savefig(
-            "8_class/" + names[0] + " vs ... vs " + names[i + 7] + " classification"
+            "8_class/" + names[i + 7] + " classification"
         )
 
 
 if __name__ == "__main__":
     torch.multiprocessing.freeze_support()
-    torch.multiprocessing.set_sharing_strategy("file_system")
     main()
