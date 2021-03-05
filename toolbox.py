@@ -78,7 +78,6 @@ class SimpleCNN32Filter5Layers(torch.nn.Module):
         x = F.relu(self.bn3(self.conv5(x)))
         x = self.maxpool(x)
         x = x.view(b, -1)
-        # print(x.shape)
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
@@ -132,47 +131,67 @@ def run_rf_image(
     return accuracy_score(test_labels, test_preds)
 
 
+def run_rf_image_set(
+    model,
+    train_images,
+    train_labels,
+    test_images,
+    test_labels,
+    samples,
+    classes,
+):
+    """
+    Peforms multiclass predictions for a random forest classifier
+    with fixed total samples
+    """
+    num_classes = len(classes)
+    partitions = np.array_split(np.array(range(samples)), num_classes)
+
+    # Obtain only train images and labels for selected classes
+    image_ls = []
+    label_ls = []
+    i = 0
+    for cls in classes:
+        class_idx = np.argwhere(train_labels == cls).flatten()
+        np.random.shuffle(class_idx)
+        class_img = train_images[class_idx[: len(partitions[i])]]
+        image_ls.append(class_img)
+        label_ls.append(np.repeat(cls, len(partitions[i])))
+        i += 1
+
+    train_images = np.concatenate(image_ls)
+    train_labels = np.concatenate(label_ls)
+
+    # Obtain only test images and labels for selected classes
+    image_ls = []
+    label_ls = []
+    for cls in classes:
+        image_ls.append(test_images[test_labels == cls])
+        label_ls.append(np.repeat(cls, np.sum(test_labels == cls)))
+
+    test_images = np.concatenate(image_ls)
+    test_labels = np.concatenate(label_ls)
+
+    # Train the model
+    model.fit(train_images, train_labels)
+
+    # Test the model
+    test_preds = model.predict(test_images)
+
+    return accuracy_score(test_labels, test_preds)
+
+
 def run_dn_image(
     model,
-    trainset,
-    train_labels,
-    testset,
-    test_labels,
-    fraction_of_train_samples,
-    classes,
+    train_loader,
+    test_loader,
     epochs=5,
     lr=0.001,
-    batch=16,
+    batch=64,
 ):
     """
     Peforms multiclass predictions for a deep network classifier
     """
-    class_idxs = []
-    for cls in classes:
-        class_idx = np.argwhere(train_labels == cls).flatten()
-        np.random.shuffle(class_idx)
-        class_idx = class_idx[: int(len(class_idx) * fraction_of_train_samples)]
-        class_idxs.append(class_idx)
-
-    np.random.shuffle(class_idxs)
-
-    train_idxs = np.concatenate(class_idxs)
-    train_sampler = torch.utils.data.sampler.SubsetRandomSampler(train_idxs)
-    train_loader = torch.utils.data.DataLoader(
-        trainset, batch_size=batch, num_workers=4, sampler=train_sampler
-    )
-
-    class_idxs = []
-    for cls in classes:
-        class_idx = np.argwhere(test_labels == cls).flatten()
-        class_idxs.append(class_idx)
-
-    test_idxs = np.concatenate(class_idxs)
-    test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
-    test_loader = torch.utils.data.DataLoader(
-        testset, batch_size=batch, shuffle=False, num_workers=4, sampler=test_sampler
-    )
-
     # define model
     dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(dev)
@@ -210,3 +229,108 @@ def run_dn_image(
             correct += (predicted == labels.view(-1)).sum().item()
     accuracy = float(correct) / float(total)
     return accuracy
+
+
+def create_loaders(
+    train_labels,
+    test_labels,
+    classes,
+    fraction_of_train_samples,
+    trainset,
+    testset,
+    batch=64,
+):
+    """
+    Creates training and testing loaders with varied total samples
+    """
+    classes = np.array(list(classes))
+
+    # get indicies of classes we want
+    class_idxs = []
+    for cls in classes:
+        class_idx = np.argwhere(train_labels == cls).flatten()
+        np.random.shuffle(class_idx)
+        class_idx = class_idx[: int(len(class_idx) * fraction_of_train_samples)]
+        class_idxs.append(class_idx)
+
+    np.random.shuffle(class_idxs)
+
+    train_idxs = np.concatenate(class_idxs)
+
+    # change the labels to be from 0-len(classes)
+    for i in train_idxs:
+        trainset.targets[i] = np.where(classes == trainset.targets[i])[0][0]
+
+    train_sampler = torch.utils.data.sampler.SubsetRandomSampler(train_idxs)
+    train_loader = torch.utils.data.DataLoader(
+        trainset, batch_size=batch, num_workers=4, sampler=train_sampler
+    )
+
+    # get indicies of classes we want
+    test_idxs = []
+    for cls in classes:
+        test_idx = np.argwhere(test_labels == cls).flatten()
+        test_idxs.append(test_idx)
+
+    test_idxs = np.concatenate(test_idxs)
+
+    # change the labels to be from 0-len(classes)
+    for i in test_idxs:
+        testset.targets[i] = np.where(classes == testset.targets[i])[0][0]
+
+    test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
+    test_loader = torch.utils.data.DataLoader(
+        testset, batch_size=batch, shuffle=False, num_workers=4, sampler=test_sampler
+    )
+    return train_loader, test_loader
+
+
+def create_loaders_set(
+    train_labels, test_labels, classes, trainset, testset, total_samples, batch=64
+):
+    """
+    Creates training and testing loaders with fixed total samples
+    """
+    classes = np.array(list(classes))
+    num_classes = len(classes)
+    partitions = np.array_split(np.array(range(total_samples)), num_classes)
+
+    # get indicies of classes we want
+    class_idxs = []
+    i = 0
+    for cls in classes:
+        class_idx = np.argwhere(train_labels == cls).flatten()
+        np.random.shuffle(class_idx)
+        class_idx = class_idx[: len(partitions[i])]
+        class_idxs.append(class_idx)
+        i += 1
+
+    np.random.shuffle(class_idxs)
+
+    train_idxs = np.concatenate(class_idxs)
+    # change the labels to be from 0-len(classes)
+    for i in train_idxs:
+        trainset.targets[i] = np.where(classes == trainset.targets[i])[0][0]
+
+    train_sampler = torch.utils.data.sampler.SubsetRandomSampler(train_idxs)
+    train_loader = torch.utils.data.DataLoader(
+        trainset, batch_size=batch, num_workers=4, sampler=train_sampler, drop_last=True
+    )
+
+    # get indicies of classes we want
+    test_idxs = []
+    for cls in classes:
+        test_idx = np.argwhere(test_labels == cls).flatten()
+        test_idxs.append(test_idx)
+
+    test_idxs = np.concatenate(test_idxs)
+
+    # change the labels to be from 0-len(classes)
+    for i in test_idxs:
+        testset.targets[i] = np.where(classes == testset.targets[i])[0][0]
+
+    test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
+    test_loader = torch.utils.data.DataLoader(
+        testset, batch_size=batch, shuffle=False, num_workers=4, sampler=test_sampler
+    )
+    return train_loader, test_loader
