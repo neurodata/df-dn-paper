@@ -79,7 +79,7 @@ def initialize_model(model_name, num_classes, use_pretrained=True):
     return model_ft, input_size
 
 for classes in experiments:
-    fraction_of_train_samples_space = np.geomspace(.01, 1, num=8)
+    fraction_of_train_samples_space = np.geomspace(.001, 1, num=8)
     trials = 1
     num_classes = len(classes)
     
@@ -90,30 +90,30 @@ for classes in experiments:
     complexcnn = list() 
     
     for fraction_of_train_samples in fraction_of_train_samples_space:
-        resnet18, input_size = initialize_model('resnet', num_classes, use_pretrained=True)
         trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
         testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
  
         train_loader, test_loader = create_loaders_set(cifar_train_labels, cifar_test_labels, classes, trainset, testset, int(fraction_of_train_samples * 10000))
         
+        resnet18, input_size = initialize_model('resnet', num_classes, use_pretrained=True)
         best_accuracy = np.mean([run_dn_image(resnet18, train_loader, test_loader) for _ in range(trials)])
         resnet_acc.append(best_accuracy)
         print("resnet Train Fraction:", str(fraction_of_train_samples), "Accuracy:", str(best_accuracy))
 
         
-        cnn32 = SimpleCNN32Filter()
+        cnn32 = SimpleCNN32Filter(num_classes)
         mean_accuracy = np.mean([run_dn_image(cnn32, train_loader, test_loader) for _ in range(trials)])
         simplecnn.append(mean_accuracy)
         print("simple Train Fraction:", str(fraction_of_train_samples), "Accuracy: ", str(mean_accuracy))
 
         
-        cnn32 = SimpleCNN32Filter2Layers()
+        cnn32 = SimpleCNN32Filter2Layers(num_classes)
         mean_accuracy = np.mean([run_dn_image(cnn32, train_loader, test_loader) for _ in range(trials)])
         cnn2layer.append(mean_accuracy)
         print("Train Fraction:", str(fraction_of_train_samples), " Cnn 2 layer Accuracy: ", str(mean_accuracy))
 
         
-        cnn32 = CNN5Layer()
+        cnn32 = CNN5Layer(num_classes)
         mean_accuracy = np.mean([run_dn_image(cnn32, train_loader, test_loader) for _ in range(trials)])
         complexcnn.append(mean_accuracy)
         print("complex Train Fraction:", str(fraction_of_train_samples), " Accuracy: ", str(mean_accuracy))
@@ -148,7 +148,7 @@ for classes in experiments:
 
     ax.set_xlabel('Number of Train Samples', fontsize=18)
     ax.set_xscale('log')
-    ax.set_xticks([i*5000*num_classes for i in list(fraction_of_train_samples_space)])
+    ax.set_xticks([i*10000 for i in list(fraction_of_train_samples_space)])
     ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
     
     ax.set_ylabel('Accuracy', fontsize=18)
