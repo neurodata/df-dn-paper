@@ -74,21 +74,21 @@ def main():
         # accuracy vs num training samples (naive_rf)
         classes = [0, 1, 2, 3, 4, 5, 6, 7, 8]
         classes.append(class10)
-        fraction_of_train_samples_space = np.geomspace(0.01, 1, num=8)
-        for fraction_of_train_samples in fraction_of_train_samples_space:
+        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
+        for samples in samples_space:
             RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
             mean_accuracy = np.mean(
                 [
-                    run_rf_image(
+                    run_rf_image_set(
                         RF,
                         cifar_train_images,
                         cifar_train_labels,
                         cifar_test_images,
                         cifar_test_labels,
-                        fraction_of_train_samples,
+                        samples,
                         classes,
                     )
-                    for _ in range(5)
+                    for _ in range(1)
                 ]
             )
             naive_rf_acc_vs_n.append(mean_accuracy)
@@ -100,41 +100,43 @@ def main():
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
 
-    # train data
-    cifar_trainset = datasets.CIFAR10(
-        root="./", train=True, download=True, transform=data_transforms
-    )
-    cifar_train_labels = np.array(cifar_trainset.targets)
-
-    # test data
-    cifar_testset = datasets.CIFAR10(
-        root="./", train=False, download=True, transform=data_transforms
-    )
-    cifar_test_labels = np.array(cifar_testset.targets)
-
     cnn32_acc_vs_n = list()
     for class10 in range(9, 10):
 
         # accuracy vs num training samples (cnn32)
         classes = [0, 1, 2, 3, 4, 5, 6, 7, 8]
         classes.append(class10)
-        fraction_of_train_samples_space = np.geomspace(0.01, 1, num=8)
-        for fraction_of_train_samples in fraction_of_train_samples_space:
-            cnn32 = SimpleCNN32Filter()
+        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
+        for samples in samples_space:
+            # train data
+            cifar_trainset = datasets.CIFAR10(
+                root="./", train=True, download=True, transform=data_transforms
+            )
+            cifar_train_labels = np.array(cifar_trainset.targets)
 
+            # test data
+            cifar_testset = datasets.CIFAR10(
+                root="./", train=False, download=True, transform=data_transforms
+            )
+            cifar_test_labels = np.array(cifar_testset.targets)
+
+            cnn32 = SimpleCNN32Filter(len(classes))
+            train_loader, test_loader = create_loaders_set(
+                cifar_train_labels,
+                cifar_test_labels,
+                classes,
+                cifar_trainset,
+                cifar_testset,
+                samples,
+            )
             mean_accuracy = np.mean(
                 [
                     run_dn_image(
                         cnn32,
-                        cifar_trainset,
-                        cifar_train_labels,
-                        cifar_testset,
-                        cifar_test_labels,
-                        fraction_of_train_samples,
-                        classes,
-                        batch=32,
+                        train_loader,
+                        test_loader,
                     )
-                    for _ in range(5)
+                    for _ in range(1)
                 ]
             )
             cnn32_acc_vs_n.append(mean_accuracy)
@@ -148,23 +150,37 @@ def main():
         # accuracy vs num training samples (cnn32_2l)
         classes = [0, 1, 2, 3, 4, 5, 6, 7, 8]
         classes.append(class10)
-        fraction_of_train_samples_space = np.geomspace(0.01, 1, num=8)
-        for fraction_of_train_samples in fraction_of_train_samples_space:
-            cnn32_2l = SimpleCNN32Filter2Layers()
+        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
+        for samples in samples_space:
+            # train data
+            cifar_trainset = datasets.CIFAR10(
+                root="./", train=True, download=True, transform=data_transforms
+            )
+            cifar_train_labels = np.array(cifar_trainset.targets)
 
+            # test data
+            cifar_testset = datasets.CIFAR10(
+                root="./", train=False, download=True, transform=data_transforms
+            )
+            cifar_test_labels = np.array(cifar_testset.targets)
+
+            cnn32_2l = SimpleCNN32Filter2Layers(len(classes))
+            train_loader, test_loader = create_loaders_set(
+                cifar_train_labels,
+                cifar_test_labels,
+                classes,
+                cifar_trainset,
+                cifar_testset,
+                samples,
+            )
             mean_accuracy = np.mean(
                 [
                     run_dn_image(
                         cnn32_2l,
-                        cifar_trainset,
-                        cifar_train_labels,
-                        cifar_testset,
-                        cifar_test_labels,
-                        fraction_of_train_samples,
-                        classes,
-                        batch=32,
+                        train_loader,
+                        test_loader,
                     )
-                    for _ in range(5)
+                    for _ in range(1)
                 ]
             )
             cnn32_2l_acc_vs_n.append(mean_accuracy)
@@ -178,23 +194,37 @@ def main():
         # accuracy vs num training samples (cnn32_2l)
         classes = [0, 1, 2, 3, 4, 5, 6, 7, 8]
         classes.append(class10)
-        fraction_of_train_samples_space = np.geomspace(0.01, 1, num=8)
-        for fraction_of_train_samples in fraction_of_train_samples_space:
-            cnn32_5l = SimpleCNN32Filter5Layers()
+        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
+        for samples in samples_space:
+            # train data
+            cifar_trainset = datasets.CIFAR10(
+                root="./", train=True, download=True, transform=data_transforms
+            )
+            cifar_train_labels = np.array(cifar_trainset.targets)
 
+            # test data
+            cifar_testset = datasets.CIFAR10(
+                root="./", train=False, download=True, transform=data_transforms
+            )
+            cifar_test_labels = np.array(cifar_testset.targets)
+
+            cnn32_5l = SimpleCNN32Filter5Layers(len(classes))
+            train_loader, test_loader = create_loaders_set(
+                cifar_train_labels,
+                cifar_test_labels,
+                classes,
+                cifar_trainset,
+                cifar_testset,
+                samples,
+            )
             mean_accuracy = np.mean(
                 [
                     run_dn_image(
                         cnn32_5l,
-                        cifar_trainset,
-                        cifar_train_labels,
-                        cifar_testset,
-                        cifar_test_labels,
-                        fraction_of_train_samples,
-                        classes,
-                        batch=32,
+                        train_loader,
+                        test_loader,
                     )
-                    for _ in range(5)
+                    for _ in range(1)
                 ]
             )
             cnn32_5l_acc_vs_n.append(mean_accuracy)
@@ -210,40 +240,45 @@ def main():
         ]
     )
 
-    # train data
-    cifar_trainset = datasets.CIFAR10(
-        root="./", train=True, download=True, transform=data_transforms
-    )
-    cifar_train_labels = np.array(cifar_trainset.targets)
-
-    # test data
-    cifar_testset = datasets.CIFAR10(
-        root="./", train=False, download=True, transform=data_transforms
-    )
-    cifar_test_labels = np.array(cifar_testset.targets)
-
     resnet18_acc_vs_n = list()
     for class10 in range(9, 10):
 
         # accuracy vs num training samples (resnet18)
         classes = [0, 1, 2, 3, 4, 5, 6, 7, 8]
         classes.append(class10)
-        fraction_of_train_samples_space = np.geomspace(0.01, 1, num=8)
-        for fraction_of_train_samples in fraction_of_train_samples_space:
-            res = models.resnet18(pretrained=True)
+        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
+        for samples in samples_space:
+            # train data
+            cifar_trainset = datasets.CIFAR10(
+                root="./", train=True, download=True, transform=data_transforms
+            )
+            cifar_train_labels = np.array(cifar_trainset.targets)
 
+            # test data
+            cifar_testset = datasets.CIFAR10(
+                root="./", train=False, download=True, transform=data_transforms
+            )
+            cifar_test_labels = np.array(cifar_testset.targets)
+
+            res = models.resnet18(pretrained=True)
+            num_ftrs = res.fc.in_features
+            res.fc = nn.Linear(num_ftrs, len(classes))
+            train_loader, test_loader = create_loaders_set(
+                cifar_train_labels,
+                cifar_test_labels,
+                classes,
+                cifar_trainset,
+                cifar_testset,
+                samples,
+            )
             mean_accuracy = np.mean(
                 [
                     run_dn_image(
                         res,
-                        cifar_trainset,
-                        cifar_train_labels,
-                        cifar_testset,
-                        cifar_test_labels,
-                        fraction_of_train_samples,
-                        classes,
+                        train_loader,
+                        test_loader,
                     )
-                    for _ in range(5)
+                    for _ in range(1)
                 ]
             )
             resnet18_acc_vs_n.append(mean_accuracy)
@@ -257,7 +292,7 @@ def main():
     # cnn32_5l_acc_vs_n = load_result("10_class/cnn32_5l.txt")
     # resnet18_acc_vs_n = load_result("10_class/resnet18.txt")
 
-    fraction_of_train_samples_space = np.geomspace(0.01, 1, num=8)
+    samples_space = np.geomspace(10, 10000, num=8, dtype=int)
     for i in range(1):
         plt.rcParams["figure.figsize"] = 13, 10
         plt.rcParams["font.size"] = 25
@@ -269,7 +304,7 @@ def main():
 
         fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
         ax.plot(
-            fraction_of_train_samples_space * 50000,
+            samples_space,
             naive_rf_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
             markerfacecolor="red",
@@ -280,7 +315,7 @@ def main():
             label="RF",
         )
         ax.plot(
-            fraction_of_train_samples_space * 50000,
+            samples_space,
             cnn32_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
             markerfacecolor="blue",
@@ -291,7 +326,7 @@ def main():
             label="CNN32",
         )
         ax.plot(
-            fraction_of_train_samples_space * 50000,
+            samples_space,
             cnn32_2l_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
             markerfacecolor="cyan",
@@ -302,7 +337,7 @@ def main():
             label="CNN32_2l",
         )
         ax.plot(
-            fraction_of_train_samples_space * 50000,
+            samples_space,
             cnn32_5l_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
             markerfacecolor="orange",
@@ -313,7 +348,7 @@ def main():
             label="CNN32_5l",
         )
         ax.plot(
-            fraction_of_train_samples_space * 50000,
+            samples_space,
             resnet18_acc_vs_n[i * 8 : (i + 1) * 8],
             marker="X",
             markerfacecolor="purple",
@@ -326,18 +361,24 @@ def main():
 
         ax.set_xlabel("Number of Train Samples", fontsize=18)
         ax.set_xscale("log")
-        ax.set_xticks([i * 50000 for i in list(np.geomspace(0.01, 1, num=8))])
+        ax.set_xticks([i for i in list(samples_space)])
         ax.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
 
         ax.set_ylabel("Accuracy", fontsize=18)
 
         ax.set_title(
-            names[0] + " vs ... vs " + names[i + 9] + " classification",
+            names[0] + " vs " + names[1] + " vs " + names[i + 2] + " classification",
             fontsize=18,
         )
         plt.legend()
         plt.savefig(
-            "10_class/" + names[i + 9] + " classification"
+            "10_class/"
+            + names[0]
+            + " vs "
+            + names[1]
+            + " vs "
+            + names[i + 2]
+            + " classification"
         )
 
 

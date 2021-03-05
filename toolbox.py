@@ -19,10 +19,10 @@ class SimpleCNN32Filter(nn.Module):
     Defines a simple CNN arhcitecture
     """
 
-    def __init__(self):
+    def __init__(self, num_classes):
         super(SimpleCNN32Filter, self).__init__()
         self.conv1 = nn.Conv2d(3, 32, kernel_size=10, stride=2)
-        self.fc1 = nn.Linear(144 * 32, 10)
+        self.fc1 = nn.Linear(144 * 32, num_classes)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
@@ -36,12 +36,12 @@ class SimpleCNN32Filter2Layers(nn.Module):
     Define a simple CNN arhcitecture with 2 layers
     """
 
-    def __init__(self):
+    def __init__(self, num_classes):
         super(SimpleCNN32Filter2Layers, self).__init__()
         self.conv1 = nn.Conv2d(3, 32, kernel_size=5, stride=1)
         self.conv2 = nn.Conv2d(32, 32, kernel_size=5, stride=2)
         self.fc1 = nn.Linear(12 * 12 * 32, 100)
-        self.fc2 = nn.Linear(100, 10)
+        self.fc2 = nn.Linear(100, num_classes)
 
     def forward(self, x):
         b = x.shape[0]
@@ -54,7 +54,11 @@ class SimpleCNN32Filter2Layers(nn.Module):
 
 
 class SimpleCNN32Filter5Layers(torch.nn.Module):
-    def __init__(self):
+    """
+    Define a simple CNN arhcitecture with 5 layers
+    """
+
+    def __init__(self, num_classes):
         super(SimpleCNN32Filter5Layers, self).__init__()
         self.conv1 = torch.nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
         self.conv2 = torch.nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
@@ -62,7 +66,7 @@ class SimpleCNN32Filter5Layers(torch.nn.Module):
         self.conv4 = torch.nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
         self.conv5 = torch.nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
         self.fc1 = torch.nn.Linear(8192, 200)
-        self.fc2 = torch.nn.Linear(200, 10)
+        self.fc2 = torch.nn.Linear(200, num_classes)
         self.maxpool = nn.MaxPool2d((2, 2))
         self.bn = nn.BatchNorm2d(32)
         self.bn2 = nn.BatchNorm2d(64)
@@ -286,14 +290,14 @@ def create_loaders(
 
 
 def create_loaders_set(
-    train_labels, test_labels, classes, trainset, testset, total_samples, batch=64
+    train_labels, test_labels, classes, trainset, testset, samples, batch=64
 ):
     """
     Creates training and testing loaders with fixed total samples
     """
     classes = np.array(list(classes))
     num_classes = len(classes)
-    partitions = np.array_split(np.array(range(total_samples)), num_classes)
+    partitions = np.array_split(np.array(range(samples)), num_classes)
 
     # get indicies of classes we want
     class_idxs = []
