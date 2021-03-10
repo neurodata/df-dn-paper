@@ -367,18 +367,12 @@ def main():
         ax.set_ylabel("Accuracy", fontsize=18)
 
         ax.set_title(
-            names[0] + " vs " + names[1] + " vs " + names[i + 2] + " classification",
+            "All classes classification",
             fontsize=18,
         )
         plt.legend()
         plt.savefig(
-            "10_class/"
-            + names[0]
-            + " vs "
-            + names[1]
-            + " vs "
-            + names[i + 2]
-            + " classification"
+            "10_class/All classes classification.png"
         )
 
 
