@@ -29,9 +29,9 @@ for i in range(9):
         experiments.append((i, j))
 
 #3 class
-experiments.extend([(0, 1, 2), (0, 1, 3), (0, 1, 4), (0, 1, 5)\
-               , (0, 1, 6), (0, 1, 7), (0, 1, 8), (0, 1, 9)])
-    
+#experiments.extend([(0, 1, 2), (0, 1, 3), (0, 1, 4), (0, 1, 5)\
+#               , (0, 1, 6), (0, 1, 7), (0, 1, 8), (0, 1, 9)])
+#4 class
 experiments.extend([(0, 1, 2, 3), (0, 1, 2, 4), (0, 1, 2, 5), (0, 1, 2, 6)\
                , (0, 1, 2, 7), (0, 1, 2, 8), (0, 1, 2, 9)])
 # filter python warnings
