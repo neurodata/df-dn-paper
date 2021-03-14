@@ -313,10 +313,10 @@ def main():
     ax.set_ylabel("Accuracy", fontsize=18)
 
     ax.set_title(
-        "3 classes classification",
+        "3 Classes Classifications",
         fontsize=18,
     )
-    for i in range(45):
+    for i in range(len(classes_space)):
         ax.plot(
             samples_space,
             naive_rf_acc_vs_n[i * 8 : (i + 1) * 8],
@@ -386,7 +386,7 @@ def main():
     )
 
     plt.legend()
-    plt.savefig("3_class/3 classes classification.png")
+    plt.savefig("3_class/3_classes_classifications.png")
 
 
 if __name__ == "__main__":

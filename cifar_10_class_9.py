@@ -3,6 +3,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 import numpy as np
+from itertools import combinations
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 
@@ -32,6 +33,15 @@ def load_result(filename):
     return ls
 
 
+def produce_mean(acc_ls):
+    ls_space = []
+    for i in range(int(len(acc_ls) / 8)):
+        ls = acc_ls[i * 8 : (i + 1) * 8]
+        ls_space.append(ls)
+
+    return np.mean(ls_space, axis=0)
+
+
 # prepare CIFAR data
 def main():
     names = [
@@ -46,6 +56,9 @@ def main():
         "ship",
         "truck",
     ]
+
+    nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    classes_space = list(combinations(nums, 9))
 
     # normalize
     scale = np.mean(np.arange(0, 256))
@@ -69,11 +82,9 @@ def main():
     cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
 
     naive_rf_acc_vs_n = list()
-    for class9 in range(8, 10):
+    for classes in classes_space:
 
         # accuracy vs num training samples (naive_rf)
-        classes = [0, 1, 2, 3, 4, 5, 6, 7]
-        classes.append(class9)
         samples_space = np.geomspace(10, 10000, num=8, dtype=int)
         for samples in samples_space:
             RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
@@ -101,15 +112,11 @@ def main():
     )
 
     cnn32_acc_vs_n = list()
-    for class9 in range(8, 10):
+    for classes in classes_space:
 
         # accuracy vs num training samples (cnn32)
-        classes = [0, 1, 2, 3, 4, 5, 6, 7]
-        classes.append(class9)
         samples_space = np.geomspace(10, 10000, num=8, dtype=int)
         for samples in samples_space:
-            curr = [class9, samples]
-            write_result("9_class/current.txt", curr)
             # train data
             cifar_trainset = datasets.CIFAR10(
                 root="./", train=True, download=True, transform=data_transforms
@@ -147,15 +154,11 @@ def main():
     write_result("9_class/cnn32.txt", cnn32_acc_vs_n)
 
     cnn32_2l_acc_vs_n = list()
-    for class9 in range(8, 10):
+    for classes in classes_space:
 
         # accuracy vs num training samples (cnn32_2l)
-        classes = [0, 1, 2, 3, 4, 5, 6, 7]
-        classes.append(class9)
         samples_space = np.geomspace(10, 10000, num=8, dtype=int)
         for samples in samples_space:
-            curr = [class9, samples]
-            write_result("9_class/current.txt", curr)
             # train data
             cifar_trainset = datasets.CIFAR10(
                 root="./", train=True, download=True, transform=data_transforms
@@ -193,15 +196,11 @@ def main():
     write_result("9_class/cnn32_2l.txt", cnn32_2l_acc_vs_n)
 
     cnn32_5l_acc_vs_n = list()
-    for class9 in range(8, 10):
+    for classes in classes_space:
 
         # accuracy vs num training samples (cnn32_2l)
-        classes = [0, 1, 2, 3, 4, 5, 6, 7]
-        classes.append(class9)
         samples_space = np.geomspace(10, 10000, num=8, dtype=int)
         for samples in samples_space:
-            curr = [class9, samples]
-            write_result("9_class/current.txt", curr)
             # train data
             cifar_trainset = datasets.CIFAR10(
                 root="./", train=True, download=True, transform=data_transforms
@@ -247,15 +246,11 @@ def main():
     )
 
     resnet18_acc_vs_n = list()
-    for class9 in range(8, 10):
+    for classes in classes_space:
 
         # accuracy vs num training samples (resnet18)
-        classes = [0, 1, 2, 3, 4, 5, 6, 7]
-        classes.append(class9)
         samples_space = np.geomspace(10, 10000, num=8, dtype=int)
         for samples in samples_space:
-            curr = [class9, samples]
-            write_result("9_class/current.txt", curr)
             # train data
             cifar_trainset = datasets.CIFAR10(
                 root="./", train=True, download=True, transform=data_transforms
@@ -301,89 +296,97 @@ def main():
     # resnet18_acc_vs_n = load_result("9_class/resnet18.txt")
 
     samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-    for i in range(2):
-        plt.rcParams["figure.figsize"] = 13, 10
-        plt.rcParams["font.size"] = 25
-        plt.rcParams["legend.fontsize"] = 16.5
-        plt.rcParams["legend.handlelength"] = 2.5
-        plt.rcParams["figure.titlesize"] = 20
-        plt.rcParams["xtick.labelsize"] = 15
-        plt.rcParams["ytick.labelsize"] = 15
+    fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
+    plt.rcParams["figure.figsize"] = 13, 10
+    plt.rcParams["font.size"] = 25
+    plt.rcParams["legend.fontsize"] = 16.5
+    plt.rcParams["legend.handlelength"] = 2.5
+    plt.rcParams["figure.titlesize"] = 20
+    plt.rcParams["xtick.labelsize"] = 15
+    plt.rcParams["ytick.labelsize"] = 15
+    plt.ylim([0, 1])
+    ax.set_xlabel("Number of Train Samples", fontsize=18)
+    ax.set_xscale("log")
+    ax.set_xticks([i for i in list(samples_space)])
+    ax.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
 
-        fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
+    ax.set_ylabel("Accuracy", fontsize=18)
+
+    ax.set_title(
+        "9 Classes Classifications",
+        fontsize=18,
+    )
+    for i in range(len(classes_space)):
         ax.plot(
             samples_space,
             naive_rf_acc_vs_n[i * 8 : (i + 1) * 8],
-            marker="X",
-            markerfacecolor="red",
-            markersize=8,
-            color="green",
-            linewidth=3,
-            linestyle=":",
-            label="RF",
+            color="#e41a1c",
+            alpha=0.1,
         )
         ax.plot(
             samples_space,
             cnn32_acc_vs_n[i * 8 : (i + 1) * 8],
-            marker="X",
-            markerfacecolor="blue",
-            markersize=8,
-            color="green",
-            linewidth=3,
-            linestyle="--",
-            label="CNN32",
+            color="#377eb8",
+            alpha=0.1,
         )
         ax.plot(
             samples_space,
             cnn32_2l_acc_vs_n[i * 8 : (i + 1) * 8],
-            marker="X",
-            markerfacecolor="cyan",
-            markersize=8,
-            color="green",
-            linewidth=3,
-            linestyle="--",
-            label="CNN32_2l",
+            color="#4daf4a",
+            alpha=0.1,
         )
         ax.plot(
             samples_space,
             cnn32_5l_acc_vs_n[i * 8 : (i + 1) * 8],
-            marker="X",
-            markerfacecolor="orange",
-            markersize=8,
-            color="green",
-            linewidth=3,
-            linestyle="--",
-            label="CNN32_5l",
+            color="#984ea3",
+            alpha=0.1,
         )
         ax.plot(
             samples_space,
             resnet18_acc_vs_n[i * 8 : (i + 1) * 8],
-            marker="X",
-            markerfacecolor="purple",
-            markersize=8,
-            color="green",
-            linewidth=3,
-            linestyle="--",
-            label="Resnet18",
+            color="#ff7f00",
+            alpha=0.1,
         )
 
-        ax.set_xlabel("Number of Train Samples", fontsize=18)
-        ax.set_xscale("log")
-        ax.set_xticks([i for i in list(samples_space)])
-        ax.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
+    naive_rf_mean = produce_mean(naive_rf_acc_vs_n)
+    cnn32_mean = produce_mean(cnn32_acc_vs_n)
+    cnn32_2l_mean = produce_mean(cnn32_2l_acc_vs_n)
+    cnn32_5l_mean = produce_mean(cnn32_5l_acc_vs_n)
+    resnet18_mean = produce_mean(resnet18_acc_vs_n)
 
-        ax.set_ylabel("Accuracy", fontsize=18)
+    ax.plot(
+        samples_space,
+        naive_rf_mean,
+        color="#e41a1c",
+        label="RF",
+    )
+    ax.plot(
+        samples_space,
+        cnn32_mean,
+        color="#377eb8",
+        label="CNN32",
+    )
+    ax.plot(
+        samples_space,
+        cnn32_2l_mean,
+        color="#4daf4a",
+        label="CNN32_2l",
+    )
+    ax.plot(
+        samples_space,
+        cnn32_5l_mean,
+        color="#984ea3",
+        label="CNN32_5l",
+    )
+    ax.plot(
+        samples_space,
+        resnet18_mean,
+        color="#ff7f00",
+        label="Resnet18",
+    )
 
-        ax.set_title(
-            "First 8 classes vs " + names[i + 8] + " classification",
-            fontsize=18,
-        )
-        plt.legend()
-        plt.savefig(
-            "9_class/First 8 classes vs "
-            + names[i + 8]
-            + " classification.png"
-        )
+    plt.legend()
+    plt.savefig("9_class/9_classes_classifications.png")
 
 
 if __name__ == "__main__":
