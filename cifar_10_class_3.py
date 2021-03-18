@@ -296,7 +296,6 @@ def main():
     # resnet18_acc_vs_n = load_result("3_class/resnet18.txt")
 
     samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-    fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
     plt.rcParams["figure.figsize"] = 13, 10
     plt.rcParams["font.size"] = 25
     plt.rcParams["legend.fontsize"] = 16.5
@@ -304,6 +303,7 @@ def main():
     plt.rcParams["figure.titlesize"] = 20
     plt.rcParams["xtick.labelsize"] = 15
     plt.rcParams["ytick.labelsize"] = 15
+    fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
     plt.ylim([0, 1])
     ax.set_xlabel("Number of Train Samples", fontsize=18)
     ax.set_xscale("log")
@@ -357,30 +357,35 @@ def main():
     ax.plot(
         samples_space,
         naive_rf_mean,
+        linewidth=5,
         color="#e41a1c",
         label="RF",
     )
     ax.plot(
         samples_space,
         cnn32_mean,
+        linewidth=5,
         color="#377eb8",
         label="CNN32",
     )
     ax.plot(
         samples_space,
         cnn32_2l_mean,
+        linewidth=5,
         color="#4daf4a",
         label="CNN32_2l",
     )
     ax.plot(
         samples_space,
         cnn32_5l_mean,
+        linewidth=5,
         color="#984ea3",
         label="CNN32_5l",
     )
     ax.plot(
         samples_space,
         resnet18_mean,
+        linewidth=5,
         color="#ff7f00",
         label="Resnet18",
     )
