@@ -1,10 +1,9 @@
 from toolbox import *
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 
 import numpy as np
 from itertools import combinations
 from sklearn.metrics import accuracy_score
+from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 
 import torch
@@ -24,39 +23,8 @@ def write_result(filename, acc_ls):
         output.write(str(acc) + "\n")
 
 
-def load_result(filename):
-    input = open(filename, "r")
-    lines = input.readlines()
-    ls = []
-    for line in lines:
-        ls.append(float(line.strip()))
-    return ls
-
-
-def produce_mean(acc_ls):
-    ls_space = []
-    for i in range(int(len(acc_ls) / 8)):
-        ls = acc_ls[i * 8 : (i + 1) * 8]
-        ls_space.append(ls)
-
-    return np.mean(ls_space, axis=0)
-
-
 # prepare CIFAR data
 def main():
-    names = [
-        "airplane",
-        "automobile",
-        "bird",
-        "cat",
-        "deer",
-        "dog",
-        "frog",
-        "horse",
-        "ship",
-        "truck",
-    ]
-
     nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     classes_space = list(combinations(nums, 3))[:45]
 
@@ -80,6 +48,32 @@ def main():
 
     cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
     cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
+
+    svm_acc_vs_n = list()
+    for classes in classes_space:
+
+        # accuracy vs num training samples (svm)
+        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
+        for samples in samples_space:
+            SVM = SVC()
+            mean_accuracy = np.mean(
+                [
+                    run_rf_image_set(
+                        SVM,
+                        cifar_train_images,
+                        cifar_train_labels,
+                        cifar_test_images,
+                        cifar_test_labels,
+                        samples,
+                        classes,
+                    )
+                    for _ in range(1)
+                ]
+            )
+            svm_acc_vs_n.append(mean_accuracy)
+
+    print("svm finished")
+    write_result("3_class/svm.txt", svm_acc_vs_n)
 
     naive_rf_acc_vs_n = list()
     for classes in classes_space:
@@ -288,110 +282,6 @@ def main():
 
     print("resnet18 finished")
     write_result("3_class/resnet18.txt", resnet18_acc_vs_n)
-
-    # naive_rf_acc_vs_n = load_result("3_class/naive_rf.txt")
-    # cnn32_acc_vs_n = load_result("3_class/cnn32.txt")
-    # cnn32_2l_acc_vs_n = load_result("3_class/cnn32_2l.txt")
-    # cnn32_5l_acc_vs_n = load_result("3_class/cnn32_5l.txt")
-    # resnet18_acc_vs_n = load_result("3_class/resnet18.txt")
-
-    samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-    plt.rcParams["figure.figsize"] = 13, 10
-    plt.rcParams["font.size"] = 25
-    plt.rcParams["legend.fontsize"] = 16.5
-    plt.rcParams["legend.handlelength"] = 2.5
-    plt.rcParams["figure.titlesize"] = 20
-    plt.rcParams["xtick.labelsize"] = 15
-    plt.rcParams["ytick.labelsize"] = 15
-    fig, ax = plt.subplots()  # create a new figure with a default 111 subplot
-    plt.ylim([0, 1])
-    ax.set_xlabel("Number of Train Samples", fontsize=18)
-    ax.set_xscale("log")
-    ax.set_xticks([i for i in list(samples_space)])
-    ax.get_xaxis().set_major_formatter(mpl.ticker.ScalarFormatter())
-
-    ax.set_ylabel("Accuracy", fontsize=18)
-
-    ax.set_title(
-        "3 Classes Classifications",
-        fontsize=18,
-    )
-    for i in range(len(classes_space)):
-        ax.plot(
-            samples_space,
-            naive_rf_acc_vs_n[i * 8 : (i + 1) * 8],
-            color="#e41a1c",
-            alpha=0.1,
-        )
-        ax.plot(
-            samples_space,
-            cnn32_acc_vs_n[i * 8 : (i + 1) * 8],
-            color="#377eb8",
-            alpha=0.1,
-        )
-        ax.plot(
-            samples_space,
-            cnn32_2l_acc_vs_n[i * 8 : (i + 1) * 8],
-            color="#4daf4a",
-            alpha=0.1,
-        )
-        ax.plot(
-            samples_space,
-            cnn32_5l_acc_vs_n[i * 8 : (i + 1) * 8],
-            color="#984ea3",
-            alpha=0.1,
-        )
-        ax.plot(
-            samples_space,
-            resnet18_acc_vs_n[i * 8 : (i + 1) * 8],
-            color="#ff7f00",
-            alpha=0.1,
-        )
-
-    naive_rf_mean = produce_mean(naive_rf_acc_vs_n)
-    cnn32_mean = produce_mean(cnn32_acc_vs_n)
-    cnn32_2l_mean = produce_mean(cnn32_2l_acc_vs_n)
-    cnn32_5l_mean = produce_mean(cnn32_5l_acc_vs_n)
-    resnet18_mean = produce_mean(resnet18_acc_vs_n)
-
-    ax.plot(
-        samples_space,
-        naive_rf_mean,
-        linewidth=5,
-        color="#e41a1c",
-        label="RF",
-    )
-    ax.plot(
-        samples_space,
-        cnn32_mean,
-        linewidth=5,
-        color="#377eb8",
-        label="CNN32",
-    )
-    ax.plot(
-        samples_space,
-        cnn32_2l_mean,
-        linewidth=5,
-        color="#4daf4a",
-        label="CNN32_2l",
-    )
-    ax.plot(
-        samples_space,
-        cnn32_5l_mean,
-        linewidth=5,
-        color="#984ea3",
-        label="CNN32_5l",
-    )
-    ax.plot(
-        samples_space,
-        resnet18_mean,
-        linewidth=5,
-        color="#ff7f00",
-        label="Resnet18",
-    )
-
-    plt.legend()
-    plt.savefig("3_class/3_classes_classifications.png")
 
 
 if __name__ == "__main__":
