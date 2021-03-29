@@ -3,17 +3,14 @@ import numpy as np
 from toolbox import *
 import sklearn
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
+from itertools import combinations
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torchvision.datasets as datasets
 from torchvision import models, transforms
-import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import matplotlib
 import pandas as pd
-import seaborn as sns; sns.set()
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -22,18 +19,9 @@ plt.rcParams["legend.loc"] = "best"
 plt.rcParams['figure.facecolor'] = 'white'
 #%matplotlib inline
 names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
-experiments = [] #(0, 2, 6, 8), (1, 3, 4, 9)
-#2 class
-for i in range(9):
-    for j in range(i + 1, 10):
-        experiments.append((i, j))
+nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+experiments = list(combinations(nums, 6))[:45]
 
-#3 class
-#experiments.extend([(0, 1, 2), (0, 1, 3), (0, 1, 4), (0, 1, 5)\
-#               , (0, 1, 6), (0, 1, 7), (0, 1, 8), (0, 1, 9)])
-#4 class
-experiments.extend([(0, 1, 2, 3), (0, 1, 2, 4), (0, 1, 2, 5), (0, 1, 2, 6)\
-               , (0, 1, 2, 7), (0, 1, 2, 8), (0, 1, 2, 9)])
 # filter python warnings
 def run():
     torch.multiprocessing.freeze_support()
