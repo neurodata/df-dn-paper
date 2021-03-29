@@ -233,6 +233,85 @@ def run_dn_image(
     return accuracy
 
 
+def run_dn_image_es(
+    model,
+    train_loader,
+    valid_loader,
+    test_loader,
+    epochs=30,
+    lr=0.001,
+    batch=64,
+):
+    """
+    Peforms multiclass predictions for a deep network classifier
+    """
+    # define model
+    dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model.to(dev)
+    # loss and optimizer
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    #early stopping setup
+    prev_loss = float('inf')
+    flag = 0
+    
+    for epoch in range(epochs):  # loop over the dataset multiple times
+
+        for i, data in enumerate(train_loader, 0):
+            # get the inputs
+            inputs, labels = data
+            inputs = inputs.clone().detach().to(dev)
+            labels = labels.clone().detach().to(dev)
+            #print(labels)
+            # zero the parameter gradients
+            optimizer.zero_grad()
+
+            # forward + backward + optimize
+            outputs = model(inputs)
+            #print(outputs.shape)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+        
+        #test generalization error for early stopping
+        cur_loss = 0
+        with torch.no_grad():
+            for i, data in enumerate(valid_loader, 0):
+                # get the inputs
+                inputs, labels = data
+                inputs = inputs.clone().detach().to(dev)
+                labels = labels.clone().detach().to(dev)
+
+                # forward
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                cur_loss += loss
+        #early stop if 3 epochs no loss decrease 
+        if cur_loss < prev_loss:
+            prev_loss = cur_loss
+        else:
+            flag += 1
+            if flag >= 3:
+                print("early stopped at epoch: ", epoch)
+                break
+
+
+    # test the model
+    correct = torch.tensor(0).to(dev)
+    total = torch.tensor(0).to(dev)
+    with torch.no_grad():
+        for data in test_loader:
+            images, labels = data
+            labels = labels.clone().detach().to(dev)
+            images = images.clone().detach().to(dev)
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels.view(-1)).sum().item()
+    accuracy = float(correct) / float(total)
+    return accuracy
+
+
 def create_loaders(train_labels, test_labels, classes, fraction_of_train_samples, trainset, testset, batch = 64):
     
     classes = np.array(list(classes))
@@ -309,11 +388,15 @@ def create_loaders_set(train_labels, test_labels, classes, trainset, testset, to
 
     #get indicies of classes we want
     test_idxs = []
+    validation_idxs = []
     for cls in classes:
         test_idx = np.argwhere(test_labels == cls).flatten()
-        test_idxs.append(test_idx)
-
+        #out of 1000, 300 validation, 700 test
+        test_idxs.append(test_idx[300:])
+        validation_idxs.append(test_idx[:300])
+    
     test_idxs = np.concatenate(test_idxs)
+    validation_idxs = np.concatenate(validation_idxs)
     
     #change the labels to be from 0-len(classes)
     for i in test_idxs:
@@ -323,4 +406,11 @@ def create_loaders_set(train_labels, test_labels, classes, trainset, testset, to
     test_loader = torch.utils.data.DataLoader(
         testset, batch_size=batch, shuffle=False, num_workers=4, sampler=test_sampler
     )
-    return train_loader, test_loader
+    
+
+    valid_sampler = torch.utils.data.sampler.SubsetRandomSampler(validation_idxs)
+    valid_loader = torch.utils.data.DataLoader(
+        testset, batch_size=batch, shuffle=False, num_workers=4, sampler=valid_sampler
+    )
+    
+    return train_loader, valid_loader, test_loader
