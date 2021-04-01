@@ -1,5 +1,6 @@
 from toolbox import *
 
+import argparse
 import numpy as np
 from itertools import combinations
 from sklearn.metrics import accuracy_score
@@ -25,8 +26,13 @@ def write_result(filename, acc_ls):
 
 # prepare CIFAR data
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", help="class number")
+    args = parser.parse_args()
+    num_classes = int(args.m)
+
     nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    classes_space = list(combinations(nums, 3))[:45]
+    classes_space = list(combinations(nums, num_classes))[:45]
 
     # normalize
     scale = np.mean(np.arange(0, 256))
@@ -73,7 +79,7 @@ def main():
             svm_acc_vs_n.append(mean_accuracy)
 
     print("svm finished")
-    write_result("3_class/svm.txt", svm_acc_vs_n)
+    write_result(args.m + "_class/svm.txt", svm_acc_vs_n)
 
     naive_rf_acc_vs_n = list()
     for classes in classes_space:
@@ -99,7 +105,7 @@ def main():
             naive_rf_acc_vs_n.append(mean_accuracy)
 
     print("naive_rf finished")
-    write_result("3_class/naive_rf.txt", naive_rf_acc_vs_n)
+    write_result(args.m + "_class/naive_rf.txt", naive_rf_acc_vs_n)
 
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
@@ -124,7 +130,7 @@ def main():
             cifar_test_labels = np.array(cifar_testset.targets)
 
             cnn32 = SimpleCNN32Filter(len(classes))
-            train_loader, test_loader = create_loaders_set(
+            train_loader, valid_loader, test_loader = create_loaders_es(
                 cifar_train_labels,
                 cifar_test_labels,
                 classes,
@@ -134,9 +140,10 @@ def main():
             )
             mean_accuracy = np.mean(
                 [
-                    run_dn_image(
+                    run_dn_image_es(
                         cnn32,
                         train_loader,
+                        valid_loader,
                         test_loader,
                     )
                     for _ in range(1)
@@ -145,7 +152,7 @@ def main():
             cnn32_acc_vs_n.append(mean_accuracy)
 
     print("cnn32 finished")
-    write_result("3_class/cnn32.txt", cnn32_acc_vs_n)
+    write_result(args.m + "_class/cnn32.txt", cnn32_acc_vs_n)
 
     cnn32_2l_acc_vs_n = list()
     for classes in classes_space:
@@ -166,7 +173,7 @@ def main():
             cifar_test_labels = np.array(cifar_testset.targets)
 
             cnn32_2l = SimpleCNN32Filter2Layers(len(classes))
-            train_loader, test_loader = create_loaders_set(
+            train_loader, valid_loader, test_loader = create_loaders_es(
                 cifar_train_labels,
                 cifar_test_labels,
                 classes,
@@ -176,9 +183,10 @@ def main():
             )
             mean_accuracy = np.mean(
                 [
-                    run_dn_image(
+                    run_dn_image_es(
                         cnn32_2l,
                         train_loader,
+                        valid_loader,
                         test_loader,
                     )
                     for _ in range(1)
@@ -187,7 +195,7 @@ def main():
             cnn32_2l_acc_vs_n.append(mean_accuracy)
 
     print("cnn32_2l finished")
-    write_result("3_class/cnn32_2l.txt", cnn32_2l_acc_vs_n)
+    write_result(args.m + "_class/cnn32_2l.txt", cnn32_2l_acc_vs_n)
 
     cnn32_5l_acc_vs_n = list()
     for classes in classes_space:
@@ -208,7 +216,7 @@ def main():
             cifar_test_labels = np.array(cifar_testset.targets)
 
             cnn32_5l = SimpleCNN32Filter5Layers(len(classes))
-            train_loader, test_loader = create_loaders_set(
+            train_loader, valid_loader, test_loader = create_loaders_es(
                 cifar_train_labels,
                 cifar_test_labels,
                 classes,
@@ -218,9 +226,10 @@ def main():
             )
             mean_accuracy = np.mean(
                 [
-                    run_dn_image(
+                    run_dn_image_es(
                         cnn32_5l,
                         train_loader,
+                        valid_loader,
                         test_loader,
                     )
                     for _ in range(1)
@@ -229,7 +238,7 @@ def main():
             cnn32_5l_acc_vs_n.append(mean_accuracy)
 
     print("cnn32_5l finished")
-    write_result("3_class/cnn32_5l.txt", cnn32_5l_acc_vs_n)
+    write_result(args.m + "_class/cnn32_5l.txt", cnn32_5l_acc_vs_n)
 
     # prepare CIFAR data
     data_transforms = transforms.Compose(
@@ -260,7 +269,7 @@ def main():
             res = models.resnet18(pretrained=True)
             num_ftrs = res.fc.in_features
             res.fc = nn.Linear(num_ftrs, len(classes))
-            train_loader, test_loader = create_loaders_set(
+            train_loader, valid_loader, test_loader = create_loaders_es(
                 cifar_train_labels,
                 cifar_test_labels,
                 classes,
@@ -270,9 +279,10 @@ def main():
             )
             mean_accuracy = np.mean(
                 [
-                    run_dn_image(
+                    run_dn_image_es(
                         res,
                         train_loader,
+                        valid_loader,
                         test_loader,
                     )
                     for _ in range(1)
@@ -281,7 +291,7 @@ def main():
             resnet18_acc_vs_n.append(mean_accuracy)
 
     print("resnet18 finished")
-    write_result("3_class/resnet18.txt", resnet18_acc_vs_n)
+    write_result(args.m + "_class/resnet18.txt", resnet18_acc_vs_n)
 
 
 if __name__ == "__main__":
