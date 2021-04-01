@@ -1,7 +1,5 @@
 """
-Coauthors: Michael Ainsworth
-           Madi Kusmanov
-           Yu-Chung Peng
+Coauthors: Yu-Chung Peng
            Haoyin Xu
 """
 import numpy as np
@@ -254,10 +252,10 @@ def run_dn_image_es(
     # loss and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-    #early stopping setup
-    prev_loss = float('inf')
+    # early stopping setup
+    prev_loss = float("inf")
     flag = 0
-    
+
     for epoch in range(epochs):  # loop over the dataset multiple times
 
         for i, data in enumerate(train_loader, 0):
@@ -265,18 +263,18 @@ def run_dn_image_es(
             inputs, labels = data
             inputs = inputs.clone().detach().to(dev)
             labels = labels.clone().detach().to(dev)
-            #print(labels)
+            # print(labels)
             # zero the parameter gradients
             optimizer.zero_grad()
 
             # forward + backward + optimize
             outputs = model(inputs)
-            #print(outputs.shape)
+            # print(outputs.shape)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
-        
-        #test generalization error for early stopping
+
+        # test generalization error for early stopping
         cur_loss = 0
         with torch.no_grad():
             for i, data in enumerate(valid_loader, 0):
@@ -289,7 +287,7 @@ def run_dn_image_es(
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
                 cur_loss += loss
-        #early stop if 3 epochs in a row no loss decrease 
+        # early stop if 3 epochs in a row no loss decrease
         if cur_loss < prev_loss:
             prev_loss = cur_loss
             flag = 0
@@ -298,7 +296,6 @@ def run_dn_image_es(
             if flag >= 3:
                 print("early stopped at epoch: ", epoch)
                 break
-
 
     # test the model
     correct = torch.tensor(0).to(dev)
@@ -420,61 +417,63 @@ def create_loaders_set(
     )
     return train_loader, test_loader
 
-def create_loaders_es(train_labels, test_labels, classes, trainset, testset, total_samples, batch = 64):
-    
+
+def create_loaders_es(
+    train_labels, test_labels, classes, trainset, testset, samples, batch=64
+):
+
     classes = np.array(list(classes))
     num_classes = len(classes)
-    partitions = np.array_split(np.array(range(total_samples)), num_classes)
-    #print(classes)
-    #get indicies of classes we want
+    partitions = np.array_split(np.array(range(samples)), num_classes)
+    # print(classes)
+    # get indicies of classes we want
     class_idxs = []
     i = 0
     for cls in classes:
         class_idx = np.argwhere(train_labels == cls).flatten()
         np.random.shuffle(class_idx)
-        class_idx = class_idx[:len(partitions[i])]
+        class_idx = class_idx[: len(partitions[i])]
         class_idxs.append(class_idx)
         i += 1
 
     np.random.shuffle(class_idxs)
 
     train_idxs = np.concatenate(class_idxs)
-    #change the labels to be from 0-len(classes)
-    #print(train_idxs)
+    # change the labels to be from 0-len(classes)
+    # print(train_idxs)
     for i in train_idxs:
-        #print("setting ", i, " to ", np.where(classes == trainset.targets[i])[0][0], trainset.targets[i])
+        # print("setting ", i, " to ", np.where(classes == trainset.targets[i])[0][0], trainset.targets[i])
         trainset.targets[i] = np.where(classes == trainset.targets[i])[0][0]
-        
+
     train_sampler = torch.utils.data.sampler.SubsetRandomSampler(train_idxs)
     train_loader = torch.utils.data.DataLoader(
         trainset, batch_size=batch, num_workers=4, sampler=train_sampler, drop_last=True
     )
 
-    #get indicies of classes we want
+    # get indicies of classes we want
     test_idxs = []
     validation_idxs = []
     for cls in classes:
         test_idx = np.argwhere(test_labels == cls).flatten()
-        #out of 1000, 300 validation, 700 test
+        # out of 1000, 300 validation, 700 test
         test_idxs.append(test_idx[300:])
         validation_idxs.append(test_idx[:300])
-    
+
     test_idxs = np.concatenate(test_idxs)
     validation_idxs = np.concatenate(validation_idxs)
-    
-    #change the labels to be from 0-len(classes)
+
+    # change the labels to be from 0-len(classes)
     for i in test_idxs:
         testset.targets[i] = np.where(classes == testset.targets[i])[0][0]
-        
+
     test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
     test_loader = torch.utils.data.DataLoader(
         testset, batch_size=batch, shuffle=False, num_workers=4, sampler=test_sampler
     )
-    
 
     valid_sampler = torch.utils.data.sampler.SubsetRandomSampler(validation_idxs)
     valid_loader = torch.utils.data.DataLoader(
         testset, batch_size=batch, shuffle=False, num_workers=4, sampler=valid_sampler
     )
-    
+
     return train_loader, valid_loader, test_loader

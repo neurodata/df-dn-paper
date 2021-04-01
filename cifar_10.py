@@ -1,3 +1,7 @@
+"""
+Coauthors: Yu-Chung Peng
+           Haoyin Xu
+"""
 from toolbox import *
 
 import argparse
@@ -30,6 +34,7 @@ def main():
     parser.add_argument("-m", help="class number")
     args = parser.parse_args()
     num_classes = int(args.m)
+    prefix = args.m+"_class/"
 
     nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     classes_space = list(combinations(nums, num_classes))[:45]
@@ -79,7 +84,7 @@ def main():
             svm_acc_vs_n.append(mean_accuracy)
 
     print("svm finished")
-    write_result(args.m + "_class/svm.txt", svm_acc_vs_n)
+    write_result(prefix+"svm.txt", svm_acc_vs_n)
 
     naive_rf_acc_vs_n = list()
     for classes in classes_space:
@@ -105,7 +110,7 @@ def main():
             naive_rf_acc_vs_n.append(mean_accuracy)
 
     print("naive_rf finished")
-    write_result(args.m + "_class/naive_rf.txt", naive_rf_acc_vs_n)
+    write_result(prefix+"naive_rf.txt", naive_rf_acc_vs_n)
 
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
@@ -152,7 +157,7 @@ def main():
             cnn32_acc_vs_n.append(mean_accuracy)
 
     print("cnn32 finished")
-    write_result(args.m + "_class/cnn32.txt", cnn32_acc_vs_n)
+    write_result(prefix+"cnn32.txt", cnn32_acc_vs_n)
 
     cnn32_2l_acc_vs_n = list()
     for classes in classes_space:
@@ -195,7 +200,7 @@ def main():
             cnn32_2l_acc_vs_n.append(mean_accuracy)
 
     print("cnn32_2l finished")
-    write_result(args.m + "_class/cnn32_2l.txt", cnn32_2l_acc_vs_n)
+    write_result(prefix+"cnn32_2l.txt", cnn32_2l_acc_vs_n)
 
     cnn32_5l_acc_vs_n = list()
     for classes in classes_space:
@@ -238,7 +243,7 @@ def main():
             cnn32_5l_acc_vs_n.append(mean_accuracy)
 
     print("cnn32_5l finished")
-    write_result(args.m + "_class/cnn32_5l.txt", cnn32_5l_acc_vs_n)
+    write_result(prefix+"cnn32_5l.txt", cnn32_5l_acc_vs_n)
 
     # prepare CIFAR data
     data_transforms = transforms.Compose(
@@ -291,7 +296,7 @@ def main():
             resnet18_acc_vs_n.append(mean_accuracy)
 
     print("resnet18 finished")
-    write_result(args.m + "_class/resnet18.txt", resnet18_acc_vs_n)
+    write_result(prefix+"resnet18.txt", resnet18_acc_vs_n)
 
 
 if __name__ == "__main__":

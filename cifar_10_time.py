@@ -1,5 +1,10 @@
+"""
+Coauthors: Yu-Chung Peng
+           Haoyin Xu
+"""
 import timeit
 import torch
+import argparse
 import numpy as np
 from itertools import combinations
 
@@ -8,6 +13,7 @@ def write_result(filename, acc_ls):
     output = open(filename, "w")
     for acc in acc_ls:
         output.write(str(acc) + "\n")
+
 
 def time_svm(SETUP_CODE, classes_space, samples_space):
     SETUP_CODE = (
@@ -45,11 +51,12 @@ run_rf_image_set(
 )""".format(
                 samples, classes
             )
-            time = timeit.repeat(setup=SETUP_CODE, stmt=TEST_CODE, repeat=3, number=1)
+            time = timeit.repeat(setup=SETUP_CODE, stmt=TEST_CODE, repeat=1, number=1)
             svm_acc_vs_n.append(np.mean(time))
 
     print("svm finished")
     write_result("3_class/svm_time.txt", svm_acc_vs_n)
+
 
 def time_rf(SETUP_CODE, classes_space, samples_space):
     SETUP_CODE = (
@@ -88,11 +95,11 @@ run_rf_image_set(
                 samples, classes
             )
 
-            time = timeit.repeat(setup=SETUP_CODE, stmt=TEST_CODE, repeat=3, number=1)
+            time = timeit.repeat(setup=SETUP_CODE, stmt=TEST_CODE, repeat=1, number=1)
             naive_rf_time_vs_n.append(np.mean(time))
 
     print("naive_rf finished")
-    write_result("3_class/naive_rf_time.txt", naive_rf_time_vs_n)
+    return naive_rf_time_vs_n
 
 
 def time_cnn32(SETUP_CODE, classes_space, samples_space):
@@ -118,7 +125,7 @@ cifar_test_labels = np.array(cifar_testset.targets)"""
         for samples in samples_space:
             TEST_CODE = """
 cnn32 = SimpleCNN32Filter(len({}))
-train_loader, test_loader = create_loaders_set(
+train_loader, valid_loader, test_loader = create_loaders_es(
     cifar_train_labels,
     cifar_test_labels,
     {},
@@ -126,19 +133,20 @@ train_loader, test_loader = create_loaders_set(
     cifar_testset,
     {},
 )
-run_dn_image(
+run_dn_image_es(
     cnn32,
     train_loader,
+    valid_loader,
     test_loader,
 )
 """.format(
                 classes, classes, samples
             )
-            time = timeit.repeat(setup=SETUP_CODE, stmt=TEST_CODE, repeat=3, number=1)
+            time = timeit.repeat(setup=SETUP_CODE, stmt=TEST_CODE, repeat=1, number=1)
             cnn32_time_vs_n.append(np.mean(time))
 
     print("cnn32 finished")
-    write_result("3_class/cnn32_time.txt", cnn32_time_vs_n)
+    return cnn32_time_vs_n
 
 
 def time_cnn32_2l(SETUP_CODE, classes_space, samples_space):
@@ -164,7 +172,7 @@ cifar_test_labels = np.array(cifar_testset.targets)"""
         for samples in samples_space:
             TEST_CODE = """
 cnn32_2l = SimpleCNN32Filter2Layers(len({}))
-train_loader, test_loader = create_loaders_set(
+train_loader, valid_loader, test_loader = create_loaders_es(
     cifar_train_labels,
     cifar_test_labels,
     {},
@@ -172,19 +180,20 @@ train_loader, test_loader = create_loaders_set(
     cifar_testset,
     {},
 )
-run_dn_image(
+run_dn_image_es(
     cnn32_2l,
     train_loader,
+    valid_loader,
     test_loader,
 )
 """.format(
                 classes, classes, samples
             )
-            time = timeit.repeat(setup=SETUP_CODE, stmt=TEST_CODE, repeat=3, number=1)
+            time = timeit.repeat(setup=SETUP_CODE, stmt=TEST_CODE, repeat=1, number=1)
             cnn32_2l_time_vs_n.append(np.mean(time))
 
     print("cnn32_2l finished")
-    write_result("3_class/cnn32_2l_time.txt", cnn32_2l_time_vs_n)
+    return cnn32_2l_time_vs_n
 
 
 def time_cnn32_5l(SETUP_CODE, classes_space, samples_space):
@@ -210,7 +219,7 @@ cifar_test_labels = np.array(cifar_testset.targets)"""
         for samples in samples_space:
             TEST_CODE = """
 cnn32_5l = SimpleCNN32Filter5Layers(len({}))
-train_loader, test_loader = create_loaders_set(
+train_loader, valid_loader, test_loader = create_loaders_es(
     cifar_train_labels,
     cifar_test_labels,
     {},
@@ -218,19 +227,20 @@ train_loader, test_loader = create_loaders_set(
     cifar_testset,
     {},
 )
-run_dn_image(
+run_dn_image_es(
     cnn32_5l,
     train_loader,
+    valid_loader,
     test_loader,
 )
 """.format(
                 classes, classes, samples
             )
-            time = timeit.repeat(setup=SETUP_CODE, stmt=TEST_CODE, repeat=3, number=1)
+            time = timeit.repeat(setup=SETUP_CODE, stmt=TEST_CODE, repeat=1, number=1)
             cnn32_5l_time_vs_n.append(np.mean(time))
 
     print("cnn32_5l finished")
-    write_result("3_class/cnn32_5l_time.txt", cnn32_5l_time_vs_n)
+    return cnn32_5l_time_vs_n
 
 
 def time_resnet18(SETUP_CODE, classes_space, samples_space):
@@ -261,7 +271,7 @@ cifar_test_labels = np.array(cifar_testset.targets)"""
 res = models.resnet18(pretrained=True)
 num_ftrs = res.fc.in_features
 res.fc = nn.Linear(num_ftrs, len({}))
-train_loader, test_loader = create_loaders_set(
+train_loader, valid_loader, test_loader = create_loaders_es(
     cifar_train_labels,
     cifar_test_labels,
     {},
@@ -269,19 +279,20 @@ train_loader, test_loader = create_loaders_set(
     cifar_testset,
     {},
 )
-run_dn_image(
+run_dn_image_es(
     res,
     train_loader,
+    valid_loader,
     test_loader,
 )
 """.format(
                 classes, classes, samples
             )
-            time = timeit.repeat(setup=SETUP_CODE, stmt=TEST_CODE, repeat=3, number=1)
+            time = timeit.repeat(setup=SETUP_CODE, stmt=TEST_CODE, repeat=1, number=1)
             resnet18_time_vs_n.append(np.mean(time))
 
     print("resnet18 finished")
-    write_result("3_class/resnet18_time.txt", resnet18_time_vs_n)
+    return resnet18_time_vs_n
 
 
 if __name__ == "__main__":
@@ -289,8 +300,8 @@ if __name__ == "__main__":
     SETUP_CODE = """
 from toolbox import (
     run_rf_image_set,
-    run_dn_image,
-    create_loaders_set,
+    run_dn_image_es,
+    create_loaders_es,
     SimpleCNN32Filter,
     SimpleCNN32Filter2Layers,
     SimpleCNN32Filter5Layers,
@@ -313,11 +324,21 @@ import torchvision.transforms as transforms
 scale = np.mean(np.arange(0, 256))
 normalize = lambda x: (x - scale) / scale
 """
+
+    # Parse the class number
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", help="class number")
+    args = parser.parse_args()
+    num_classes = int(args.m)
+
+    # Run the timers and save results
     nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    classes_space = list(combinations(nums, 3))[:45]
+    classes_space = list(combinations(nums, num_classes))[:45]
     samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-    time_rf(SETUP_CODE, classes_space, samples_space)
-    time_cnn32(SETUP_CODE, classes_space, samples_space)
-    time_cnn32_2l(SETUP_CODE, classes_space, samples_space)
-    time_cnn32_5l(SETUP_CODE, classes_space, samples_space)
-    time_resnet18(SETUP_CODE, classes_space, samples_space)
+    prefix = args.m+"_class/"
+    write_result(prefix+"naive_rf_time.txt", time_rf(SETUP_CODE, classes_space, samples_space))
+    write_result(prefix+"cnn32_time.txt", time_cnn32(SETUP_CODE, classes_space, samples_space))
+    write_result(prefix+"cnn32_2l_time.txt", time_cnn32_2l(SETUP_CODE, classes_space, samples_space))
+    write_result(prefix+"cnn32_5l_time.txt", time_cnn32_5l(SETUP_CODE, classes_space, samples_space))
+    write_result(prefix+"resnet18_time.txt", time_resnet18(SETUP_CODE, classes_space, samples_space))
+    write_result(prefix+"svm_rf_time.txt", time_svm(SETUP_CODE, classes_space, samples_space))
