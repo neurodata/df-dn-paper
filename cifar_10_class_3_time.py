@@ -9,6 +9,47 @@ def write_result(filename, acc_ls):
     for acc in acc_ls:
         output.write(str(acc) + "\n")
 
+def time_svm(SETUP_CODE, classes_space, samples_space):
+    SETUP_CODE = (
+        SETUP_CODE
+        + """
+cifar_trainset = datasets.CIFAR10(
+    root="./", train=True, download=True, transform=None
+)
+cifar_train_images = normalize(cifar_trainset.data)
+cifar_train_labels = np.array(cifar_trainset.targets)
+
+cifar_testset = datasets.CIFAR10(
+    root="./", train=False, download=True, transform=None
+)
+cifar_test_images = normalize(cifar_testset.data)
+cifar_test_labels = np.array(cifar_testset.targets)
+
+cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
+cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)"""
+    )
+
+    svm_acc_vs_n = list()
+    for classes in classes_space:
+        for samples in samples_space:
+            TEST_CODE = """
+SVM = SVC()
+run_rf_image_set(
+    SVM,
+    cifar_train_images,
+    cifar_train_labels,
+    cifar_test_images,
+    cifar_test_labels,
+    {},
+    {},
+)""".format(
+                samples, classes
+            )
+            time = timeit.repeat(setup=SETUP_CODE, stmt=TEST_CODE, repeat=3, number=1)
+            svm_acc_vs_n.append(np.mean(time))
+
+    print("svm finished")
+    write_result("3_class/svm_time.txt", svm_acc_vs_n)
 
 def time_rf(SETUP_CODE, classes_space, samples_space):
     SETUP_CODE = (
@@ -256,6 +297,7 @@ from toolbox import (
 )
 import numpy as np
 from sklearn.metrics import accuracy_score
+from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 
 import torch

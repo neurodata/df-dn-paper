@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from itertools import combinations
 from sklearn.metrics import accuracy_score
+from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 
 import torch
@@ -80,6 +81,32 @@ def main():
 
     cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
     cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
+
+    svm_acc_vs_n = list()
+    for classes in classes_space:
+
+        # accuracy vs num training samples (svm)
+        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
+        for samples in samples_space:
+            SVM = SVC()
+            mean_accuracy = np.mean(
+                [
+                    run_rf_image_set(
+                        SVM,
+                        cifar_train_images,
+                        cifar_train_labels,
+                        cifar_test_images,
+                        cifar_test_labels,
+                        samples,
+                        classes,
+                    )
+                    for _ in range(1)
+                ]
+            )
+            svm_acc_vs_n.append(mean_accuracy)
+
+    print("svm finished")
+    write_result("8_class/svm.txt", svm_acc_vs_n)
 
     naive_rf_acc_vs_n = list()
     for classes in classes_space:
