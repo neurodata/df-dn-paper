@@ -466,6 +466,9 @@ def create_loaders_es(
     for i in test_idxs:
         testset.targets[i] = np.where(classes == testset.targets[i])[0][0]
 
+    for i in validation_idxs:
+        testset.targets[i] = np.where(classes == testset.targets[i])[0][0]
+      
     test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
     test_loader = torch.utils.data.DataLoader(
         testset, batch_size=batch, shuffle=False, num_workers=4, sampler=test_sampler
