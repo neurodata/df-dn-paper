@@ -263,13 +263,11 @@ def run_dn_image_es(
             inputs, labels = data
             inputs = inputs.clone().detach().to(dev)
             labels = labels.clone().detach().to(dev)
-            # print(labels)
             # zero the parameter gradients
             optimizer.zero_grad()
 
             # forward + backward + optimize
             outputs = model(inputs)
-            # print(outputs.shape)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
@@ -425,7 +423,6 @@ def create_loaders_es(
     classes = np.array(list(classes))
     num_classes = len(classes)
     partitions = np.array_split(np.array(range(samples)), num_classes)
-    # print(classes)
     # get indicies of classes we want
     class_idxs = []
     i = 0
@@ -440,9 +437,7 @@ def create_loaders_es(
 
     train_idxs = np.concatenate(class_idxs)
     # change the labels to be from 0-len(classes)
-    # print(train_idxs)
     for i in train_idxs:
-        # print("setting ", i, " to ", np.where(classes == trainset.targets[i])[0][0], trainset.targets[i])
         trainset.targets[i] = np.where(classes == trainset.targets[i])[0][0]
 
     train_sampler = torch.utils.data.sampler.SubsetRandomSampler(train_idxs)
@@ -468,7 +463,7 @@ def create_loaders_es(
 
     for i in validation_idxs:
         testset.targets[i] = np.where(classes == testset.targets[i])[0][0]
-      
+
     test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
     test_loader = torch.utils.data.DataLoader(
         testset, batch_size=batch, shuffle=False, num_workers=4, sampler=test_sampler

@@ -35,7 +35,7 @@ cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
 cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)"""
     )
 
-    svm_acc_vs_n = list()
+    svm_time_vs_n = list()
     for classes in classes_space:
         for samples in samples_space:
             TEST_CODE = """
@@ -52,10 +52,10 @@ run_rf_image_set(
                 samples, classes
             )
             time = timeit.repeat(setup=SETUP_CODE, stmt=TEST_CODE, repeat=1, number=1)
-            svm_acc_vs_n.append(np.mean(time))
+            svm_time_vs_n.append(np.mean(time))
 
     print("svm finished")
-    write_result("3_class/svm_time.txt", svm_acc_vs_n)
+    return svm_time_vs_n
 
 
 def time_rf(SETUP_CODE, classes_space, samples_space):
@@ -329,16 +329,31 @@ normalize = lambda x: (x - scale) / scale
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", help="class number")
     args = parser.parse_args()
-    num_classes = int(args.m)
+    n_classes = int(args.m)
 
     # Run the timers and save results
     nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    classes_space = list(combinations(nums, num_classes))[:45]
+    classes_space = list(combinations(nums, n_classes))[:45]
     samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-    prefix = args.m+"_class/"
-    write_result(prefix+"naive_rf_time.txt", time_rf(SETUP_CODE, classes_space, samples_space))
-    write_result(prefix+"cnn32_time.txt", time_cnn32(SETUP_CODE, classes_space, samples_space))
-    write_result(prefix+"cnn32_2l_time.txt", time_cnn32_2l(SETUP_CODE, classes_space, samples_space))
-    write_result(prefix+"cnn32_5l_time.txt", time_cnn32_5l(SETUP_CODE, classes_space, samples_space))
-    write_result(prefix+"resnet18_time.txt", time_resnet18(SETUP_CODE, classes_space, samples_space))
-    write_result(prefix+"svm_rf_time.txt", time_svm(SETUP_CODE, classes_space, samples_space))
+    prefix = args.m + "_class/"
+    write_result(
+        prefix + "naive_rf_time.txt", time_rf(SETUP_CODE, classes_space, samples_space)
+    )
+    write_result(
+        prefix + "cnn32_time.txt", time_cnn32(SETUP_CODE, classes_space, samples_space)
+    )
+    write_result(
+        prefix + "cnn32_2l_time.txt",
+        time_cnn32_2l(SETUP_CODE, classes_space, samples_space),
+    )
+    write_result(
+        prefix + "cnn32_5l_time.txt",
+        time_cnn32_5l(SETUP_CODE, classes_space, samples_space),
+    )
+    write_result(
+        prefix + "resnet18_time.txt",
+        time_resnet18(SETUP_CODE, classes_space, samples_space),
+    )
+    write_result(
+        prefix + "svm_time.txt", time_svm(SETUP_CODE, classes_space, samples_space)
+    )
