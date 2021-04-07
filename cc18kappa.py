@@ -1,11 +1,9 @@
 import numpy as np
-from keras.utils import to_categorical
 
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.rcParams['lines.linewidth'] = 6
 
-import seaborn as sns
 import pandas as pd
 from random import choices
 from random import sample
@@ -62,7 +60,6 @@ for task_num, task_id in enumerate(tqdm(openml.study.get_suite("OpenML-CC18").ta
 
 
 
-
 def random_sample_new(data, training_sample_sizes):
     
     temp_inds = []
@@ -98,16 +95,17 @@ node_range = test_list + two_layer + three_layer
 
 all_parameters = []
 
-num_datasets = 3
+# Datasets from 0 to 71
+run_datasets = [i for i in range(3)]
 
-all_sample_sizes = np.zeros((num_datasets, 8))
+all_sample_sizes = np.zeros((len(run_datasets), 8))
 
-rf_evolution = np.zeros((8*num_datasets,5))
-dn_evolution = np.zeros((8*num_datasets,5))
+rf_evolution = np.zeros((8*len(run_datasets),5))
+dn_evolution = np.zeros((8*len(run_datasets),5))
 
-for dataset in range(num_datasets):
+for dataset_index, dataset in enumerate(run_datasets):
     
-    print('Dataset: ', dataset)
+    print('\n\nDataset: ', dataset)
 
     X = X_data_list[dataset]
     y = y_data_list[dataset]
@@ -157,8 +155,7 @@ for dataset in range(num_datasets):
         t = (np.log10(X_train.shape[0]) - temp) / 7
         training_sample_sizes = []
         for i in range(8):
-            training_sample_sizes[dataset][i] = round(np.power(10,temp + i*t))
-        print(training_sample_sizes)
+            training_sample_sizes.append(round(np.power(10,temp + i*t)))
     
         ss_inds = random_sample_new(X_train, training_sample_sizes)
 
@@ -174,18 +171,20 @@ for dataset in range(num_datasets):
             y_pred_rf = rf.predict(X_test)
 
             k_rf = cohen_kappa_score(y_test, y_pred_rf)
-            rf_evolution[sample_size_index + 8*dataset][k_index] = k_rf
+            rf_evolution[sample_size_index + 8*dataset_index][k_index] = k_rf
 
 
             mlp.fit(X_train_new, y_train_new)
             y_pred = mlp.predict(X_test)
 
             k = cohen_kappa_score(y_test, y_pred)
-            dn_evolution[sample_size_index + 8*dataset][k_index] = k
+            dn_evolution[sample_size_index + 8*dataset_index][k_index] = k
             
         k_index += 1
     
-    all_sample_sizes.append(training_sample_sizes)
+    all_sample_sizes[dataset_index][:] = np.array(training_sample_sizes)
+    print(all_sample_sizes)
+
 
 print(dn_evolution)
 print(rf_evolution)
