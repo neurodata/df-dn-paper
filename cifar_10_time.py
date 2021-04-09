@@ -6,13 +6,33 @@ import timeit
 import torch
 import argparse
 import numpy as np
-from itertools import combinations
 
 
 def write_result(filename, acc_ls):
     output = open(filename, "w")
     for acc in acc_ls:
         output.write(str(acc) + "\n")
+
+
+def combinations_45(iterable, r):
+    pool = tuple(iterable)
+    n = len(pool)
+    if r > n:
+        return
+    indices = list(range(r))
+    yield tuple(pool[i] for i in indices)
+    count = 0
+    while count < 45:
+        count += 1
+        for i in reversed(range(r)):
+            if indices[i] != i + n - r:
+                break
+        else:
+            return
+        indices[i] += 1
+        for j in range(i + 1, r):
+            indices[j] = indices[j - 1] + 1
+        yield tuple(pool[i] for i in indices)
 
 
 def time_svm(SETUP_CODE, classes_space, samples_space):
@@ -332,8 +352,8 @@ normalize = lambda x: (x - scale) / scale
     n_classes = int(args.m)
 
     # Run the timers and save results
-    nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    classes_space = list(combinations(nums, n_classes))[:45]
+    nums = range(10)
+    classes_space = list(combinations_45(nums, n_classes))
     samples_space = np.geomspace(10, 10000, num=8, dtype=int)
     prefix = args.m + "_class/"
     write_result(
