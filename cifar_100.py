@@ -84,7 +84,7 @@ def main():
     for classes in classes_space:
 
         # accuracy vs num training samples (svm)
-        samples_space = [40, 89]
+        samples_space = np.geomspace(100, 10000, num=8, dtype=int)
         for samples in samples_space:
             SVM = SVC()
             mean_accuracy = np.mean(
@@ -110,7 +110,7 @@ def main():
     for classes in classes_space:
 
         # accuracy vs num training samples (naive_rf)
-        samples_space = [40, 89]
+        samples_space = np.geomspace(100, 10000, num=8, dtype=int)
         for samples in samples_space:
             RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
             mean_accuracy = np.mean(
@@ -140,7 +140,7 @@ def main():
     for classes in classes_space:
 
         # accuracy vs num training samples (cnn32)
-        samples_space = [40, 89]
+        samples_space = np.geomspace(100, 10000, num=8, dtype=int)
         for samples in samples_space:
             # train data
             cifar_trainset = datasets.CIFAR100(
@@ -183,7 +183,7 @@ def main():
     for classes in classes_space:
 
         # accuracy vs num training samples (cnn32_2l)
-        samples_space = [40, 89]
+        samples_space = np.geomspace(100, 10000, num=8, dtype=int)
         for samples in samples_space:
             # train data
             cifar_trainset = datasets.CIFAR100(
@@ -226,7 +226,7 @@ def main():
     for classes in classes_space:
 
         # accuracy vs num training samples (cnn32_5l)
-        samples_space = [40, 89]
+        samples_space = np.geomspace(100, 10000, num=8, dtype=int)
         for samples in samples_space:
             # train data
             cifar_trainset = datasets.CIFAR100(
@@ -277,7 +277,7 @@ def main():
     for classes in classes_space:
 
         # accuracy vs num training samples (resnet18)
-        samples_space = [40, 89]
+        samples_space = np.geomspace(100, 10000, num=8, dtype=int)
         for samples in samples_space:
             # train data
             cifar_trainset = datasets.CIFAR100(
