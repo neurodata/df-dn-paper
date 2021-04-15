@@ -5,6 +5,7 @@ Coauthors: Yu-Chung Peng
 from toolbox import *
 
 import argparse
+import random
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC
@@ -21,33 +22,6 @@ import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
 
-def write_result(filename, acc_ls):
-    output = open(filename, "w")
-    for acc in acc_ls:
-        output.write(str(acc) + "\n")
-
-
-def combinations_45(iterable, r):
-    pool = tuple(iterable)
-    n = len(pool)
-    if r > n:
-        return
-    indices = list(range(r))
-    yield tuple(pool[i] for i in indices)
-    count = 0
-    while count < 45:
-        count += 1
-        for i in reversed(range(r)):
-            if indices[i] != i + n - r:
-                break
-        else:
-            return
-        indices[i] += 1
-        for j in range(i + 1, r):
-            indices[j] = indices[j - 1] + 1
-        yield tuple(pool[i] for i in indices)
-
-
 # prepare CIFAR data
 def main():
     parser = argparse.ArgumentParser()
@@ -56,7 +30,8 @@ def main():
     n_classes = int(args.m)
     prefix = args.m + "_class/"
 
-    nums = range(10)
+    nums = list(range(10))
+    random.shuffle(nums)
     classes_space = list(combinations_45(nums, n_classes))
 
     # normalize
