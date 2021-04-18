@@ -216,7 +216,7 @@ def run_dn_image(
     model,
     train_loader,
     test_loader,
-    epochs=5,
+    epochs=1,
     lr=0.001,
     batch=64,
 ):
