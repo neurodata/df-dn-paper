@@ -96,7 +96,15 @@ node_range = test_list + two_layer + three_layer
 all_parameters = []
 
 # Datasets from 0 to 71
-run_datasets = [i for i in range(3)]
+# exclude = {24,27,35,43,53,56,64,67,68,69}
+
+# run_datasets = []
+
+# for i in range(72):
+#     if i not in exclude:
+#         run_datasets.append(i)
+run_datasets = [68]
+
 
 all_sample_sizes = np.zeros((len(run_datasets), 8))
 
@@ -190,11 +198,11 @@ print(dn_evolution)
 print(rf_evolution)
     
 
-np.savetxt('sample_sizes.txt', all_sample_sizes)     
+np.savetxt('sample_sizes_68.txt', all_sample_sizes)     
 
-np.savetxt('dn_evolution.txt', dn_evolution)     
-np.savetxt('rf_evolution.txt', rf_evolution)   
+np.savetxt('dn_evolution_68.txt', dn_evolution)     
+np.savetxt('rf_evolution_68.txt', rf_evolution)   
 
-with open('all_parameters.txt', 'w') as f:
+with open('all_parameters_68.txt', 'w') as f:
     for item in all_parameters:
         f.write("%s\n" % item)
