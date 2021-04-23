@@ -17,12 +17,12 @@ def time_cnn32(SETUP_CODE, classes_space, samples_space):
 data_transforms = transforms.Compose(
     [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
 )
-cifar_trainset = datasets.CIFAR10(
+cifar_trainset = datasets.CIFAR100(
     root="./", train=True, download=True, transform=data_transforms
 )
 cifar_train_labels = np.array(cifar_trainset.targets)
 
-cifar_testset = datasets.CIFAR10(
+cifar_testset = datasets.CIFAR100(
     root="./", train=False, download=True, transform=data_transforms
 )
 cifar_test_labels = np.array(cifar_testset.targets)"""
@@ -63,12 +63,12 @@ def time_cnn32_2l(SETUP_CODE, classes_space, samples_space):
 data_transforms = transforms.Compose(
     [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
 )
-cifar_trainset = datasets.CIFAR10(
+cifar_trainset = datasets.CIFAR100(
     root="./", train=True, download=True, transform=data_transforms
 )
 cifar_train_labels = np.array(cifar_trainset.targets)
 
-cifar_testset = datasets.CIFAR10(
+cifar_testset = datasets.CIFAR100(
     root="./", train=False, download=True, transform=data_transforms
 )
 cifar_test_labels = np.array(cifar_testset.targets)"""
@@ -109,12 +109,12 @@ def time_cnn32_5l(SETUP_CODE, classes_space, samples_space):
 data_transforms = transforms.Compose(
     [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
 )
-cifar_trainset = datasets.CIFAR10(
+cifar_trainset = datasets.CIFAR100(
     root="./", train=True, download=True, transform=data_transforms
 )
 cifar_train_labels = np.array(cifar_trainset.targets)
 
-cifar_testset = datasets.CIFAR10(
+cifar_testset = datasets.CIFAR100(
     root="./", train=False, download=True, transform=data_transforms
 )
 cifar_test_labels = np.array(cifar_testset.targets)"""
@@ -158,12 +158,12 @@ data_transforms = transforms.Compose(
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
     ]
 )
-cifar_trainset = datasets.CIFAR10(
+cifar_trainset = datasets.CIFAR100(
     root="./", train=True, download=True, transform=data_transforms
 )
 cifar_train_labels = np.array(cifar_trainset.targets)
 
-cifar_testset = datasets.CIFAR10(
+cifar_testset = datasets.CIFAR100(
     root="./", train=False, download=True, transform=data_transforms
 )
 cifar_test_labels = np.array(cifar_testset.targets)"""
@@ -229,10 +229,10 @@ import torchvision.transforms as transforms
     n_classes = int(args.m)
 
     # Run the timers and save results
-    nums = list(range(10))
+    nums = list(range(100))
     random.shuffle(nums)
     classes_space = list(combinations_45(nums, n_classes))
-    samples_space = np.geomspace(10, 10000, num=8, dtype=int)
+    samples_space = np.geomspace(100, 10000, num=8, dtype=int)
     prefix = args.m + "_class/"
     write_result(
         prefix + "cnn32_time_stc.txt",
