@@ -144,7 +144,7 @@ def run_rf_image_set(
 
     train_images = np.concatenate(image_ls)
     train_labels = np.concatenate(label_ls)
-    print(train_images.shape, train_labels.shape)
+    #print(train_images.shape, train_labels.shape)
     # Obtain only test images and labels for selected classes
     image_ls = []
     label_ls = []
@@ -192,7 +192,7 @@ def run_dn_image_es(
 
     for epoch in range(epochs):  # loop over the dataset multiple times
 
-        for i in range(len(train_data)):
+        for i in range(0, len(train_data), batch):
             # get the inputs
             inputs = train_data[i:i + batch].to(dev)
             labels = train_labels[i:i + batch].to(dev)
@@ -200,6 +200,7 @@ def run_dn_image_es(
             optimizer.zero_grad()
 
             # forward + backward + optimize
+            #print("toolbox: ", inputs.shape)
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             loss.backward()
@@ -208,7 +209,7 @@ def run_dn_image_es(
         # test generalization error for early stopping
         cur_loss = 0
         with torch.no_grad():
-            for i in range(len(valid_data)):
+            for i in range(0, len(valid_data), batch):
                 # get the inputs
                 inputs = valid_data[i:i + batch].to(dev)
                 labels = valid_labels[i:i + batch].to(dev)
@@ -231,7 +232,7 @@ def run_dn_image_es(
     correct = torch.tensor(0).to(dev)
     total = torch.tensor(0).to(dev)
     with torch.no_grad():
-        for i in range(len(test_data)):
+        for i in range(0, len(test_data), batch):
             inputs = test_data[i:i + batch].to(dev)
             labels = test_labels[i:i + batch].to(dev)
             outputs = model(inputs)
