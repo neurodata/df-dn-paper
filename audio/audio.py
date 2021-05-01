@@ -94,9 +94,9 @@ def main():
 
         # accuracy vs num training samples (resnet18)
         for samples in samples_space:
-            print(samples)
+            #print(samples)
             model = models.resnet18(pretrained=True)
-            model.conv1 = nn.Conv2d(2, 64, kernel_size=(7,7), stride=(2, 2), padding=(3, 3), bias=False)
+            #model.conv1 = nn.Conv2d(2, 64, kernel_size=(7,7), stride=(2, 2), padding=(3, 3), bias=False)
             num_ftrs = model.fc.in_features
             model.fc = nn.Linear(num_ftrs, len(classes))
             # train data
@@ -112,10 +112,10 @@ def main():
                                            test_labels, samples, classes)
             #print(train_images.shape)
             #need to duplicate channel because batch norm cant have 1 channel images
-            train_images = torch.cat((train_images, train_images), dim=1)
-            valid_images = torch.cat((valid_images, valid_images), dim=1)
-            test_images = torch.cat((test_images, test_images), dim=1)
-            print(train_images.shape)
+            train_images = torch.cat((train_images, train_images, train_images), dim=1)
+            valid_images = torch.cat((valid_images, valid_images, valid_images), dim=1)
+            test_images = torch.cat((test_images, test_images, test_images), dim=1)
+            #print(train_images.shape)
             mean_accuracy = np.mean(
                 [
                     run_dn_image_es(
@@ -132,7 +132,7 @@ def main():
     print("resnet18 finished")
     write_result(prefix + "resnet18.txt", resnet18_acc_vs_n)
     
-    
+
     
     svm_acc_vs_n = list()
     for classes in classes_space:
