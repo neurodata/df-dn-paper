@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 data
+
 # C extensions
 *.so
 
@@ -127,3 +128,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Mac files
+.DS_Store
+
+# CIFAR datasets
+cifar-10-batches-py/
+
+# audio files
+recordings/
