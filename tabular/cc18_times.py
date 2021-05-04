@@ -1,3 +1,7 @@
+"""
+Author: Michael Ainsworth
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from random import sample
@@ -232,5 +236,5 @@ for dataset_index, dataset in enumerate(dataset_indices):
 
 
 # Save results as txt files
-np.savetxt("results/rf_evolution_times_test.txt", rf_times)
-np.savetxt("results/dn_evolution_times_test.txt", dn_times)
+np.savetxt("results/cc18_rf_times.txt", rf_times)
+np.savetxt("results/cc18_dn_times.txt", dn_times)
