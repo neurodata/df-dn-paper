@@ -144,7 +144,7 @@ def run_rf_image_set(
 
     train_images = np.concatenate(image_ls)
     train_labels = np.concatenate(label_ls)
-    #print(train_images.shape, train_labels.shape)
+    # print(train_images.shape, train_labels.shape)
     # Obtain only test images and labels for selected classes
     image_ls = []
     label_ls = []
@@ -170,7 +170,7 @@ def run_dn_image_es(
     train_labels,
     valid_data,
     valid_labels,
-    test_data, 
+    test_data,
     test_labels,
     epochs=30,
     lr=0.001,
@@ -194,13 +194,13 @@ def run_dn_image_es(
 
         for i in range(0, len(train_data), batch):
             # get the inputs
-            inputs = train_data[i:i + batch].to(dev)
-            labels = train_labels[i:i + batch].to(dev)
+            inputs = train_data[i : i + batch].to(dev)
+            labels = train_labels[i : i + batch].to(dev)
             # zero the parameter gradients
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            #print("toolbox: ", inputs.shape)
+            # print("toolbox: ", inputs.shape)
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             loss.backward()
@@ -211,8 +211,8 @@ def run_dn_image_es(
         with torch.no_grad():
             for i in range(0, len(valid_data), batch):
                 # get the inputs
-                inputs = valid_data[i:i + batch].to(dev)
-                labels = valid_labels[i:i + batch].to(dev)
+                inputs = valid_data[i : i + batch].to(dev)
+                labels = valid_labels[i : i + batch].to(dev)
 
                 # forward
                 outputs = model(inputs)
@@ -233,8 +233,8 @@ def run_dn_image_es(
     total = torch.tensor(0).to(dev)
     with torch.no_grad():
         for i in range(0, len(test_data), batch):
-            inputs = test_data[i:i + batch].to(dev)
-            labels = test_labels[i:i + batch].to(dev)
+            inputs = test_data[i : i + batch].to(dev)
+            labels = test_labels[i : i + batch].to(dev)
             outputs = model(inputs)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
@@ -243,8 +243,9 @@ def run_dn_image_es(
     return accuracy
 
 
-def prepare_data(train_images, train_labels, test_images, \
-    test_labels, samples, classes):
+def prepare_data(
+    train_images, train_labels, test_images, test_labels, samples, classes
+):
 
     classes = np.array(list(classes))
     num_classes = len(classes)
@@ -259,13 +260,12 @@ def prepare_data(train_images, train_labels, test_images, \
         class_idxs.append(class_idx)
         i += 1
 
-
     train_idxs = np.concatenate(class_idxs)
     np.random.shuffle(train_idxs)
     # change the labels to be from 0-len(classes)
     for i in train_idxs:
         train_labels[i] = np.where(classes == train_labels[i])[0][0]
-    
+
     # get indicies of classes we want
     test_idxs = []
     validation_idxs = []
@@ -284,12 +284,18 @@ def prepare_data(train_images, train_labels, test_images, \
 
     for i in validation_idxs:
         test_labels[i] = np.where(classes == test_labels[i])[0][0]
-        
+
     train_images = torch.FloatTensor(train_images[train_idxs]).unsqueeze(1)
     train_labels = torch.LongTensor(train_labels[train_idxs])
     valid_images = torch.FloatTensor(test_images[validation_idxs]).unsqueeze(1)
     valid_labels = torch.LongTensor(test_labels[validation_idxs])
     test_images = torch.FloatTensor(test_images[test_idxs]).unsqueeze(1)
     test_labels = torch.LongTensor(test_labels[test_idxs])
-    return train_images, train_labels, valid_images, valid_labels, test_images, \
-                test_labels
+    return (
+        train_images,
+        train_labels,
+        valid_images,
+        valid_labels,
+        test_images,
+        test_labels,
+    )

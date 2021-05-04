@@ -6,6 +6,7 @@ import numpy as np
 import torchaudio.transforms as trans
 import torch
 
+
 def load_spoken_digit(path_recordings):
     file = os.listdir(path_recordings)
 
@@ -17,8 +18,8 @@ def load_spoken_digit(path_recordings):
     a = trans.Spectrogram(n_fft=128, normalized=True)
     for i in file:
         x, sr = librosa.load(path_recordings + i, sr=8000)
-        #x_stft = librosa.stft(x, n_fft=128)  # Extract STFT
-        #x_stft_db = librosa.amplitude_to_db(abs(x_stft))
+        # x_stft = librosa.stft(x, n_fft=128)  # Extract STFT
+        # x_stft_db = librosa.amplitude_to_db(abs(x_stft))
         x_stft_db = a(torch.tensor(x)).numpy()
         # Convert an amplitude spectrogram to dB-scaled spectrogram
         x_stft_db_mini = cv2.resize(x_stft_db, (32, 32))  # Resize into 28 by 28
