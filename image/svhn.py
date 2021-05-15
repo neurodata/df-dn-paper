@@ -2,7 +2,7 @@
 Coauthors: Yu-Chung Peng
            Haoyin Xu
 """
-from svnh_toolbox import *
+from svhn_toolbox import *
 
 import argparse
 import random
@@ -77,7 +77,7 @@ def main():
             svm_acc_vs_n.append(mean_accuracy)
 
     print("svm finished")
-    write_result(prefix + "svnh_svm.txt", svm_acc_vs_n)
+    write_result(prefix + "svhn_svm.txt", svm_acc_vs_n)
 
     naive_rf_acc_vs_n = list()
     for classes in classes_space:
@@ -103,7 +103,7 @@ def main():
             naive_rf_acc_vs_n.append(mean_accuracy)
 
     print("naive_rf finished")
-    write_result(prefix + "svnh_naive_rf.txt", naive_rf_acc_vs_n)
+    write_result(prefix + "svhn_naive_rf.txt", naive_rf_acc_vs_n)
 
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
@@ -150,7 +150,7 @@ def main():
             cnn32_acc_vs_n.append(mean_accuracy)
 
     print("cnn32 finished")
-    write_result(prefix + "svnh_cnn32.txt", cnn32_acc_vs_n)
+    write_result(prefix + "svhn_cnn32.txt", cnn32_acc_vs_n)
 
     cnn32_2l_acc_vs_n = list()
     for classes in classes_space:
@@ -193,7 +193,7 @@ def main():
             cnn32_2l_acc_vs_n.append(mean_accuracy)
 
     print("cnn32_2l finished")
-    write_result(prefix + "svnh_cnn32_2l.txt", cnn32_2l_acc_vs_n)
+    write_result(prefix + "svhn_cnn32_2l.txt", cnn32_2l_acc_vs_n)
 
     cnn32_5l_acc_vs_n = list()
     for classes in classes_space:
@@ -236,7 +236,7 @@ def main():
             cnn32_5l_acc_vs_n.append(mean_accuracy)
 
     print("cnn32_5l finished")
-    write_result(prefix + "svnh_cnn32_5l.txt", cnn32_5l_acc_vs_n)
+    write_result(prefix + "svhn_cnn32_5l.txt", cnn32_5l_acc_vs_n)
 
     # prepare CIFAR data
     data_transforms = transforms.Compose(
@@ -289,7 +289,7 @@ def main():
             resnet18_acc_vs_n.append(mean_accuracy)
 
     print("resnet18 finished")
-    write_result(prefix + "svnh_resnet18.txt", resnet18_acc_vs_n)
+    write_result(prefix + "svhn_resnet18.txt", resnet18_acc_vs_n)
 
 
 if __name__ == "__main__":
