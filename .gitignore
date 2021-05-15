@@ -133,3 +133,6 @@ dmypy.json
 
 # CIFAR datasets
 cifar-10-batches-py/
+
+# SVHN datasets
+*.mat
