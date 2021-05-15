@@ -440,7 +440,12 @@ def create_loaders_set(
 
     test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
     test_loader = torch.utils.data.DataLoader(
-        testset, batch_size=batch, shuffle=False, num_workers=4, sampler=test_sampler
+        testset,
+        batch_size=batch,
+        shuffle=False,
+        num_workers=4,
+        sampler=test_sampler,
+        drop_last=True,
     )
     return train_loader, test_loader
 
@@ -495,12 +500,22 @@ def create_loaders_es(
 
     test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
     test_loader = torch.utils.data.DataLoader(
-        testset, batch_size=batch, shuffle=False, num_workers=4, sampler=test_sampler
+        testset,
+        batch_size=batch,
+        shuffle=False,
+        num_workers=4,
+        sampler=test_sampler,
+        drop_last=True,
     )
 
     valid_sampler = torch.utils.data.sampler.SubsetRandomSampler(validation_idxs)
     valid_loader = torch.utils.data.DataLoader(
-        testset, batch_size=batch, shuffle=False, num_workers=4, sampler=valid_sampler
+        testset,
+        batch_size=batch,
+        shuffle=False,
+        num_workers=4,
+        sampler=valid_sampler,
+        drop_last=True,
     )
 
     return train_loader, valid_loader, test_loader

@@ -46,9 +46,7 @@ def main():
     svhn_train_labels = np.array(svhn_trainset.labels)
 
     # test data
-    svhn_testset = datasets.SVHN(
-        root="./", split="test", download=True, transform=None
-    )
+    svhn_testset = datasets.SVHN(root="./", split="test", download=True, transform=None)
     svhn_test_images = normalize(svhn_testset.data)
     svhn_test_labels = np.array(svhn_testset.labels)
 
