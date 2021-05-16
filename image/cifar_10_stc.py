@@ -6,6 +6,7 @@ from toolbox import *
 
 import argparse
 import random
+import time
 import numpy as np
 
 import torch
@@ -23,9 +24,21 @@ import torchvision.transforms as transforms
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", help="class number")
+    parser.add_argument("-s", help="computation speed")
     args = parser.parse_args()
     n_classes = int(args.m)
     prefix = args.m + "_class/"
+
+    if args.s == "h":
+        # High speed RF
+        rf_times = produce_mean(load_result(prefix + "naive_rf_time.txt"))
+        ratio = 1.0
+    elif args.s == "l":
+        # Low speed RF
+        rf_times = produce_mean(load_result(prefix + "naive_rf_time_lc.txt"))
+        ratio = 0.11 / 0.9
+    else:
+        raise Exception("Wrong configurations for time calibration.")
 
     nums = list(range(10))
     random.shuffle(nums)
@@ -40,7 +53,7 @@ def main():
 
         # accuracy vs num training samples (cnn32)
         samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-        for samples in samples_space:
+        for i, samples in enumerate(samples_space):
             # train data
             cifar_trainset = datasets.CIFAR10(
                 root="./", train=True, download=True, transform=data_transforms
@@ -53,6 +66,8 @@ def main():
             )
             cifar_test_labels = np.array(cifar_testset.targets)
 
+            start_time = time.perf_counter()
+            time_limit = rf_times[i]
             cnn32 = SimpleCNN32Filter(len(classes))
             train_loader, test_loader = create_loaders_set(
                 cifar_train_labels,
@@ -64,10 +79,13 @@ def main():
             )
             mean_accuracy = np.mean(
                 [
-                    run_dn_image(
+                    run_dn_image_set(
                         cnn32,
                         train_loader,
                         test_loader,
+                        start_time=start_time,
+                        time_limit=time_limit,
+                        ratio=ratio,
                     )
                     for _ in range(1)
                 ]
@@ -75,14 +93,17 @@ def main():
             cnn32_acc_vs_n.append(mean_accuracy)
 
     print("cnn32 finished")
-    write_result(prefix + "cnn32_stc.txt", cnn32_acc_vs_n)
+    if args.s == "h":
+        write_result(prefix + "cnn32_st.txt", cnn32_acc_vs_n)
+    elif args.s == "l":
+        write_result(prefix + "cnn32_sc.txt", cnn32_acc_vs_n)
 
     cnn32_2l_acc_vs_n = list()
     for classes in classes_space:
 
         # accuracy vs num training samples (cnn32_2l)
         samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-        for samples in samples_space:
+        for i, samples in enumerate(samples_space):
             # train data
             cifar_trainset = datasets.CIFAR10(
                 root="./", train=True, download=True, transform=data_transforms
@@ -95,6 +116,8 @@ def main():
             )
             cifar_test_labels = np.array(cifar_testset.targets)
 
+            start_time = time.perf_counter()
+            time_limit = rf_times[i]
             cnn32_2l = SimpleCNN32Filter2Layers(len(classes))
             train_loader, test_loader = create_loaders_set(
                 cifar_train_labels,
@@ -106,10 +129,13 @@ def main():
             )
             mean_accuracy = np.mean(
                 [
-                    run_dn_image(
+                    run_dn_image_set(
                         cnn32_2l,
                         train_loader,
                         test_loader,
+                        start_time=start_time,
+                        time_limit=time_limit,
+                        ratio=ratio,
                     )
                     for _ in range(1)
                 ]
@@ -117,14 +143,17 @@ def main():
             cnn32_2l_acc_vs_n.append(mean_accuracy)
 
     print("cnn32_2l finished")
-    write_result(prefix + "cnn32_2l_stc.txt", cnn32_2l_acc_vs_n)
+    if args.s == "h":
+        write_result(prefix + "cnn32_2l_st.txt", cnn32_2l_acc_vs_n)
+    elif args.s == "l":
+        write_result(prefix + "cnn32_2l_sc.txt", cnn32_2l_acc_vs_n)
 
     cnn32_5l_acc_vs_n = list()
     for classes in classes_space:
 
         # accuracy vs num training samples (cnn32_5l)
         samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-        for samples in samples_space:
+        for i, samples in enumerate(samples_space):
             # train data
             cifar_trainset = datasets.CIFAR10(
                 root="./", train=True, download=True, transform=data_transforms
@@ -137,6 +166,8 @@ def main():
             )
             cifar_test_labels = np.array(cifar_testset.targets)
 
+            start_time = time.perf_counter()
+            time_limit = rf_times[i]
             cnn32_5l = SimpleCNN32Filter5Layers(len(classes))
             train_loader, test_loader = create_loaders_set(
                 cifar_train_labels,
@@ -148,10 +179,13 @@ def main():
             )
             mean_accuracy = np.mean(
                 [
-                    run_dn_image(
+                    run_dn_image_set(
                         cnn32_5l,
                         train_loader,
                         test_loader,
+                        start_time=start_time,
+                        time_limit=time_limit,
+                        ratio=ratio,
                     )
                     for _ in range(1)
                 ]
@@ -159,7 +193,10 @@ def main():
             cnn32_5l_acc_vs_n.append(mean_accuracy)
 
     print("cnn32_5l finished")
-    write_result(prefix + "cnn32_5l_stc.txt", cnn32_5l_acc_vs_n)
+    if args.s == "h":
+        write_result(prefix + "cnn32_5l_st.txt", cnn32_5l_acc_vs_n)
+    elif args.s == "l":
+        write_result(prefix + "cnn32_5l_sc.txt", cnn32_5l_acc_vs_n)
 
     # prepare CIFAR data
     data_transforms = transforms.Compose(
@@ -174,7 +211,7 @@ def main():
 
         # accuracy vs num training samples (resnet18)
         samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-        for samples in samples_space:
+        for i, samples in enumerate(samples_space):
             # train data
             cifar_trainset = datasets.CIFAR10(
                 root="./", train=True, download=True, transform=data_transforms
@@ -187,6 +224,8 @@ def main():
             )
             cifar_test_labels = np.array(cifar_testset.targets)
 
+            start_time = time.perf_counter()
+            time_limit = rf_times[i]
             res = models.resnet18(pretrained=True)
             num_ftrs = res.fc.in_features
             res.fc = nn.Linear(num_ftrs, len(classes))
@@ -200,10 +239,13 @@ def main():
             )
             mean_accuracy = np.mean(
                 [
-                    run_dn_image(
+                    run_dn_image_set(
                         res,
                         train_loader,
                         test_loader,
+                        start_time=start_time,
+                        time_limit=time_limit,
+                        ratio=ratio,
                     )
                     for _ in range(1)
                 ]
@@ -211,7 +253,10 @@ def main():
             resnet18_acc_vs_n.append(mean_accuracy)
 
     print("resnet18 finished")
-    write_result(prefix + "resnet18_stc.txt", resnet18_acc_vs_n)
+    if args.s == "h":
+        write_result(prefix + "resnet18_st.txt", resnet18_acc_vs_n)
+    elif args.s == "l":
+        write_result(prefix + "resnet18_sc.txt", resnet18_acc_vs_n)
 
 
 if __name__ == "__main__":
