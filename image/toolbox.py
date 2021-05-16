@@ -2,6 +2,7 @@
 Coauthors: Yu-Chung Peng
            Haoyin Xu
 """
+import time
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
@@ -204,12 +205,18 @@ def run_rf_image_set(
     test_labels = np.concatenate(label_ls)
 
     # Train the model
+    start_time = time.perf_counter()
     model.fit(train_images, train_labels)
+    end_time = time.perf_counter()
+    train_time = end_time - start_time
 
     # Test the model
+    start_time = time.perf_counter()
     test_preds = model.predict(test_images)
+    end_time = time.perf_counter()
+    test_time = end_time - start_time
 
-    return accuracy_score(test_labels, test_preds)
+    return accuracy_score(test_labels, test_preds), train_time, test_time
 
 
 def run_dn_image(
@@ -285,6 +292,7 @@ def run_dn_image_es(
     prev_loss = float("inf")
     flag = 0
 
+    start_time = time.perf_counter()
     for epoch in range(epochs):  # loop over the dataset multiple times
 
         for i, data in enumerate(train_loader, 0):
@@ -323,8 +331,11 @@ def run_dn_image_es(
             if flag >= 3:
                 print("early stopped at epoch: ", epoch)
                 break
+    end_time = time.perf_counter()
+    train_time = end_time - start_time
 
     # test the model
+    start_time = time.perf_counter()
     correct = torch.tensor(0).to(dev)
     total = torch.tensor(0).to(dev)
     with torch.no_grad():
@@ -337,7 +348,9 @@ def run_dn_image_es(
             total += labels.size(0)
             correct += (predicted == labels.view(-1)).sum().item()
     accuracy = float(correct) / float(total)
-    return accuracy
+    end_time = time.perf_counter()
+    test_time = end_time - start_time
+    return accuracy, train_time, test_time
 
 
 def create_loaders(
@@ -372,7 +385,7 @@ def create_loaders(
 
     train_sampler = torch.utils.data.sampler.SubsetRandomSampler(train_idxs)
     train_loader = torch.utils.data.DataLoader(
-        trainset, batch_size=batch, num_workers=4, sampler=train_sampler
+        trainset, batch_size=batch, num_workers=4, sampler=train_sampler, drop_last=True
     )
 
     # get indicies of classes we want
@@ -389,7 +402,12 @@ def create_loaders(
 
     test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
     test_loader = torch.utils.data.DataLoader(
-        testset, batch_size=batch, shuffle=False, num_workers=4, sampler=test_sampler
+        testset,
+        batch_size=batch,
+        shuffle=False,
+        num_workers=4,
+        sampler=test_sampler,
+        drop_last=True,
     )
     return train_loader, test_loader
 
@@ -440,7 +458,12 @@ def create_loaders_set(
 
     test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
     test_loader = torch.utils.data.DataLoader(
-        testset, batch_size=batch, shuffle=False, num_workers=4, sampler=test_sampler
+        testset,
+        batch_size=batch,
+        shuffle=False,
+        num_workers=4,
+        sampler=test_sampler,
+        drop_last=True,
     )
     return train_loader, test_loader
 
@@ -495,12 +518,22 @@ def create_loaders_es(
 
     test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
     test_loader = torch.utils.data.DataLoader(
-        testset, batch_size=batch, shuffle=False, num_workers=4, sampler=test_sampler
+        testset,
+        batch_size=batch,
+        shuffle=False,
+        num_workers=4,
+        sampler=test_sampler,
+        drop_last=True,
     )
 
     valid_sampler = torch.utils.data.sampler.SubsetRandomSampler(validation_idxs)
     valid_loader = torch.utils.data.DataLoader(
-        testset, batch_size=batch, shuffle=False, num_workers=4, sampler=valid_sampler
+        testset,
+        batch_size=batch,
+        shuffle=False,
+        num_workers=4,
+        sampler=valid_sampler,
+        drop_last=True,
     )
 
     return train_loader, valid_loader, test_loader

@@ -55,63 +55,67 @@ def main():
     cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
     cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
 
-    svm_acc_vs_n = list()
-    for classes in classes_space:
-
-        # accuracy vs num training samples (svm)
-        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-        for samples in samples_space:
-            SVM = SVC()
-            mean_accuracy = np.mean(
-                [
-                    run_rf_image_set(
-                        SVM,
-                        cifar_train_images,
-                        cifar_train_labels,
-                        cifar_test_images,
-                        cifar_test_labels,
-                        samples,
-                        classes,
-                    )
-                    for _ in range(1)
-                ]
-            )
-            svm_acc_vs_n.append(mean_accuracy)
-
-    print("svm finished")
-    write_result(prefix + "svm.txt", svm_acc_vs_n)
-
     naive_rf_acc_vs_n = list()
+    naive_rf_train_time = list()
+    naive_rf_test_time = list()
     for classes in classes_space:
 
         # accuracy vs num training samples (naive_rf)
         samples_space = np.geomspace(10, 10000, num=8, dtype=int)
         for samples in samples_space:
             RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
-            mean_accuracy = np.mean(
-                [
-                    run_rf_image_set(
-                        RF,
-                        cifar_train_images,
-                        cifar_train_labels,
-                        cifar_test_images,
-                        cifar_test_labels,
-                        samples,
-                        classes,
-                    )
-                    for _ in range(1)
-                ]
+            accuracy, train_time, test_time = run_rf_image_set(
+                RF,
+                cifar_train_images,
+                cifar_train_labels,
+                cifar_test_images,
+                cifar_test_labels,
+                samples,
+                classes,
             )
-            naive_rf_acc_vs_n.append(mean_accuracy)
+            naive_rf_acc_vs_n.append(accuracy)
+            naive_rf_train_time.append(train_time)
+            naive_rf_test_time.append(test_time)
 
     print("naive_rf finished")
     write_result(prefix + "naive_rf.txt", naive_rf_acc_vs_n)
+    write_result(prefix + "naive_rf_train_time.txt", naive_rf_train_time)
+    write_result(prefix + "naive_rf_test_time.txt", naive_rf_test_time)
+
+    svm_acc_vs_n = list()
+    svm_train_time = list()
+    svm_test_time = list()
+    for classes in classes_space:
+
+        # accuracy vs num training samples (svm)
+        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
+        for samples in samples_space:
+            SVM = SVC()
+            accuracy, train_time, test_time = run_rf_image_set(
+                SVM,
+                cifar_train_images,
+                cifar_train_labels,
+                cifar_test_images,
+                cifar_test_labels,
+                samples,
+                classes,
+            )
+            svm_acc_vs_n.append(accuracy)
+            svm_train_time.append(train_time)
+            svm_test_time.append(test_time)
+
+    print("svm finished")
+    write_result(prefix + "svm.txt", svm_acc_vs_n)
+    write_result(prefix + "svm_train_time.txt", svm_train_time)
+    write_result(prefix + "svm_test_time.txt", svm_test_time)
 
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
 
     cnn32_acc_vs_n = list()
+    cnn32_train_time = list()
+    cnn32_test_time = list()
     for classes in classes_space:
 
         # accuracy vs num training samples (cnn32)
@@ -138,23 +142,24 @@ def main():
                 cifar_testset,
                 samples,
             )
-            mean_accuracy = np.mean(
-                [
-                    run_dn_image_es(
-                        cnn32,
-                        train_loader,
-                        valid_loader,
-                        test_loader,
-                    )
-                    for _ in range(1)
-                ]
+            accuracy, train_time, test_time = run_dn_image_es(
+                cnn32,
+                train_loader,
+                valid_loader,
+                test_loader,
             )
-            cnn32_acc_vs_n.append(mean_accuracy)
+            cnn32_acc_vs_n.append(accuracy)
+            cnn32_train_time.append(train_time)
+            cnn32_test_time.append(test_time)
 
     print("cnn32 finished")
     write_result(prefix + "cnn32.txt", cnn32_acc_vs_n)
+    write_result(prefix + "cnn32_train_time.txt", cnn32_train_time)
+    write_result(prefix + "cnn32_test_time.txt", cnn32_test_time)
 
     cnn32_2l_acc_vs_n = list()
+    cnn32_2l_train_time = list()
+    cnn32_2l_test_time = list()
     for classes in classes_space:
 
         # accuracy vs num training samples (cnn32_2l)
@@ -181,23 +186,24 @@ def main():
                 cifar_testset,
                 samples,
             )
-            mean_accuracy = np.mean(
-                [
-                    run_dn_image_es(
-                        cnn32_2l,
-                        train_loader,
-                        valid_loader,
-                        test_loader,
-                    )
-                    for _ in range(1)
-                ]
+            accuracy, train_time, test_time = run_dn_image_es(
+                cnn32_2l,
+                train_loader,
+                valid_loader,
+                test_loader,
             )
-            cnn32_2l_acc_vs_n.append(mean_accuracy)
+            cnn32_2l_acc_vs_n.append(accuracy)
+            cnn32_2l_train_time.append(train_time)
+            cnn32_2l_test_time.append(test_time)
 
     print("cnn32_2l finished")
     write_result(prefix + "cnn32_2l.txt", cnn32_2l_acc_vs_n)
+    write_result(prefix + "cnn32_2l_train_time.txt", cnn32_2l_train_time)
+    write_result(prefix + "cnn32_2l_test_time.txt", cnn32_2l_test_time)
 
     cnn32_5l_acc_vs_n = list()
+    cnn32_5l_train_time = list()
+    cnn32_5l_test_time = list()
     for classes in classes_space:
 
         # accuracy vs num training samples (cnn32_5l)
@@ -224,21 +230,20 @@ def main():
                 cifar_testset,
                 samples,
             )
-            mean_accuracy = np.mean(
-                [
-                    run_dn_image_es(
-                        cnn32_5l,
-                        train_loader,
-                        valid_loader,
-                        test_loader,
-                    )
-                    for _ in range(1)
-                ]
+            accuracy, train_time, test_time = run_dn_image_es(
+                cnn32_5l,
+                train_loader,
+                valid_loader,
+                test_loader,
             )
-            cnn32_5l_acc_vs_n.append(mean_accuracy)
+            cnn32_5l_acc_vs_n.append(accuracy)
+            cnn32_5l_train_time.append(train_time)
+            cnn32_5l_test_time.append(test_time)
 
     print("cnn32_5l finished")
     write_result(prefix + "cnn32_5l.txt", cnn32_5l_acc_vs_n)
+    write_result(prefix + "cnn32_5l_train_time.txt", cnn32_5l_train_time)
+    write_result(prefix + "cnn32_5l_test_time.txt", cnn32_5l_test_time)
 
     # prepare CIFAR data
     data_transforms = transforms.Compose(
@@ -249,6 +254,8 @@ def main():
     )
 
     resnet18_acc_vs_n = list()
+    resnet18_train_time = list()
+    resnet18_test_time = list()
     for classes in classes_space:
 
         # accuracy vs num training samples (resnet18)
@@ -277,21 +284,20 @@ def main():
                 cifar_testset,
                 samples,
             )
-            mean_accuracy = np.mean(
-                [
-                    run_dn_image_es(
-                        res,
-                        train_loader,
-                        valid_loader,
-                        test_loader,
-                    )
-                    for _ in range(1)
-                ]
+            accuracy, train_time, test_time = run_dn_image_es(
+                res,
+                train_loader,
+                valid_loader,
+                test_loader,
             )
-            resnet18_acc_vs_n.append(mean_accuracy)
+            resnet18_acc_vs_n.append(accuracy)
+            resnet18_train_time.append(train_time)
+            resnet18_test_time.append(test_time)
 
     print("resnet18 finished")
     write_result(prefix + "resnet18.txt", resnet18_acc_vs_n)
+    write_result(prefix + "resnet18_train_time.txt", resnet18_train_time)
+    write_result(prefix + "resnet18_test_time.txt", resnet18_test_time)
 
 
 if __name__ == "__main__":
