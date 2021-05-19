@@ -6,8 +6,6 @@ from toolbox import *
 
 import argparse
 import random
-from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
 
 import torchvision.models as models
 import torchvision.datasets as datasets
@@ -16,9 +14,10 @@ import torchvision.transforms as transforms
 
 # prepare CIFAR data
 def main():
-    # Example usage: python cifar_10.py -m 3
+    # Example usage: python cifar_10.py -m 3 -s l
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", help="class number")
+    parser.add_argument("-s", help="computation speed")
     args = parser.parse_args()
     n_classes = int(args.m)
     prefix = args.m + "_class/"
@@ -27,80 +26,18 @@ def main():
     random.shuffle(nums)
     classes_space = list(combinations_45(nums, n_classes))
 
-    # normalize
-    scale = np.mean(np.arange(0, 256))
-    normalize = lambda x: (x - scale) / scale
-
-    # train data
-    cifar_trainset = datasets.CIFAR10(
-        root="./", train=True, download=True, transform=None
-    )
-    cifar_train_images = normalize(cifar_trainset.data)
-    cifar_train_labels = np.array(cifar_trainset.targets)
-
-    # test data
-    cifar_testset = datasets.CIFAR10(
-        root="./", train=False, download=True, transform=None
-    )
-    cifar_test_images = normalize(cifar_testset.data)
-    cifar_test_labels = np.array(cifar_testset.targets)
-
-    cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
-    cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
-
-    naive_rf_acc_vs_n = list()
-    naive_rf_train_time = list()
-    naive_rf_test_time = list()
-    for classes in classes_space:
-
-        # accuracy vs num training samples (naive_rf)
-        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-        for samples in samples_space:
-            RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
-            accuracy, train_time, test_time = run_rf_image_set(
-                RF,
-                cifar_train_images,
-                cifar_train_labels,
-                cifar_test_images,
-                cifar_test_labels,
-                samples,
-                classes,
-            )
-            naive_rf_acc_vs_n.append(accuracy)
-            naive_rf_train_time.append(train_time)
-            naive_rf_test_time.append(test_time)
-
-    print("naive_rf finished")
-    write_result(prefix + "naive_rf.txt", naive_rf_acc_vs_n)
-    write_result(prefix + "naive_rf_train_time.txt", naive_rf_train_time)
-    write_result(prefix + "naive_rf_test_time.txt", naive_rf_test_time)
-
-    svm_acc_vs_n = list()
-    svm_train_time = list()
-    svm_test_time = list()
-    for classes in classes_space:
-
-        # accuracy vs num training samples (svm)
-        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-        for samples in samples_space:
-            SVM = SVC()
-            accuracy, train_time, test_time = run_rf_image_set(
-                SVM,
-                cifar_train_images,
-                cifar_train_labels,
-                cifar_test_images,
-                cifar_test_labels,
-                samples,
-                classes,
-            )
-            svm_acc_vs_n.append(accuracy)
-            svm_train_time.append(train_time)
-            svm_test_time.append(test_time)
-
-    print("svm finished")
-    write_result(prefix + "svm.txt", svm_acc_vs_n)
-    write_result(prefix + "svm_train_time.txt", svm_train_time)
-    write_result(prefix + "svm_test_time.txt", svm_test_time)
+    if args.s == "h":
+        # High speed RF
+        rf_times = produce_mean(load_result(prefix + "naive_rf_time.txt"))
+        suffix = "_st.txt"
+        ratio = 1.0
+    elif args.s == "l":
+        # Low speed RF
+        rf_times = produce_mean(load_result(prefix + "naive_rf_time_lc.txt"))
+        suffix = "_sc.txt"
+        ratio = 0.11 / 0.9
+    else:
+        raise Exception("Wrong configurations for time calibration.")
 
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
@@ -127,7 +64,8 @@ def main():
             cifar_test_labels = np.array(cifar_testset.targets)
 
             cnn32 = SimpleCNN32Filter(len(classes))
-            train_loader, valid_loader, test_loader = create_loaders_es(
+            time_limit = rf_times[i]
+            train_loader, test_loader = create_loaders_set(
                 cifar_train_labels,
                 cifar_test_labels,
                 classes,
@@ -135,20 +73,21 @@ def main():
                 cifar_testset,
                 samples,
             )
-            accuracy, train_time, test_time = run_dn_image_es(
+            accuracy, train_time, test_time = run_dn_image_set(
                 cnn32,
                 train_loader,
-                valid_loader,
                 test_loader,
+                time_limit=time_limit,
+                ratio=ratio,
             )
             cnn32_acc_vs_n.append(accuracy)
             cnn32_train_time.append(train_time)
             cnn32_test_time.append(test_time)
 
     print("cnn32 finished")
-    write_result(prefix + "cnn32.txt", cnn32_acc_vs_n)
-    write_result(prefix + "cnn32_train_time.txt", cnn32_train_time)
-    write_result(prefix + "cnn32_test_time.txt", cnn32_test_time)
+    write_result(prefix + "cnn32" + suffix, cnn32_acc_vs_n)
+    write_result(prefix + "cnn32_train_time" + suffix, cnn32_train_time)
+    write_result(prefix + "cnn32_test_time" + suffix, cnn32_test_time)
 
     cnn32_2l_acc_vs_n = list()
     cnn32_2l_train_time = list()
@@ -171,7 +110,8 @@ def main():
             cifar_test_labels = np.array(cifar_testset.targets)
 
             cnn32_2l = SimpleCNN32Filter2Layers(len(classes))
-            train_loader, valid_loader, test_loader = create_loaders_es(
+            time_limit = rf_times[i]
+            train_loader, test_loader = create_loaders_set(
                 cifar_train_labels,
                 cifar_test_labels,
                 classes,
@@ -179,20 +119,21 @@ def main():
                 cifar_testset,
                 samples,
             )
-            accuracy, train_time, test_time = run_dn_image_es(
+            accuracy, train_time, test_time = run_dn_image_set(
                 cnn32_2l,
                 train_loader,
-                valid_loader,
                 test_loader,
+                time_limit=time_limit,
+                ratio=ratio,
             )
             cnn32_2l_acc_vs_n.append(accuracy)
             cnn32_2l_train_time.append(train_time)
             cnn32_2l_test_time.append(test_time)
 
     print("cnn32_2l finished")
-    write_result(prefix + "cnn32_2l.txt", cnn32_2l_acc_vs_n)
-    write_result(prefix + "cnn32_2l_train_time.txt", cnn32_2l_train_time)
-    write_result(prefix + "cnn32_2l_test_time.txt", cnn32_2l_test_time)
+    write_result(prefix + "cnn32_2l" + suffix, cnn32_2l_acc_vs_n)
+    write_result(prefix + "cnn32_2l_train_time" + suffix, cnn32_2l_train_time)
+    write_result(prefix + "cnn32_2l_test_time" + suffix, cnn32_2l_test_time)
 
     cnn32_5l_acc_vs_n = list()
     cnn32_5l_train_time = list()
@@ -215,7 +156,8 @@ def main():
             cifar_test_labels = np.array(cifar_testset.targets)
 
             cnn32_5l = SimpleCNN32Filter5Layers(len(classes))
-            train_loader, valid_loader, test_loader = create_loaders_es(
+            time_limit = rf_times[i]
+            train_loader, test_loader = create_loaders_set(
                 cifar_train_labels,
                 cifar_test_labels,
                 classes,
@@ -223,20 +165,21 @@ def main():
                 cifar_testset,
                 samples,
             )
-            accuracy, train_time, test_time = run_dn_image_es(
+            accuracy, train_time, test_time = run_dn_image_set(
                 cnn32_5l,
                 train_loader,
-                valid_loader,
                 test_loader,
+                time_limit=time_limit,
+                ratio=ratio,
             )
             cnn32_5l_acc_vs_n.append(accuracy)
             cnn32_5l_train_time.append(train_time)
             cnn32_5l_test_time.append(test_time)
 
     print("cnn32_5l finished")
-    write_result(prefix + "cnn32_5l.txt", cnn32_5l_acc_vs_n)
-    write_result(prefix + "cnn32_5l_train_time.txt", cnn32_5l_train_time)
-    write_result(prefix + "cnn32_5l_test_time.txt", cnn32_5l_test_time)
+    write_result(prefix + "cnn32_5l" + suffix, cnn32_5l_acc_vs_n)
+    write_result(prefix + "cnn32_5l_train_time" + suffix, cnn32_5l_train_time)
+    write_result(prefix + "cnn32_5l_test_time" + suffix, cnn32_5l_test_time)
 
     # prepare CIFAR data
     data_transforms = transforms.Compose(
@@ -269,7 +212,8 @@ def main():
             res = models.resnet18(pretrained=True)
             num_ftrs = res.fc.in_features
             res.fc = nn.Linear(num_ftrs, len(classes))
-            train_loader, valid_loader, test_loader = create_loaders_es(
+            time_limit = rf_times[i]
+            train_loader, test_loader = create_loaders_set(
                 cifar_train_labels,
                 cifar_test_labels,
                 classes,
@@ -277,20 +221,21 @@ def main():
                 cifar_testset,
                 samples,
             )
-            accuracy, train_time, test_time = run_dn_image_es(
+            accuracy, train_time, test_time = run_dn_image_set(
                 res,
                 train_loader,
-                valid_loader,
                 test_loader,
+                time_limit=time_limit,
+                ratio=ratio,
             )
             resnet18_acc_vs_n.append(accuracy)
             resnet18_train_time.append(train_time)
             resnet18_test_time.append(test_time)
 
     print("resnet18 finished")
-    write_result(prefix + "resnet18.txt", resnet18_acc_vs_n)
-    write_result(prefix + "resnet18_train_time.txt", resnet18_train_time)
-    write_result(prefix + "resnet18_test_time.txt", resnet18_test_time)
+    write_result(prefix + "resnet18" + suffix, resnet18_acc_vs_n)
+    write_result(prefix + "resnet18_train_time" + suffix, resnet18_train_time)
+    write_result(prefix + "resnet18_test_time" + suffix, resnet18_test_time)
 
 
 if __name__ == "__main__":

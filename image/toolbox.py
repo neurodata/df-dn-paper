@@ -5,7 +5,6 @@ Coauthors: Yu-Chung Peng
 import time
 import numpy as np
 from sklearn.metrics import accuracy_score
-from sklearn.ensemble import RandomForestClassifier
 
 import torch
 import torch.nn as nn
@@ -113,6 +112,30 @@ def combinations_45(iterable, r):
         for j in range(i + 1, r):
             indices[j] = indices[j - 1] + 1
         yield tuple(pool[i] for i in indices)
+
+
+def load_result(filename):
+    """
+    Loads results from specified file
+    """
+    inputs = open(filename, "r")
+    lines = inputs.readlines()
+    ls = []
+    for line in lines:
+        ls.append(float(line.strip()))
+    return ls
+
+
+def produce_mean(ls):
+    """
+    Produces means from list of 8 results
+    """
+    ls_space = []
+    for i in range(int(len(ls) / 8)):
+        l = ls[i * 8 : (i + 1) * 8]
+        ls_space.append(l)
+
+    return np.mean(ls_space, axis=0)
 
 
 def run_rf_image(
@@ -267,6 +290,66 @@ def run_dn_image(
             correct += (predicted == labels.view(-1)).sum().item()
     accuracy = float(correct) / float(total)
     return accuracy
+
+
+def run_dn_image_set(
+    model,
+    train_loader,
+    test_loader,
+    time_limit,
+    ratio,
+    lr=0.001,
+    batch=64,
+):
+    """
+    Peforms multiclass predictions for a deep network classifier
+    """
+    # define model
+    dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model.to(dev)
+    # loss and optimizer
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+
+    start_time = time.perf_counter()
+    while True:  # loop over the dataset multiple times
+
+        for i, data in enumerate(train_loader, 0):
+            # get the inputs
+            inputs, labels = data
+            inputs = inputs.clone().detach().to(dev)
+            labels = labels.clone().detach().to(dev)
+            # zero the parameter gradients
+            optimizer.zero_grad()
+
+            # forward + backward + optimize
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+        end_time = time.perf_counter()
+        if (end_time - start_time) / ratio >= time_limit:
+            train_time = end_time - start_time
+            break
+
+    # test the model
+    start_time = time.perf_counter()
+    correct = torch.tensor(0).to(dev)
+    total = torch.tensor(0).to(dev)
+    with torch.no_grad():
+        for data in test_loader:
+            images, labels = data
+            labels = labels.clone().detach().to(dev)
+            images = images.clone().detach().to(dev)
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels.view(-1)).sum().item()
+    accuracy = float(correct) / float(total)
+    end_time = time.perf_counter()
+    test_time = end_time - start_time
+    return accuracy, train_time, test_time
 
 
 def run_dn_image_es(

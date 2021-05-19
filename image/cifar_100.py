@@ -6,17 +6,9 @@ from toolbox import *
 
 import argparse
 import random
-import numpy as np
-from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-
-import torchvision
 import torchvision.models as models
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
@@ -24,6 +16,7 @@ import torchvision.transforms as transforms
 
 # prepare CIFAR data
 def main():
+    # Example usage: python cifar_100.py -m 90
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", help="class number")
     args = parser.parse_args()
