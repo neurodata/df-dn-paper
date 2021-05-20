@@ -47,6 +47,16 @@ def load_cc18():
     return X_data_list, y_data_list, dataset_name
 
 
+def sample_large_datasets(X_data, y_data):
+    """
+    For large datasets with over 10000 samples, resample the data to only include
+    10000 random samples.
+    """
+    inds = [i for i in range(X_data.shape[0])]
+    fin = sorted(sample(inds, 10000))
+    return X_data[fin], y_data[fin]
+
+
 # Load data from CC18 data set suite
 X_data_list, y_data_list, dataset_name = load_cc18()
 
@@ -64,7 +74,10 @@ all_parameters = []
 
 
 # Choose dataset indices
-dataset_indices = [i for i in range(72)]
+# dataset_indices = [i for i in range(72)]
+dataset_indices = [i for i in range(72) if X_data_list[i].shape[0] >= 10000]
+print(dataset_indices)
+
 
 
 # For each dataset, use randomized hyperparameter search to optimize parameters
@@ -74,6 +87,13 @@ for dataset_index, dataset in enumerate(dataset_indices):
 
     X = X_data_list[dataset]
     y = y_data_list[dataset]
+
+    # If data set has over 10000 samples, resample to contain 10000
+    if X.shape[0] > 10000:
+        X, y = sample_large_datasets(X, y)
+    
+    print(X.shape)
+    print(y.shape)
 
     scaler = StandardScaler()
     scaler.fit(X)
@@ -107,6 +127,6 @@ for dataset_index, dataset in enumerate(dataset_indices):
 
 
 # Save optimal parameters to txt file
-with open("metrics/cc18_all_parameters.txt", "w") as f:
+with open("metrics/cc18_all_parameters_largest_datasets.txt", "w") as f:
     for item in all_parameters:
         f.write("%s\n" % item)
