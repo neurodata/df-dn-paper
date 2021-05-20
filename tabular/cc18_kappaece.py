@@ -130,11 +130,8 @@ def sample_large_datasets(X_data, y_data):
 
 # Import CC18 data and pretuned hyperparameters
 X_data_list, y_data_list, dataset_name = load_cc18()
-#all_params = read_params_txt("metrics/cc18_all_parameters.txt")
-all_params = read_params_txt("metrics/cc18_all_parameters_10000_cutoff.txt")
-# train_indices = [i for i in range(72)]
-train_indices = [i for i in range(72) if X_data_list[i].shape[0] >= 10000]
-print(train_indices)
+all_params = read_params_txt("metrics/cc18_all_parameters.txt")
+train_indices = [i for i in range(72)]
 
 
 # Number of repetitions for each CV fold at each sample size
@@ -155,7 +152,7 @@ dn_evolution_ece = np.zeros((8 * len(train_indices), 5))
 # Record outputs using Cohen's Kappa and ECE
 for dataset_index, dataset in enumerate(train_indices):
 
-    print("\n\nCurrent Dataset: ", dataset)
+    print("\n\n\Current Dataset: ", dataset)
 
     X = X_data_list[dataset]
     y = y_data_list[dataset]
@@ -245,14 +242,8 @@ for dataset_index, dataset in enumerate(train_indices):
 
 
 # Save sample sizes and model results in txt files
-# np.savetxt("metrics/cc18_sample_sizes.txt", all_sample_sizes)
-# np.savetxt("results/cc18_dn_kappa.txt", dn_evolution)
-# np.savetxt("results/cc18_rf_kappa.txt", rf_evolution)
-# np.savetxt("results/cc18_dn_ece.txt", dn_evolution_ece)
-# np.savetxt("results/cc18_rf_ece.txt", rf_evolution_ece)
-
-np.savetxt("metrics/cc18_sample_sizes_10000_cutoff_15.txt", all_sample_sizes)
-np.savetxt("results/cc18_dn_kappa_10000_cutoff_15.txt", dn_evolution)
-np.savetxt("results/cc18_rf_kappa_10000_cutoff_15.txt", rf_evolution)
-np.savetxt("results/cc18_dn_ece_10000_cutoff_15.txt", dn_evolution_ece)
-np.savetxt("results/cc18_rf_ece_10000_cutoff_15.txt", rf_evolution_ece)
+np.savetxt("metrics/cc18_sample_sizes.txt", all_sample_sizes)
+np.savetxt("results/cc18_dn_kappa.txt", dn_evolution)
+np.savetxt("results/cc18_rf_kappa.txt", rf_evolution)
+np.savetxt("results/cc18_dn_ece.txt", dn_evolution_ece)
+np.savetxt("results/cc18_rf_ece.txt", rf_evolution_ece)
