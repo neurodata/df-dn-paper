@@ -1,4 +1,6 @@
 matplotlib
+cv2
+librosa
 numpy==1.18.5
 scikit-learn==0.22.2.post1
 scipy==1.5.2
