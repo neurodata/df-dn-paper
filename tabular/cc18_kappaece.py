@@ -152,7 +152,7 @@ dn_evolution_ece = np.zeros((8 * len(train_indices), 5))
 # Record outputs using Cohen's Kappa and ECE
 for dataset_index, dataset in enumerate(train_indices):
 
-    print("\n\n\Current Dataset: ", dataset)
+    print("\n\nCurrent Dataset: ", dataset)
 
     X = X_data_list[dataset]
     y = y_data_list[dataset]

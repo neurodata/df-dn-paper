@@ -10,10 +10,10 @@ from sklearn import datasets
 from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 import ast
 import openml
-import timeit
+import time
 
 
 def load_cc18():
@@ -97,90 +97,20 @@ def sample_large_datasets(X_data, y_data):
     return X_data[fin], y_data[fin]
 
 
-def time_rf_cc18(SETUP_CODE, X_train_new, y_train_new, X_test, all_params, dataset):
-    """
-    Use timeit function to measure training and fitting time of the Random Forest
-    classifier using optimized parameters for given dataset.
-    """
-    TEST_CODE = """
-
-rf = RandomForestClassifier(**{}[{}][1], n_estimators=500, n_jobs=-1)
-rf.fit(X_train_new, y_train_new)
-y_pred_rf = rf.predict(X_test)
-
-    """.format(
-        all_params, dataset
-    )
-    time_rf = timeit.repeat(
-        setup=SETUP_CODE_RF,
-        stmt=TEST_CODE,
-        repeat=1,
-        number=1,
-        globals={
-            "X_train_new": X_train_new,
-            "y_train_new": y_train_new,
-            "X_test": X_test,
-        },
-    )
-
-    return time_rf
-
-
-SETUP_CODE_RF = """
-
-from sklearn.ensemble import RandomForestClassifier
-
-"""
-
-
-def time_mlp_cc18(SETUP_CODE, X_train_new, y_train_new, X_test, all_params, dataset):
-    """
-    Use timeit function to measure training and fitting time of the Random Forest
-    classifier using optimized parameters for given dataset.
-    """
-    TEST_CODE = """
-
-mlp = MLPClassifier(**{}[{}][0])
-mlp.fit(X_train_new, y_train_new)
-y_pred_mlp = mlp.predict(X_test)
-
-    """.format(
-        all_params, dataset
-    )
-    time_mlp = timeit.repeat(
-        setup=SETUP_CODE_MLP,
-        stmt=TEST_CODE,
-        repeat=1,
-        number=1,
-        globals={
-            "X_train_new": X_train_new,
-            "y_train_new": y_train_new,
-            "X_test": X_test,
-        },
-    )
-
-    return time_mlp
-
-
-SETUP_CODE_MLP = """
-
-from sklearn.neural_network import MLPClassifier
-
-"""
-
-
 # Load data from CC18 data set suite
 X_data_list, y_data_list, dataset_name = load_cc18()
-# dataset_indices = [i for i in range(72)]
-dataset_indices = [0, 2]
+dataset_indices = [i for i in range(72)]
 
 # Import pretuned hyperparameters
 all_params = read_params_txt("metrics/cc18_all_parameters.txt")
 
 
 # Empty arrays to index times into
-rf_times = np.zeros((8 * len(dataset_indices), 5))
-dn_times = np.zeros((8 * len(dataset_indices), 5))
+rf_times_train = np.zeros((8 * len(dataset_indices), 5))
+rf_times_test = np.zeros((8 * len(dataset_indices), 5))
+
+dn_times_train = np.zeros((8 * len(dataset_indices), 5))
+dn_times_test = np.zeros((8 * len(dataset_indices), 5))
 
 
 # For each dataset, determine wall times at each sample size
@@ -222,19 +152,47 @@ for dataset_index, dataset in enumerate(dataset_indices):
             X_train_new = X_train[ss_inds[sample_size_index]]
             y_train_new = y_train[ss_inds[sample_size_index]]
 
-            rf_time_temp = time_rf_cc18(
-                SETUP_CODE_RF, X_train_new, y_train_new, X_test, all_params, dataset
-            )
-            mlp_time_temp = time_mlp_cc18(
-                SETUP_CODE_MLP, X_train_new, y_train_new, X_test, all_params, dataset
+            rf = RandomForestClassifier(
+                **all_params[dataset][1], n_estimators=500, n_jobs=-1
             )
 
-            rf_times[sample_size_index + 8 * dataset_index][k_index] = rf_time_temp[0]
-            dn_times[sample_size_index + 8 * dataset_index][k_index] = mlp_time_temp[0]
+            start_time = time.perf_counter()
+            rf.fit(X_train_new, y_train_new)
+            end_time = time.perf_counter()
+            rf_train_time = end_time - start_time
+
+            start_time = time.perf_counter()
+            y_pred_rf = rf.predict(X_test)
+            end_time = time.perf_counter()
+            rf_test_time = end_time - start_time
+
+            mlp = MLPClassifier(**all_params[dataset][0])
+
+            start_time = time.perf_counter()
+            mlp.fit(X_train_new, y_train_new)
+            end_time = time.perf_counter()
+            dn_train_time = end_time - start_time
+
+            start_time = time.perf_counter()
+            y_pred_mlp = mlp.predict(X_test)
+            end_time = time.perf_counter()
+            dn_test_time = end_time - start_time
+
+            rf_times_train[sample_size_index + 8 * dataset_index][
+                k_index
+            ] = rf_train_time
+            rf_times_test[sample_size_index + 8 * dataset_index][k_index] = rf_test_time
+
+            dn_times_train[sample_size_index + 8 * dataset_index][
+                k_index
+            ] = dn_train_time
+            dn_times_test[sample_size_index + 8 * dataset_index][k_index] = dn_test_time
 
         k_index += 1
 
 
 # Save results as txt files
-np.savetxt("results/cc18_rf_times.txt", rf_times)
-np.savetxt("results/cc18_dn_times.txt", dn_times)
+np.savetxt("results/cc18_rf_times_train.txt", rf_times_train)
+np.savetxt("results/cc18_rf_times_test.txt", rf_times_test)
+np.savetxt("results/cc18_dn_times_train.txt", dn_times_train)
+np.savetxt("results/cc18_dn_times_test.txt", dn_times_test)
