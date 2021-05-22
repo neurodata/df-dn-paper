@@ -272,6 +272,7 @@ def run_dn_image_es(
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels.view(-1)).sum().item()
+    accuracy = float(correct) / float(total)
     end_time = time.perf_counter()
     test_time = end_time - start_time
     return accuracy, train_time, test_time
