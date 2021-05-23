@@ -28,12 +28,12 @@ def main():
 
     if args.s == "h":
         # High speed RF
-        rf_times = produce_mean(load_result(prefix + "naive_rf_time.txt"))
+        rf_times = produce_mean(load_result(prefix + "naive_rf_train_time.txt"))
         suffix = "_st.txt"
         ratio = 1.0
     elif args.s == "l":
         # Low speed RF
-        rf_times = produce_mean(load_result(prefix + "naive_rf_time_lc.txt"))
+        rf_times = produce_mean(load_result(prefix + "naive_rf_train_time_lc.txt"))
         suffix = "_sc.txt"
         ratio = 0.11 / 0.9
     else:
@@ -50,7 +50,7 @@ def main():
 
         # accuracy vs num training samples (cnn32)
         samples_space = np.geomspace(100, 10000, num=8, dtype=int)
-        for samples in samples_space:
+        for i, samples in enumerate(samples_space):
             # train data
             cifar_trainset = datasets.CIFAR100(
                 root="./", train=True, download=True, transform=data_transforms
@@ -96,7 +96,7 @@ def main():
 
         # accuracy vs num training samples (cnn32_2l)
         samples_space = np.geomspace(100, 10000, num=8, dtype=int)
-        for samples in samples_space:
+        for i, samples in enumerate(samples_space):
             # train data
             cifar_trainset = datasets.CIFAR100(
                 root="./", train=True, download=True, transform=data_transforms
@@ -142,7 +142,7 @@ def main():
 
         # accuracy vs num training samples (cnn32_5l)
         samples_space = np.geomspace(100, 10000, num=8, dtype=int)
-        for samples in samples_space:
+        for i, samples in enumerate(samples_space):
             # train data
             cifar_trainset = datasets.CIFAR100(
                 root="./", train=True, download=True, transform=data_transforms
@@ -196,7 +196,7 @@ def main():
 
         # accuracy vs num training samples (resnet18)
         samples_space = np.geomspace(100, 10000, num=8, dtype=int)
-        for samples in samples_space:
+        for i, samples in enumerate(samples_space):
             # train data
             cifar_trainset = datasets.CIFAR100(
                 root="./", train=True, download=True, transform=data_transforms
