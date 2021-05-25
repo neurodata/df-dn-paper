@@ -137,3 +137,6 @@ cifar-10-batches-py/
 
 # audio files
 recordings/
+
+# SVHN datasets
+*.mat
