@@ -3,8 +3,6 @@ Coauthors: Yu-Chung Peng
            Haoyin Xu
 """
 from audio_toolbox import *
-from spoken_digit_functions import *
-
 import argparse
 import numpy as np
 from sklearn.svm import SVC
