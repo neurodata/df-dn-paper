@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+data
 
 # C extensions
 *.so
@@ -133,6 +134,9 @@ dmypy.json
 
 # CIFAR datasets
 cifar-10-batches-py/
+
+# audio files
+recordings/
 
 # SVHN datasets
 *.mat
