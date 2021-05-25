@@ -1,6 +1,7 @@
 """
 Coauthors: Yu-Chung Peng
            Haoyin Xu
+           Madi Kusmanov
 """
 import numpy as np
 from sklearn.metrics import accuracy_score
@@ -14,15 +15,20 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torchaudio.transforms as trans
 
-def load_spoken_digit(path_recordings):
+def load_spoken_digit(path_recordings, feature_type = 'spectogram'):
     file = os.listdir(path_recordings)
-
+    
     audio_data = []  # audio data
     x_spec = []  # STFT spectrogram
     x_spec_mini = []  # resized image, 28*28
     y_number = []  # label of number
     y_speaker = []  # label of speaker
-    a = trans.Spectrogram(n_fft=128, normalized=True)
+    if feature_type == 'spectogram':
+      a = trans.Spectrogram(n_fft=128, normalized=True)
+    elif feature_type == 'melspectogram':
+      a = trans.MelSpectrogram(n_fft=128, normalized=True)
+    elif feature_type == 'mfcc':
+      a = trans.MFCC(n_mfcc = 128)
     for i in file:
         x, sr = librosa.load(path_recordings + i, sr=8000)
         #x_stft = librosa.stft(x, n_fft=128)  # Extract STFT

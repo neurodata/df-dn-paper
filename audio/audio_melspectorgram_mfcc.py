@@ -1,9 +1,9 @@
 """
 Coauthors: Yu-Chung Peng
            Haoyin Xu
+           Madi Kusmanov
 """
-from audio_toolbox import *
-import argparse
+#from audio_toolbox import *
 import numpy as np
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
@@ -18,46 +18,56 @@ import random
 warnings.filterwarnings('ignore')
 
 def write_result(filename, acc_ls):
-    output = open(filename, "w")
-    for acc in acc_ls:
-        output.write(str(acc) + "\n")
+  with open(filename, 'a') as testwritefile:
+      for acc in acc_ls:  
+        testwritefile.write(str(acc) + "\n")
 
-def combinations_45(iterable, r):
-    pool = tuple(iterable)
-    n = len(pool)
-    if r > n:
-        return
-    indices = list(range(r))
-    yield tuple(pool[i] for i in indices)
-    count = 0
-    while count < 45: #TODO CHANGE TO 45!!!!!!!!!!!!!!!
-        count += 1
-        for i in reversed(range(r)):
-            if indices[i] != i + n - r:
-                break
-        else:
-            return
-        indices[i] += 1
-        for j in range(i + 1, r):
-            indices[j] = indices[j - 1] + 1
-        yield tuple(pool[i] for i in indices)
-
-
-# prepare CIFAR data
+# prepare FSDD data
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", help="class number")
+    parser.add_argument("--m", help="class number")
     args = parser.parse_args()
     n_classes = int(args.m)
-    prefix = args.m + "_class/"
-
-    nums = list(range(10))
-    random.shuffle(nums)
-    classes_space = list(combinations_45(nums, n_classes))
-
     path_recordings = 'recordings/'
+    
     #data is normalized upon loading
-    x_spec, y_number = load_spoken_digit(path_recordings)
+    #define feature of interest
+    feature_type = 'melspectogram'
+
+    #load dataset
+    x_spec, y_number = load_spoken_digit(path_recordings, feature_type)
+
+    #define path, samples space and number of class combinations
+    if feature_type == 'melspectogram':
+      prefix = args.m + "_class_mel/"
+      samples_space = np.geomspace(10, 480, num=6, dtype=int)
+      comb = 44
+      if n_classes == 3:
+        nums = list(range(1,10))
+      elif n_classes == 8:
+        nums = list(range(10))
+    elif feature_type == 'spectogram':
+      prefix = args.m + "_class/"
+      samples_space = np.geomspace(10, 481, num=6, dtype=int)
+      comb = 44
+      if n_classes == 3:
+        nums = list(range(1,10))
+      elif n_classes == 8:
+        nums = list(range(10))
+    elif feature_type == 'mfcc':
+      prefix = args.m + "_class_mfcc/"
+      samples_space = np.geomspace(10, 471, num=6, dtype=int)
+      comb = 45
+      if n_classes == 3:
+        nums = list(range(1,10))
+      elif n_classes == 8:
+        nums = list(range(10))
+   
+    #create list of classes with const random seed
+    random.Random(5).shuffle(nums)
+    classes_space = list(combinations_45(nums, n_classes, comb))
+    print(classes_space)
+    
     #scale the data
     x_spec = scale(x_spec.reshape(3000, -1), axis=1).reshape(3000, 32, 32)
     y_number = np.array(y_number)
@@ -77,18 +87,17 @@ def main():
     trainy = trainy[1:]           
     testx = testx[1:]
     testy = testy[1:]
-    samples_space = np.geomspace(10, 480, num=6, dtype=int)
+    #samples_space = np.geomspace(10, 480, num=6, dtype=int)
     
     #3000 samples, 80% train is 2400 samples, 20% test
-    cifar_train_images = trainx.reshape(-1, 32 * 32)
-    cifar_train_labels = trainy.copy()
+    fsdd_train_images = trainx.reshape(-1, 32 * 32)
+    fsdd_train_labels = trainy.copy()
     #reshape in 2d array
-    cifar_test_images = testx.reshape(-1, 32 * 32)
-    cifar_test_labels = testy.copy()
+    fsdd_test_images = testx.reshape(-1, 32 * 32)
+    fsdd_test_labels = testy.copy()
 
 
-
-
+    # Resnet18 
     resnet18_acc_vs_n = list()
     resnet18_train_time = list()
     resnet18_test_time = list()
@@ -96,11 +105,10 @@ def main():
 
         # accuracy vs num training samples (resnet18)
         for samples in samples_space:
-            #print(samples)
-            model = models.resnet18(pretrained=True)
-            #model.conv1 = nn.Conv2d(2, 64, kernel_size=(7,7), stride=(2, 2), padding=(3, 3), bias=False)
-            num_ftrs = model.fc.in_features
-            model.fc = nn.Linear(num_ftrs, len(classes))
+            resnet = models.resnet18(pretrained=True)
+            
+            num_ftrs = resnet.fc.in_features
+            resnet.fc = nn.Linear(num_ftrs, len(classes))
             # train data
             #3000 samples, 80% train is 2400 samples, 20% test
             train_images = trainx.copy()
@@ -119,7 +127,7 @@ def main():
             test_images = torch.cat((test_images, test_images, test_images), dim=1)
             #print(train_images.shape)
             accuracy, train_time, test_time = run_dn_image_es(
-                        model,
+                        resnet,
                         train_images, train_labels,
                         valid_images, valid_labels,
                         test_images, test_labels,
@@ -134,6 +142,7 @@ def main():
     write_result(prefix + "resnet18_test_time.txt", resnet18_test_time)
 
     
+    # Support Vector Machine
     svm_acc_vs_n = list()
     svm_train_time = list()
     svm_test_time = list()
@@ -144,10 +153,10 @@ def main():
             SVM = SVC()
             accuracy, train_time, test_time = run_rf_image_set(
                         SVM,
-                        cifar_train_images,
-                        cifar_train_labels,
-                        cifar_test_images,
-                        cifar_test_labels,
+                        fsdd_train_images,
+                        fsdd_train_labels,
+                        fsdd_test_images,
+                        fsdd_test_labels,
                         samples,
                         classes)
             svm_acc_vs_n.append(accuracy)
@@ -160,7 +169,7 @@ def main():
     write_result(prefix + "svm_test_time.txt", svm_test_time)
 
 
-
+    # CNN 32
     cnn32_acc_vs_n = list()
     cnn32_train_time = list()
     cnn32_test_time = list()
@@ -169,7 +178,7 @@ def main():
         # accuracy vs num training samples (cnn32)
         for samples in samples_space:
             # train data
-            model = SimpleCNN32Filter(len(classes))
+            cnn32 = SimpleCNN32Filter(len(classes))
             #3000 samples, 80% train is 2400 samples, 20% test
             train_images = trainx.copy()
             train_labels = trainy.copy()
@@ -182,7 +191,7 @@ def main():
                                            test_labels, samples, classes)
             
             accuracy, train_time, test_time = run_dn_image_es(
-                        model,
+                        cnn32,
                         train_images, train_labels,
                         valid_images, valid_labels,
                         test_images, test_labels,
@@ -196,7 +205,7 @@ def main():
     write_result(prefix + "cnn32_train_time.txt", cnn32_train_time)
     write_result(prefix + "cnn32_test_time.txt", cnn32_test_time)
     
-    
+    # Naive Random Forest
     naive_rf_acc_vs_n = list()
     naive_rf_train_time = list()
     naive_rf_test_time = list()
@@ -207,10 +216,10 @@ def main():
             RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
             accuracy, train_time, test_time = run_rf_image_set(
                         RF,
-                        cifar_train_images,
-                        cifar_train_labels,
-                        cifar_test_images,
-                        cifar_test_labels,
+                        fsdd_train_images,
+                        fsdd_train_labels,
+                        fsdd_test_images,
+                        fsdd_test_labels,
                         samples,
                         classes,
                     )
@@ -225,7 +234,7 @@ def main():
     write_result(prefix + "naive_rf_test_time.txt", naive_rf_test_time)
 
 
-    
+    # CNN 32 with 2 layers
     cnn32_2l_acc_vs_n = list()
     cnn32_2l_train_time = list()
     cnn32_2l_test_time = list()
@@ -234,7 +243,7 @@ def main():
         # accuracy vs num training samples (cnn32_2l)
         for samples in samples_space:
             
-            model = SimpleCNN32Filter2Layers(len(classes))
+            cnn32_2l = SimpleCNN32Filter2Layers(len(classes))
             #3000 samples, 80% train is 2400 samples, 20% test
             train_images = trainx.copy()
             train_labels = trainy.copy()
@@ -247,7 +256,7 @@ def main():
                                            test_labels, samples, classes)
             
             accuracy, train_time, test_time = run_dn_image_es(
-                        model,
+                        cnn32_2l,
                         train_images, train_labels,
                         valid_images, valid_labels,
                         test_images, test_labels,
@@ -262,7 +271,7 @@ def main():
     write_result(prefix + "cnn32_2l_test_time.txt", cnn32_2l_test_time)
 
 
-
+    # CNN 32 with 5 layers
     cnn32_5l_acc_vs_n = list()
     cnn32_5l_train_time = list()
     cnn32_5l_test_time = list()
@@ -271,7 +280,7 @@ def main():
         # accuracy vs num training samples (cnn32_5l)
         for samples in samples_space:
             
-            model = SimpleCNN32Filter5Layers(len(classes))
+            cnn32_5l = SimpleCNN32Filter5Layers(len(classes))
             #3000 samples, 80% train is 2400 samples, 20% test
             train_images = trainx.copy()
             train_labels = trainy.copy()
@@ -284,7 +293,7 @@ def main():
                                            test_labels, samples, classes)
             
             accuracy, train_time, test_time = run_dn_image_es(
-                        model,
+                        cnn32_5l,
                         train_images, train_labels,
                         valid_images, valid_labels,
                         test_images, test_labels,
