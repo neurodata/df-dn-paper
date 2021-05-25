@@ -4,13 +4,46 @@ Coauthors: Yu-Chung Peng
 """
 import numpy as np
 from sklearn.metrics import accuracy_score
-from sklearn.ensemble import RandomForestClassifier
-
+import time
 import torch
+import os
+import cv2
+import librosa
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import torchaudio.transforms as trans
 
+def load_spoken_digit(path_recordings):
+    file = os.listdir(path_recordings)
+
+    audio_data = []  # audio data
+    x_spec = []  # STFT spectrogram
+    x_spec_mini = []  # resized image, 28*28
+    y_number = []  # label of number
+    y_speaker = []  # label of speaker
+    a = trans.Spectrogram(n_fft=128, normalized=True)
+    for i in file:
+        x, sr = librosa.load(path_recordings + i, sr=8000)
+        #x_stft = librosa.stft(x, n_fft=128)  # Extract STFT
+        #x_stft_db = librosa.amplitude_to_db(abs(x_stft))
+        x_stft_db = a(torch.tensor(x)).numpy()
+        # Convert an amplitude spectrogram to dB-scaled spectrogram
+        x_stft_db_mini = cv2.resize(x_stft_db, (32, 32))  # Resize into 28 by 28
+        y_n = i[0]  # number
+        y_s = i[2]  # first letter of speaker's name
+
+        audio_data.append(x)
+        x_spec.append(x_stft_db)
+        x_spec_mini.append(x_stft_db_mini)
+        y_number.append(y_n)
+        y_speaker.append(y_s)
+
+    x_spec_mini = np.array(x_spec_mini)
+    y_number = np.array(y_number).astype(int)
+    y_speaker = np.array(y_speaker)
+
+    return x_spec_mini, y_number
 
 class SimpleCNN32Filter(nn.Module):
     """
@@ -144,7 +177,7 @@ def run_rf_image_set(
 
     train_images = np.concatenate(image_ls)
     train_labels = np.concatenate(label_ls)
-    # print(train_images.shape, train_labels.shape)
+    #print(train_images.shape, train_labels.shape)
     # Obtain only test images and labels for selected classes
     image_ls = []
     label_ls = []
@@ -156,12 +189,18 @@ def run_rf_image_set(
     test_labels = np.concatenate(label_ls)
 
     # Train the model
+    start_time = time.perf_counter()
     model.fit(train_images, train_labels)
+    end_time = time.perf_counter()
+    train_time = end_time - start_time
 
     # Test the model
+    start_time = time.perf_counter()
     test_preds = model.predict(test_images)
+    end_time = time.perf_counter()
+    test_time = end_time - start_time
 
-    return accuracy_score(test_labels, test_preds)
+    return accuracy_score(test_labels, test_preds), train_time, test_time
 
 
 def run_dn_image_es(
@@ -170,7 +209,7 @@ def run_dn_image_es(
     train_labels,
     valid_data,
     valid_labels,
-    test_data,
+    test_data, 
     test_labels,
     epochs=30,
     lr=0.001,
@@ -189,18 +228,18 @@ def run_dn_image_es(
     # early stopping setup
     prev_loss = float("inf")
     flag = 0
-
+    start_time = time.perf_counter()
     for epoch in range(epochs):  # loop over the dataset multiple times
 
         for i in range(0, len(train_data), batch):
             # get the inputs
-            inputs = train_data[i : i + batch].to(dev)
-            labels = train_labels[i : i + batch].to(dev)
+            inputs = train_data[i:i + batch].to(dev)
+            labels = train_labels[i:i + batch].to(dev)
             # zero the parameter gradients
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            # print("toolbox: ", inputs.shape)
+            #print("toolbox: ", inputs.shape)
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             loss.backward()
@@ -211,8 +250,8 @@ def run_dn_image_es(
         with torch.no_grad():
             for i in range(0, len(valid_data), batch):
                 # get the inputs
-                inputs = valid_data[i : i + batch].to(dev)
-                labels = valid_labels[i : i + batch].to(dev)
+                inputs = valid_data[i:i + batch].to(dev)
+                labels = valid_labels[i:i + batch].to(dev)
 
                 # forward
                 outputs = model(inputs)
@@ -227,25 +266,28 @@ def run_dn_image_es(
             if flag >= 3:
                 print("early stopped at epoch: ", epoch)
                 break
-
+    end_time = time.perf_counter()
+    train_time = end_time - start_time
     # test the model
     correct = torch.tensor(0).to(dev)
     total = torch.tensor(0).to(dev)
+    start_time = time.perf_counter()
     with torch.no_grad():
         for i in range(0, len(test_data), batch):
-            inputs = test_data[i : i + batch].to(dev)
-            labels = test_labels[i : i + batch].to(dev)
+            inputs = test_data[i:i + batch].to(dev)
+            labels = test_labels[i:i + batch].to(dev)
             outputs = model(inputs)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels.view(-1)).sum().item()
+    end_time = time.perf_counter()
+    test_time = end_time - start_time
     accuracy = float(correct) / float(total)
-    return accuracy
+    return accuracy, train_time, test_time
 
 
-def prepare_data(
-    train_images, train_labels, test_images, test_labels, samples, classes
-):
+def prepare_data(train_images, train_labels, test_images, \
+    test_labels, samples, classes):
 
     classes = np.array(list(classes))
     num_classes = len(classes)
@@ -260,12 +302,13 @@ def prepare_data(
         class_idxs.append(class_idx)
         i += 1
 
+
     train_idxs = np.concatenate(class_idxs)
     np.random.shuffle(train_idxs)
     # change the labels to be from 0-len(classes)
     for i in train_idxs:
         train_labels[i] = np.where(classes == train_labels[i])[0][0]
-
+    
     # get indicies of classes we want
     test_idxs = []
     validation_idxs = []
@@ -284,18 +327,12 @@ def prepare_data(
 
     for i in validation_idxs:
         test_labels[i] = np.where(classes == test_labels[i])[0][0]
-
+        
     train_images = torch.FloatTensor(train_images[train_idxs]).unsqueeze(1)
     train_labels = torch.LongTensor(train_labels[train_idxs])
     valid_images = torch.FloatTensor(test_images[validation_idxs]).unsqueeze(1)
     valid_labels = torch.LongTensor(test_labels[validation_idxs])
     test_images = torch.FloatTensor(test_images[test_idxs]).unsqueeze(1)
     test_labels = torch.LongTensor(test_labels[test_idxs])
-    return (
-        train_images,
-        train_labels,
-        valid_images,
-        valid_labels,
-        test_images,
-        test_labels,
-    )
+    return train_images, train_labels, valid_images, valid_labels, test_images, \
+                test_labels
