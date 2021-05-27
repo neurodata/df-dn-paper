@@ -2,9 +2,9 @@
 Coauthors: Yu-Chung Peng
            Haoyin Xu
 """
+import time
 import numpy as np
 from sklearn.metrics import accuracy_score
-from sklearn.ensemble import RandomForestClassifier
 
 import torch
 import torch.nn as nn
@@ -114,6 +114,30 @@ def combinations_45(iterable, r):
         yield tuple(pool[i] for i in indices)
 
 
+def load_result(filename):
+    """
+    Loads results from specified file
+    """
+    inputs = open(filename, "r")
+    lines = inputs.readlines()
+    ls = []
+    for line in lines:
+        ls.append(float(line.strip()))
+    return ls
+
+
+def produce_mean(ls):
+    """
+    Produces means from list of 8 results
+    """
+    ls_space = []
+    for i in range(int(len(ls) / 8)):
+        l = ls[i * 8 : (i + 1) * 8]
+        ls_space.append(l)
+
+    return np.mean(ls_space, axis=0)
+
+
 def run_rf_image(
     model,
     train_images,
@@ -204,12 +228,18 @@ def run_rf_image_set(
     test_labels = np.concatenate(label_ls)
 
     # Train the model
+    start_time = time.perf_counter()
     model.fit(train_images, train_labels)
+    end_time = time.perf_counter()
+    train_time = end_time - start_time
 
     # Test the model
+    start_time = time.perf_counter()
     test_preds = model.predict(test_images)
+    end_time = time.perf_counter()
+    test_time = end_time - start_time
 
-    return accuracy_score(test_labels, test_preds)
+    return accuracy_score(test_labels, test_preds), train_time, test_time
 
 
 def run_dn_image(
@@ -262,6 +292,66 @@ def run_dn_image(
     return accuracy
 
 
+def run_dn_image_set(
+    model,
+    train_loader,
+    test_loader,
+    time_limit,
+    ratio,
+    lr=0.001,
+    batch=64,
+):
+    """
+    Peforms multiclass predictions for a deep network classifier
+    """
+    # define model
+    dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model.to(dev)
+    # loss and optimizer
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+
+    start_time = time.perf_counter()
+    while True:  # loop over the dataset multiple times
+
+        for i, data in enumerate(train_loader, 0):
+            # get the inputs
+            inputs, labels = data
+            inputs = inputs.clone().detach().to(dev)
+            labels = labels.clone().detach().to(dev)
+            # zero the parameter gradients
+            optimizer.zero_grad()
+
+            # forward + backward + optimize
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+        end_time = time.perf_counter()
+        if (end_time - start_time) / ratio >= time_limit:
+            train_time = end_time - start_time
+            break
+
+    # test the model
+    start_time = time.perf_counter()
+    correct = torch.tensor(0).to(dev)
+    total = torch.tensor(0).to(dev)
+    with torch.no_grad():
+        for data in test_loader:
+            images, labels = data
+            labels = labels.clone().detach().to(dev)
+            images = images.clone().detach().to(dev)
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels.view(-1)).sum().item()
+    accuracy = float(correct) / float(total)
+    end_time = time.perf_counter()
+    test_time = end_time - start_time
+    return accuracy, train_time, test_time
+
+
 def run_dn_image_es(
     model,
     train_loader,
@@ -285,6 +375,7 @@ def run_dn_image_es(
     prev_loss = float("inf")
     flag = 0
 
+    start_time = time.perf_counter()
     for epoch in range(epochs):  # loop over the dataset multiple times
 
         for i, data in enumerate(train_loader, 0):
@@ -323,8 +414,11 @@ def run_dn_image_es(
             if flag >= 3:
                 print("early stopped at epoch: ", epoch)
                 break
+    end_time = time.perf_counter()
+    train_time = end_time - start_time
 
     # test the model
+    start_time = time.perf_counter()
     correct = torch.tensor(0).to(dev)
     total = torch.tensor(0).to(dev)
     with torch.no_grad():
@@ -337,7 +431,9 @@ def run_dn_image_es(
             total += labels.size(0)
             correct += (predicted == labels.view(-1)).sum().item()
     accuracy = float(correct) / float(total)
-    return accuracy
+    end_time = time.perf_counter()
+    test_time = end_time - start_time
+    return accuracy, train_time, test_time
 
 
 def create_loaders(
@@ -372,7 +468,7 @@ def create_loaders(
 
     train_sampler = torch.utils.data.sampler.SubsetRandomSampler(train_idxs)
     train_loader = torch.utils.data.DataLoader(
-        trainset, batch_size=batch, num_workers=4, sampler=train_sampler
+        trainset, batch_size=batch, num_workers=4, sampler=train_sampler, drop_last=True
     )
 
     # get indicies of classes we want
@@ -389,7 +485,12 @@ def create_loaders(
 
     test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
     test_loader = torch.utils.data.DataLoader(
-        testset, batch_size=batch, shuffle=False, num_workers=4, sampler=test_sampler
+        testset,
+        batch_size=batch,
+        shuffle=False,
+        num_workers=4,
+        sampler=test_sampler,
+        drop_last=True,
     )
     return train_loader, test_loader
 
