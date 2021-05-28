@@ -1,7 +1,3 @@
-"""
-Coauthors: Yu-Chung Peng
-           Haoyin Xu
-"""
 from toolbox import *
 
 import argparse

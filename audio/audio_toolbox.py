@@ -1,8 +1,3 @@
-"""
-Coauthors: Yu-Chung Peng
-           Haoyin Xu
-           Madi Kusmanov
-"""
 import numpy as np
 from sklearn.metrics import accuracy_score
 import time

@@ -1,7 +1,3 @@
-"""
-Coauthors: Yu-Chung Peng
-           Haoyin Xu
-"""
 import time
 import numpy as np
 from sklearn.metrics import accuracy_score

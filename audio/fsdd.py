@@ -1,8 +1,3 @@
-"""
-Coauthors: Yu-Chung Peng
-           Haoyin Xu
-           Madi Kusmanov
-"""
 from audio_toolbox import *
 import numpy as np
 from sklearn.svm import SVC
@@ -19,7 +14,7 @@ warnings.filterwarnings('ignore')
 
 def write_result(filename, acc_ls):
   with open(filename, 'a') as testwritefile:
-      for acc in acc_ls:  
+      for acc in acc_ls:
         testwritefile.write(str(acc) + "\n")
 
 # prepare FSDD data
@@ -31,7 +26,7 @@ def main():
     n_classes = int(args.m)
     feature_type = str(args.f)
     path_recordings = 'recordings/'
-    
+
     #data is normalized upon loading
     #load dataset
     x_spec, y_number = load_spoken_digit(path_recordings, feature_type)
@@ -45,16 +40,16 @@ def main():
       prefix = args.m + "_class/"
     elif feature_type == 'mfcc':
       prefix = args.m + "_class_mfcc/"
-   
+
     #create list of classes with const random seed
     random.Random(5).shuffle(nums)
     classes_space = list(combinations_45(nums, n_classes, comb))
     print(classes_space)
-    
+
     #scale the data
     x_spec = scale(x_spec.reshape(3000, -1), axis=1).reshape(3000, 32, 32)
     y_number = np.array(y_number)
-    
+
     #need to take train/valid/test equally from each class
     trainx = np.zeros((1, 32, 32))
     trainy = np.zeros((1))
@@ -65,13 +60,13 @@ def main():
         trainx = np.concatenate((trainx, x_spec[i * 300: (i + 1) * 3000][shuffler][:240]))
         trainy = np.concatenate((trainy, y_number[i * 300: (i + 1) * 3000][shuffler][:240]))
         testx = np.concatenate((testx, x_spec[i * 300: (i + 1) * 3000][shuffler][240:]))
-        testy = np.concatenate((testy, y_number[i * 300: (i + 1) * 3000][shuffler][240:])) 
+        testy = np.concatenate((testy, y_number[i * 300: (i + 1) * 3000][shuffler][240:]))
     trainx = trainx[1:]
-    trainy = trainy[1:]           
+    trainy = trainy[1:]
     testx = testx[1:]
     testy = testy[1:]
-    
-    
+
+
     #3000 samples, 80% train is 2400 samples, 20% test
     fsdd_train_images = trainx.reshape(-1, 32 * 32)
     fsdd_train_labels = trainy.copy()
@@ -80,7 +75,7 @@ def main():
     fsdd_test_labels = testy.copy()
 
 
-    # Resnet18 
+    # Resnet18
     resnet18_acc_vs_n = list()
     resnet18_train_time = list()
     resnet18_test_time = list()
@@ -89,7 +84,7 @@ def main():
         # accuracy vs num training samples (resnet18)
         for samples in samples_space:
             resnet = models.resnet18(pretrained=True)
-            
+
             num_ftrs = resnet.fc.in_features
             resnet.fc = nn.Linear(num_ftrs, len(classes))
             # train data
@@ -103,12 +98,12 @@ def main():
             train_images, train_labels, valid_images, valid_labels, test_images, \
                 test_labels = prepare_data(train_images, train_labels, test_images, \
                                            test_labels, samples, classes)
-            
+
             #need to duplicate channel because batch norm cant have 1 channel images
             train_images = torch.cat((train_images, train_images, train_images), dim=1)
             valid_images = torch.cat((valid_images, valid_images, valid_images), dim=1)
             test_images = torch.cat((test_images, test_images, test_images), dim=1)
-            
+
             accuracy, train_time, test_time = run_dn_image_es(
                         resnet,
                         train_images, train_labels,
@@ -124,7 +119,7 @@ def main():
     write_result(prefix + "resnet18_train_time.txt", resnet18_train_time)
     write_result(prefix + "resnet18_test_time.txt", resnet18_test_time)
 
-    
+
     # Support Vector Machine
     svm_acc_vs_n = list()
     svm_train_time = list()
@@ -172,7 +167,7 @@ def main():
             train_images, train_labels, valid_images, valid_labels, test_images, \
                 test_labels = prepare_data(train_images, train_labels, test_images, \
                                            test_labels, samples, classes)
-            
+
             accuracy, train_time, test_time = run_dn_image_es(
                         cnn32,
                         train_images, train_labels,
@@ -187,7 +182,7 @@ def main():
     write_result(prefix + "cnn32.txt", cnn32_acc_vs_n)
     write_result(prefix + "cnn32_train_time.txt", cnn32_train_time)
     write_result(prefix + "cnn32_test_time.txt", cnn32_test_time)
-    
+
     # Naive Random Forest
     naive_rf_acc_vs_n = list()
     naive_rf_train_time = list()
@@ -206,7 +201,7 @@ def main():
                         samples,
                         classes,
                     )
-            
+
             naive_rf_acc_vs_n.append(accuracy)
             naive_rf_train_time.append(train_time)
             naive_rf_test_time.append(test_time)
@@ -225,7 +220,7 @@ def main():
 
         # accuracy vs num training samples (cnn32_2l)
         for samples in samples_space:
-            
+
             cnn32_2l = SimpleCNN32Filter2Layers(len(classes))
             #3000 samples, 80% train is 2400 samples, 20% test
             train_images = trainx.copy()
@@ -237,7 +232,7 @@ def main():
             train_images, train_labels, valid_images, valid_labels, test_images, \
                 test_labels = prepare_data(train_images, train_labels, test_images, \
                                            test_labels, samples, classes)
-            
+
             accuracy, train_time, test_time = run_dn_image_es(
                         cnn32_2l,
                         train_images, train_labels,
@@ -262,7 +257,7 @@ def main():
 
         # accuracy vs num training samples (cnn32_5l)
         for samples in samples_space:
-            
+
             cnn32_5l = SimpleCNN32Filter5Layers(len(classes))
             #3000 samples, 80% train is 2400 samples, 20% test
             train_images = trainx.copy()
@@ -274,7 +269,7 @@ def main():
             train_images, train_labels, valid_images, valid_labels, test_images, \
                 test_labels = prepare_data(train_images, train_labels, test_images, \
                                            test_labels, samples, classes)
-            
+
             accuracy, train_time, test_time = run_dn_image_es(
                         cnn32_5l,
                         train_images, train_labels,
