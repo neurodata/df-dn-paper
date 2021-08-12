@@ -42,4 +42,5 @@ license: MIT
 message: "If you use this software, please cite it using these metadata."
 repository-code: "https://github.com/neurodata/rf-dn-paper"
 title: "When are Deep Networks really better than Random Forests?"
+version: "0.0.1"
 ...
