@@ -30,8 +30,10 @@ authors:
     given-names: Joshua
     orcid: "https://orcid.org/0000-0003-2487-6237"
 cff-version: "1.1.0"
+identifiers: 
 date-released: 2021-05-28
 keywords: 
+  - Python
   - classification
   - "decision trees"
   - "random forests"
