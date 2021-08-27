@@ -6,6 +6,7 @@ from toolbox import *
 
 import argparse
 import random
+from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 
 import torchvision.models as models
@@ -73,6 +74,33 @@ def main():
     write_result(prefix + "naive_rf.txt", naive_rf_acc_vs_n)
     write_result(prefix + "naive_rf_train_time.txt", naive_rf_train_time)
     write_result(prefix + "naive_rf_test_time.txt", naive_rf_test_time)
+
+    svm_acc_vs_n = list()
+    svm_train_time = list()
+    svm_test_time = list()
+    for classes in classes_space:
+
+        # accuracy vs num training samples (svm)
+        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
+        for samples in samples_space:
+            SVM = SVC()
+            accuracy, train_time, test_time = run_rf_image_set(
+                SVM,
+                cifar_train_images,
+                cifar_train_labels,
+                cifar_test_images,
+                cifar_test_labels,
+                samples,
+                classes,
+            )
+            svm_acc_vs_n.append(accuracy)
+            svm_train_time.append(train_time)
+            svm_test_time.append(test_time)
+
+    print("svm finished")
+    write_result(prefix + "svm.txt", svm_acc_vs_n)
+    write_result(prefix + "svm_train_time.txt", svm_train_time)
+    write_result(prefix + "svm_test_time.txt", svm_test_time)
 
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
