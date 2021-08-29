@@ -21,7 +21,7 @@ def load_spoken_digit(path_recordings, feature_type="spectrogram"):
 
     audio_data = []  # audio data
     x_spec = []  # STFT spectrogram
-    x_spec_mini = []  # resized image, 28*28
+    x_spec_mini = []  # resized image, 32*32
     y_number = []  # label of number
     y_speaker = []  # label of speaker
     if feature_type == "spectrogram":
@@ -34,7 +34,7 @@ def load_spoken_digit(path_recordings, feature_type="spectrogram"):
         x, sr = librosa.load(path_recordings + i, sr=8000)
         x_stft_db = a(torch.tensor(x)).numpy()
         # Convert an amplitude spectrogram to dB-scaled spectrogram
-        x_stft_db_mini = cv2.resize(x_stft_db, (32, 32))  # Resize into 28 by 28
+        x_stft_db_mini = cv2.resize(x_stft_db, (32, 32))  # Resize into 32 by 32
         y_n = i[0]  # number
         y_s = i[2]  # first letter of speaker's name
 
