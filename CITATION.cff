@@ -1,16 +1,16 @@
 # YAML 1.2
 ---
 abstract: "Random forests (RF) and deep networks (DN) are two of the primary machine learning methods in current literature and are known to yield differing levels of performance on different data modalities. In particular, RF is one of the leading methods for classifying tabular data, while DN excels at classifying structured data. We wish to further explore and establish the conditions and domains in which each approach excels, particularly in the context of sample size and feature dimension. To address these issues, our team is analyzing the performance of these models across tabular, image, and audio settings using varying model parameters and architectures. For our tabular domain, we used OpenML-CC18, a collection of benchmark datasets for machine learning analysis. For image data, we used CIFAR-10, CIFAR-100, and SVHN datasets. For audio data, we used FSDD and employed spectrogram construction as a preprocessing step. The goal of this project is to observe novel trends in model classification accuracy and wall time across a range of sample sizes and domains. In general, DN would surpass RF at higher class numbers and higher sample sizes."
-authors: 
-  -
-    affiliation: "Johns Hopkins University, Baltimore, MD"
-    family-names: Ainsworth
-    given-names: Michael
+authors:
   -
     affiliation: "Johns Hopkins University, Baltimore, MD"
     family-names: Xu
     given-names: Haoyin
     orcid: "https://orcid.org/0000-0001-8235-4950"
+  -
+    affiliation: "Johns Hopkins University, Baltimore, MD"
+    family-names: Ainsworth
+    given-names: Michael
   -
     affiliation: "Johns Hopkins University, Baltimore, MD"
     family-names: Peng
@@ -30,9 +30,12 @@ authors:
     given-names: Joshua
     orcid: "https://orcid.org/0000-0003-2487-6237"
 cff-version: "1.1.0"
-identifiers: 
-date-released: 2021-05-28
-keywords: 
+identifiers:
+  -
+    type: url
+    value: "https://arxiv.org/pdf/2108.13637.pdf"
+date-released: 2021-08-31
+keywords:
   - Python
   - classification
   - "decision trees"
