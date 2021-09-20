@@ -13,12 +13,16 @@ authors:
     given-names: Michael
   -
     affiliation: "Johns Hopkins University, Baltimore, MD"
-    family-names: Peng
-    given-names: "Yu-Chung"
+    family-names: Kinfu
+    given-names: Kaleab
   -
     affiliation: "Johns Hopkins University, Baltimore, MD"
-    family-names: Kusmanov
-    given-names: Madi
+    family-names: LeVine
+    given-names: Will
+  -
+    affiliation: "Johns Hopkins University, Baltimore, MD"
+    family-names: Peng
+    given-names: "Yu-Chung"
   -
     affiliation: "Johns Hopkins University, Baltimore, MD"
     family-names: Panda
@@ -26,9 +30,29 @@ authors:
     orcid: "https://orcid.org/0000-0001-8455-4243"
   -
     affiliation: "Johns Hopkins University, Baltimore, MD"
+    family-names: Dey
+    given-names: Jayanta
+  -
+    affiliation: "Johns Hopkins University, Baltimore, MD"
+    family-names: Kusmanov
+    given-names: Madi
+  -
+    affiliation: "Harvard University, Cambridge, MA"
+    family-names: Engert
+    given-names: Florian
+  -
+    affiliation: "Microsoft Research, Redmond, WA"
+    family-names: White
+    given-names: Christopher
+  -
+    affiliation: "Johns Hopkins University, Baltimore, MD"
     family-names: Vogelstein
     given-names: Joshua
     orcid: "https://orcid.org/0000-0003-2487-6237"
+  -
+    affiliation: "Johns Hopkins University, Baltimore, MD"
+    family-names: Priebe
+    given-names: Carey
 cff-version: "1.1.0"
 identifiers:
   -
@@ -44,6 +68,6 @@ keywords:
 license: MIT
 message: "If you use this software, please cite it using these metadata."
 repository-code: "https://github.com/neurodata/rf-dn-paper"
-title: "When are Deep Networks really better than Random Forests?"
+title: "Decision Forests vs. Deep Networks: Conceptual Similarities and Empirical Differences at Small Sample Sizes"
 version: "0.0.1"
 ...
