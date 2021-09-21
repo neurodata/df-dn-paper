@@ -1,16 +1,12 @@
 # YAML 1.2
 ---
-abstract: "Random forests (RF) and deep networks (DN) are two of the primary machine learning methods in current literature and are known to yield differing levels of performance on different data modalities. In particular, RF is one of the leading methods for classifying tabular data, while DN excels at classifying structured data. We wish to further explore and establish the conditions and domains in which each approach excels, particularly in the context of sample size and feature dimension. To address these issues, our team is analyzing the performance of these models across tabular, image, and audio settings using varying model parameters and architectures. For our tabular domain, we used OpenML-CC18, a collection of benchmark datasets for machine learning analysis. For image data, we used CIFAR-10, CIFAR-100, and SVHN datasets. For audio data, we used FSDD and employed spectrogram construction as a preprocessing step. The goal of this project is to observe novel trends in model classification accuracy and wall time across a range of sample sizes and domains. In general, DN would surpass RF at higher class numbers and higher sample sizes."
+abstract: "Deep networks and decision forests (such as random forests and gradient boosted trees) are the leading machine learning methods for structured and tabular data, respectively. Many papers have empirically compared large numbers of classifiers on one or two different domains (e.g., on 100 different tabular data settings). However, a careful conceptual and empirical comparison of these two strategies using the most contemporary best practices has yet to be performed. Conceptually, we illustrate that both can be profitably viewed as “partition and vote” schemes. Specifically, the representation space that they both learn is a partitioning of feature space into a union of convex polytopes. For inference, each decides on the basis of votes from the activated nodes. This formulation allows for a unified basic understanding of the relationship between these methods. Empirically, we compare these two strategies on hundreds of tabular data settings, as well as several vision and auditory settings. Our focus is on datasets with at most 10,000 samples, which represent a large fraction of scientific and biomedical datasets. In general, we found forests to excel at tabular and structured data (vision and audition) with small sample sizes, whereas deep nets performed better on structured data with larger sample sizes. This suggests that further gains in both scenarios may be realized via further combining aspects of forests and networks. We will continue revising this technical report in the coming months with updated results."
 authors:
   -
     affiliation: "Johns Hopkins University, Baltimore, MD"
     family-names: Xu
     given-names: Haoyin
     orcid: "https://orcid.org/0000-0001-8235-4950"
-  -
-    affiliation: "Johns Hopkins University, Baltimore, MD"
-    family-names: Ainsworth
-    given-names: Michael
   -
     affiliation: "Johns Hopkins University, Baltimore, MD"
     family-names: Kinfu
@@ -21,10 +17,6 @@ authors:
     given-names: Will
   -
     affiliation: "Johns Hopkins University, Baltimore, MD"
-    family-names: Peng
-    given-names: "Yu-Chung"
-  -
-    affiliation: "Johns Hopkins University, Baltimore, MD"
     family-names: Panda
     given-names: Sambit
     orcid: "https://orcid.org/0000-0001-8455-4243"
@@ -32,6 +24,14 @@ authors:
     affiliation: "Johns Hopkins University, Baltimore, MD"
     family-names: Dey
     given-names: Jayanta
+  -
+    affiliation: "Johns Hopkins University, Baltimore, MD"
+    family-names: Ainsworth
+    given-names: Michael
+  -
+    affiliation: "Johns Hopkins University, Baltimore, MD"
+    family-names: Peng
+    given-names: "Yu-Chung"
   -
     affiliation: "Johns Hopkins University, Baltimore, MD"
     family-names: Kusmanov
