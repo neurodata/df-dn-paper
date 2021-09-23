@@ -1,6 +1,6 @@
 """
-Coauthors: Yu-Chung Peng
-           Haoyin Xu
+Coauthors: Haoyin Xu
+           Yu-Chung Peng
            Madi Kusmanov
 """
 import numpy as np
