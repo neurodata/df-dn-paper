@@ -1,5 +1,6 @@
 """
-Author: Michael Ainsworth
+Coauthors: Michael Ainsworth
+           Jayanta Dey
 """
 
 import numpy as np

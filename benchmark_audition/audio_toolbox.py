@@ -1,10 +1,10 @@
 """
-Coauthors: Yu-Chung Peng
-           Haoyin Xu
+Coauthors: Haoyin Xu
+           Yu-Chung Peng
            Madi Kusmanov
 """
 import numpy as np
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import cohen_kappa_score
 import time
 import torch
 import os
@@ -206,7 +206,7 @@ def run_rf_image_set(
     end_time = time.perf_counter()
     test_time = end_time - start_time
 
-    return accuracy_score(test_labels, test_preds), train_time, test_time
+    return cohen_kappa_score(test_labels, test_preds), train_time, test_time
 
 
 def run_dn_image_es(
@@ -236,7 +236,7 @@ def run_dn_image_es(
     flag = 0
     start_time = time.perf_counter()
     for epoch in range(epochs):  # loop over the dataset multiple times
-
+        model.train()
         for i in range(0, len(train_data), batch):
             # get the inputs
             inputs = train_data[i : i + batch].to(dev)
@@ -251,6 +251,7 @@ def run_dn_image_es(
             optimizer.step()
 
         # test generalization error for early stopping
+        model.eval()
         cur_loss = 0
         with torch.no_grad():
             for i in range(0, len(valid_data), batch):
@@ -273,22 +274,25 @@ def run_dn_image_es(
                 break
     end_time = time.perf_counter()
     train_time = end_time - start_time
+
     # test the model
-    correct = torch.tensor(0).to(dev)
-    total = torch.tensor(0).to(dev)
+    model.eval()
     start_time = time.perf_counter()
+    test_preds = []
+    test_labels = []
     with torch.no_grad():
         for i in range(0, len(test_data), batch):
             inputs = test_data[i : i + batch].to(dev)
             labels = test_labels[i : i + batch].to(dev)
+            test_labels = np.concatenate((test_labels, labels.tolist()))
+
             outputs = model(inputs)
             _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels.view(-1)).sum().item()
+            test_preds = np.concatenate((test_preds, predicted.tolist()))
+
     end_time = time.perf_counter()
     test_time = end_time - start_time
-    accuracy = float(correct) / float(total)
-    return accuracy, train_time, test_time
+    return cohen_kappa_score(test_preds, test_labels), train_time, test_time
 
 
 def prepare_data(

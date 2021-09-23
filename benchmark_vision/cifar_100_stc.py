@@ -1,6 +1,6 @@
 """
-Coauthors: Yu-Chung Peng
-           Haoyin Xu
+Coauthors: Haoyin Xu
+           Yu-Chung Peng
 """
 from toolbox import *
 
@@ -12,17 +12,209 @@ import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
 
-# prepare CIFAR data
-def main():
-    # Example usage: python cifar_10.py -m 3 -s l
+def run_cnn32():
+    cnn32_acc_vs_n = list()
+    cnn32_train_time = list()
+    cnn32_test_time = list()
+    for classes in classes_space:
+
+        # cohen_kappa vs num training samples (cnn32)
+        for i, samples in enumerate(samples_space):
+            # train data
+            cifar_trainset = datasets.CIFAR100(
+                root="./", train=True, download=True, transform=data_transforms
+            )
+            cifar_train_labels = np.array(cifar_trainset.targets)
+
+            # test data
+            cifar_testset = datasets.CIFAR100(
+                root="./", train=False, download=True, transform=data_transforms
+            )
+            cifar_test_labels = np.array(cifar_testset.targets)
+
+            cnn32 = SimpleCNN32Filter(len(classes))
+            time_limit = rf_times[i]
+            train_loader, test_loader = create_loaders_set(
+                cifar_train_labels,
+                cifar_test_labels,
+                classes,
+                cifar_trainset,
+                cifar_testset,
+                samples,
+            )
+            cohen_kappa, train_time, test_time = run_dn_image_set(
+                cnn32,
+                train_loader,
+                test_loader,
+                time_limit=time_limit,
+                ratio=ratio,
+            )
+            cnn32_acc_vs_n.append(cohen_kappa)
+            cnn32_train_time.append(train_time)
+            cnn32_test_time.append(test_time)
+
+    print("cnn32 finished")
+    write_result(prefix + "cnn32" + suffix, cnn32_acc_vs_n)
+    write_result(prefix + "cnn32_train_time" + suffix, cnn32_train_time)
+    write_result(prefix + "cnn32_test_time" + suffix, cnn32_test_time)
+
+
+def run_cnn32_2l():
+    cnn32_2l_acc_vs_n = list()
+    cnn32_2l_train_time = list()
+    cnn32_2l_test_time = list()
+    for classes in classes_space:
+
+        # cohen_kappa vs num training samples (cnn32_2l)
+        for i, samples in enumerate(samples_space):
+            # train data
+            cifar_trainset = datasets.CIFAR100(
+                root="./", train=True, download=True, transform=data_transforms
+            )
+            cifar_train_labels = np.array(cifar_trainset.targets)
+
+            # test data
+            cifar_testset = datasets.CIFAR100(
+                root="./", train=False, download=True, transform=data_transforms
+            )
+            cifar_test_labels = np.array(cifar_testset.targets)
+
+            cnn32_2l = SimpleCNN32Filter2Layers(len(classes))
+            time_limit = rf_times[i]
+            train_loader, test_loader = create_loaders_set(
+                cifar_train_labels,
+                cifar_test_labels,
+                classes,
+                cifar_trainset,
+                cifar_testset,
+                samples,
+            )
+            cohen_kappa, train_time, test_time = run_dn_image_set(
+                cnn32_2l,
+                train_loader,
+                test_loader,
+                time_limit=time_limit,
+                ratio=ratio,
+            )
+            cnn32_2l_acc_vs_n.append(cohen_kappa)
+            cnn32_2l_train_time.append(train_time)
+            cnn32_2l_test_time.append(test_time)
+
+    print("cnn32_2l finished")
+    write_result(prefix + "cnn32_2l" + suffix, cnn32_2l_acc_vs_n)
+    write_result(prefix + "cnn32_2l_train_time" + suffix, cnn32_2l_train_time)
+    write_result(prefix + "cnn32_2l_test_time" + suffix, cnn32_2l_test_time)
+
+
+def run_cnn32_5l():
+    cnn32_5l_acc_vs_n = list()
+    cnn32_5l_train_time = list()
+    cnn32_5l_test_time = list()
+    for classes in classes_space:
+
+        # cohen_kappa vs num training samples (cnn32_5l)
+        for i, samples in enumerate(samples_space):
+            # train data
+            cifar_trainset = datasets.CIFAR100(
+                root="./", train=True, download=True, transform=data_transforms
+            )
+            cifar_train_labels = np.array(cifar_trainset.targets)
+
+            # test data
+            cifar_testset = datasets.CIFAR100(
+                root="./", train=False, download=True, transform=data_transforms
+            )
+            cifar_test_labels = np.array(cifar_testset.targets)
+
+            cnn32_5l = SimpleCNN32Filter5Layers(len(classes))
+            time_limit = rf_times[i]
+            train_loader, test_loader = create_loaders_set(
+                cifar_train_labels,
+                cifar_test_labels,
+                classes,
+                cifar_trainset,
+                cifar_testset,
+                samples,
+            )
+            cohen_kappa, train_time, test_time = run_dn_image_set(
+                cnn32_5l,
+                train_loader,
+                test_loader,
+                time_limit=time_limit,
+                ratio=ratio,
+            )
+            cnn32_5l_acc_vs_n.append(cohen_kappa)
+            cnn32_5l_train_time.append(train_time)
+            cnn32_5l_test_time.append(test_time)
+
+    print("cnn32_5l finished")
+    write_result(prefix + "cnn32_5l" + suffix, cnn32_5l_acc_vs_n)
+    write_result(prefix + "cnn32_5l_train_time" + suffix, cnn32_5l_train_time)
+    write_result(prefix + "cnn32_5l_test_time" + suffix, cnn32_5l_test_time)
+
+
+def run_resnet18():
+    resnet18_acc_vs_n = list()
+    resnet18_train_time = list()
+    resnet18_test_time = list()
+    for classes in classes_space:
+
+        # cohen_kappa vs num training samples (resnet18)
+        for i, samples in enumerate(samples_space):
+            # train data
+            cifar_trainset = datasets.CIFAR100(
+                root="./", train=True, download=True, transform=data_transforms
+            )
+            cifar_train_labels = np.array(cifar_trainset.targets)
+
+            # test data
+            cifar_testset = datasets.CIFAR100(
+                root="./", train=False, download=True, transform=data_transforms
+            )
+            cifar_test_labels = np.array(cifar_testset.targets)
+
+            res = models.resnet18(pretrained=True)
+            num_ftrs = res.fc.in_features
+            res.fc = nn.Linear(num_ftrs, len(classes))
+            time_limit = rf_times[i]
+            train_loader, test_loader = create_loaders_set(
+                cifar_train_labels,
+                cifar_test_labels,
+                classes,
+                cifar_trainset,
+                cifar_testset,
+                samples,
+            )
+            cohen_kappa, train_time, test_time = run_dn_image_set(
+                res,
+                train_loader,
+                test_loader,
+                time_limit=time_limit,
+                ratio=ratio,
+            )
+            resnet18_acc_vs_n.append(cohen_kappa)
+            resnet18_train_time.append(train_time)
+            resnet18_test_time.append(test_time)
+
+    print("resnet18 finished")
+    write_result(prefix + "resnet18" + suffix, resnet18_acc_vs_n)
+    write_result(prefix + "resnet18_train_time" + suffix, resnet18_train_time)
+    write_result(prefix + "resnet18_test_time" + suffix, resnet18_test_time)
+
+
+if __name__ == "__main__":
+    torch.multiprocessing.freeze_support()
+
+    # Example usage: python cifar_100.py -m 90 -s l
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", help="class number")
     parser.add_argument("-s", help="computation speed")
     args = parser.parse_args()
     n_classes = int(args.m)
     prefix = args.m + "_class/"
+    samples_space = np.geomspace(100, 10000, num=8, dtype=int)
 
-    nums = list(range(10))
+    nums = list(range(100))
     random.shuffle(nums)
     classes_space = list(combinations_45(nums, n_classes))
 
@@ -43,145 +235,10 @@ def main():
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
 
-    cnn32_acc_vs_n = list()
-    cnn32_train_time = list()
-    cnn32_test_time = list()
-    for classes in classes_space:
+    run_cnn32()
+    run_cnn32_2l()
+    run_cnn32_5l()
 
-        # accuracy vs num training samples (cnn32)
-        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-        for i, samples in enumerate(samples_space):
-            # train data
-            cifar_trainset = datasets.CIFAR10(
-                root="./", train=True, download=True, transform=data_transforms
-            )
-            cifar_train_labels = np.array(cifar_trainset.targets)
-
-            # test data
-            cifar_testset = datasets.CIFAR10(
-                root="./", train=False, download=True, transform=data_transforms
-            )
-            cifar_test_labels = np.array(cifar_testset.targets)
-
-            cnn32 = SimpleCNN32Filter(len(classes))
-            time_limit = rf_times[i]
-            train_loader, test_loader = create_loaders_set(
-                cifar_train_labels,
-                cifar_test_labels,
-                classes,
-                cifar_trainset,
-                cifar_testset,
-                samples,
-            )
-            accuracy, train_time, test_time = run_dn_image_set(
-                cnn32,
-                train_loader,
-                test_loader,
-                time_limit=time_limit,
-                ratio=ratio,
-            )
-            cnn32_acc_vs_n.append(accuracy)
-            cnn32_train_time.append(train_time)
-            cnn32_test_time.append(test_time)
-
-    print("cnn32 finished")
-    write_result(prefix + "cnn32" + suffix, cnn32_acc_vs_n)
-    write_result(prefix + "cnn32_train_time" + suffix, cnn32_train_time)
-    write_result(prefix + "cnn32_test_time" + suffix, cnn32_test_time)
-
-    cnn32_2l_acc_vs_n = list()
-    cnn32_2l_train_time = list()
-    cnn32_2l_test_time = list()
-    for classes in classes_space:
-
-        # accuracy vs num training samples (cnn32_2l)
-        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-        for i, samples in enumerate(samples_space):
-            # train data
-            cifar_trainset = datasets.CIFAR10(
-                root="./", train=True, download=True, transform=data_transforms
-            )
-            cifar_train_labels = np.array(cifar_trainset.targets)
-
-            # test data
-            cifar_testset = datasets.CIFAR10(
-                root="./", train=False, download=True, transform=data_transforms
-            )
-            cifar_test_labels = np.array(cifar_testset.targets)
-
-            cnn32_2l = SimpleCNN32Filter2Layers(len(classes))
-            time_limit = rf_times[i]
-            train_loader, test_loader = create_loaders_set(
-                cifar_train_labels,
-                cifar_test_labels,
-                classes,
-                cifar_trainset,
-                cifar_testset,
-                samples,
-            )
-            accuracy, train_time, test_time = run_dn_image_set(
-                cnn32_2l,
-                train_loader,
-                test_loader,
-                time_limit=time_limit,
-                ratio=ratio,
-            )
-            cnn32_2l_acc_vs_n.append(accuracy)
-            cnn32_2l_train_time.append(train_time)
-            cnn32_2l_test_time.append(test_time)
-
-    print("cnn32_2l finished")
-    write_result(prefix + "cnn32_2l" + suffix, cnn32_2l_acc_vs_n)
-    write_result(prefix + "cnn32_2l_train_time" + suffix, cnn32_2l_train_time)
-    write_result(prefix + "cnn32_2l_test_time" + suffix, cnn32_2l_test_time)
-
-    cnn32_5l_acc_vs_n = list()
-    cnn32_5l_train_time = list()
-    cnn32_5l_test_time = list()
-    for classes in classes_space:
-
-        # accuracy vs num training samples (cnn32_5l)
-        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-        for i, samples in enumerate(samples_space):
-            # train data
-            cifar_trainset = datasets.CIFAR10(
-                root="./", train=True, download=True, transform=data_transforms
-            )
-            cifar_train_labels = np.array(cifar_trainset.targets)
-
-            # test data
-            cifar_testset = datasets.CIFAR10(
-                root="./", train=False, download=True, transform=data_transforms
-            )
-            cifar_test_labels = np.array(cifar_testset.targets)
-
-            cnn32_5l = SimpleCNN32Filter5Layers(len(classes))
-            time_limit = rf_times[i]
-            train_loader, test_loader = create_loaders_set(
-                cifar_train_labels,
-                cifar_test_labels,
-                classes,
-                cifar_trainset,
-                cifar_testset,
-                samples,
-            )
-            accuracy, train_time, test_time = run_dn_image_set(
-                cnn32_5l,
-                train_loader,
-                test_loader,
-                time_limit=time_limit,
-                ratio=ratio,
-            )
-            cnn32_5l_acc_vs_n.append(accuracy)
-            cnn32_5l_train_time.append(train_time)
-            cnn32_5l_test_time.append(test_time)
-
-    print("cnn32_5l finished")
-    write_result(prefix + "cnn32_5l" + suffix, cnn32_5l_acc_vs_n)
-    write_result(prefix + "cnn32_5l_train_time" + suffix, cnn32_5l_train_time)
-    write_result(prefix + "cnn32_5l_test_time" + suffix, cnn32_5l_test_time)
-
-    # prepare CIFAR data
     data_transforms = transforms.Compose(
         [
             transforms.ToTensor(),
@@ -189,55 +246,4 @@ def main():
         ]
     )
 
-    resnet18_acc_vs_n = list()
-    resnet18_train_time = list()
-    resnet18_test_time = list()
-    for classes in classes_space:
-
-        # accuracy vs num training samples (resnet18)
-        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
-        for i, samples in enumerate(samples_space):
-            # train data
-            cifar_trainset = datasets.CIFAR10(
-                root="./", train=True, download=True, transform=data_transforms
-            )
-            cifar_train_labels = np.array(cifar_trainset.targets)
-
-            # test data
-            cifar_testset = datasets.CIFAR10(
-                root="./", train=False, download=True, transform=data_transforms
-            )
-            cifar_test_labels = np.array(cifar_testset.targets)
-
-            res = models.resnet18(pretrained=True)
-            num_ftrs = res.fc.in_features
-            res.fc = nn.Linear(num_ftrs, len(classes))
-            time_limit = rf_times[i]
-            train_loader, test_loader = create_loaders_set(
-                cifar_train_labels,
-                cifar_test_labels,
-                classes,
-                cifar_trainset,
-                cifar_testset,
-                samples,
-            )
-            accuracy, train_time, test_time = run_dn_image_set(
-                res,
-                train_loader,
-                test_loader,
-                time_limit=time_limit,
-                ratio=ratio,
-            )
-            resnet18_acc_vs_n.append(accuracy)
-            resnet18_train_time.append(train_time)
-            resnet18_test_time.append(test_time)
-
-    print("resnet18 finished")
-    write_result(prefix + "resnet18" + suffix, resnet18_acc_vs_n)
-    write_result(prefix + "resnet18_train_time" + suffix, resnet18_train_time)
-    write_result(prefix + "resnet18_test_time" + suffix, resnet18_test_time)
-
-
-if __name__ == "__main__":
-    torch.multiprocessing.freeze_support()
-    main()
+    run_resnet18()
