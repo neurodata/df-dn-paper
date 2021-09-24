@@ -274,10 +274,10 @@ def run_dn_image_set(
 
     # test the model
     model.eval()
+    first = True
     prob_cal = nn.Softmax()
     start_time = time.perf_counter()
     test_preds = []
-    test_probs = []
     test_labels = []
     with torch.no_grad():
         for data in test_loader:
@@ -291,13 +291,17 @@ def run_dn_image_set(
             test_preds = np.concatenate((test_preds, predicted.tolist()))
 
             test_prob = prob_cal(outputs)
-            test_probs.append(test_prob.tolist())
+            if first:
+                test_probs = test_prob.tolist()
+                first = False
+            else:
+                test_probs = np.concatenate((test_probs, test_prob.tolist()))
 
     end_time = time.perf_counter()
     test_time = end_time - start_time
     return (
         cohen_kappa_score(test_preds, test_labels),
-        get_ece(np.array(test_probs), test_preds, test_labels),
+        get_ece(test_probs, test_preds, test_labels),
         train_time,
         test_time,
     )
@@ -371,10 +375,10 @@ def run_dn_image_es(
 
     # test the model
     model.eval()
+    first = True
     prob_cal = nn.Softmax()
     start_time = time.perf_counter()
     test_preds = []
-    test_probs = []
     test_labels = []
     with torch.no_grad():
         for data in test_loader:
@@ -388,13 +392,17 @@ def run_dn_image_es(
             test_preds = np.concatenate((test_preds, predicted.tolist()))
 
             test_prob = prob_cal(outputs)
-            test_probs.append(test_prob.tolist())
+            if first:
+                test_probs = test_prob.tolist()
+                first = False
+            else:
+                test_probs = np.concatenate((test_probs, test_prob.tolist()))
 
     end_time = time.perf_counter()
     test_time = end_time - start_time
     return (
         cohen_kappa_score(test_preds, test_labels),
-        get_ece(np.array(test_probs), test_preds, test_labels),
+        get_ece(test_probs, test_preds, test_labels),
         train_time,
         test_time,
     )

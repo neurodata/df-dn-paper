@@ -334,10 +334,9 @@ def run_dn_image_es(
     end_time = time.perf_counter()
     test_time = end_time - start_time
     test_labels = np.array(test_labels.tolist())
-    test_preds = np.array(test_preds)
     return (
         cohen_kappa_score(test_preds, test_labels),
-        get_ece(np.array(test_probs), test_preds, test_labels),
+        get_ece(test_probs, test_preds, test_labels),
         train_time,
         test_time,
     )
