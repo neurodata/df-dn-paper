@@ -4,13 +4,13 @@ Coauthors: Haoyin Xu
            Madi Kusmanov
 """
 from audio_toolbox import *
+import argparse
 import numpy as np
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import scale
 import torch
 import torch.nn as nn
-
 import torchvision.models as models
 import warnings
 import random
@@ -279,7 +279,6 @@ if __name__ == "__main__":
     # load dataset
     x_spec, y_number = load_spoken_digit(path_recordings, feature_type)
     nums = list(range(10))
-    comb = 45
     samples_space = np.geomspace(10, 480, num=6, dtype=int)
     # define path, samples space and number of class combinations
     if feature_type == "melspectrogram":
@@ -291,8 +290,7 @@ if __name__ == "__main__":
 
     # create list of classes with const random seed
     random.Random(5).shuffle(nums)
-    classes_space = list(combinations_45(nums, n_classes, comb))
-    print(classes_space)
+    classes_space = list(combinations_45(nums, n_classes))
 
     # scale the data
     x_spec = scale(x_spec.reshape(3000, -1), axis=1).reshape(3000, 32, 32)

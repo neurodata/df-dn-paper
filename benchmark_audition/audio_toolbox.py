@@ -316,26 +316,28 @@ def run_dn_image_es(
     prob_cal = nn.Softmax()
     start_time = time.perf_counter()
     test_preds = []
-    test_probs = []
-    test_labels = []
     with torch.no_grad():
         for i in range(0, len(test_data), batch):
             inputs = test_data[i : i + batch].to(dev)
             labels = test_labels[i : i + batch].to(dev)
-            test_labels = np.concatenate((test_labels, labels.tolist()))
 
             outputs = model(inputs)
             _, predicted = torch.max(outputs.data, 1)
             test_preds = np.concatenate((test_preds, predicted.tolist()))
 
             test_prob = prob_cal(outputs)
-            test_probs.append(test_prob.tolist())
+            if i == 0:
+                test_probs = test_prob.tolist()
+            else:
+                test_probs = np.concatenate((test_probs, test_prob.tolist()))
 
     end_time = time.perf_counter()
     test_time = end_time - start_time
+    test_labels = np.array(test_labels.tolist())
+    test_preds = np.array(test_preds)
     return (
         cohen_kappa_score(test_preds, test_labels),
-        get_ece(test_probs, test_preds, test_labels),
+        get_ece(np.array(test_probs), test_preds, test_labels),
         train_time,
         test_time,
     )

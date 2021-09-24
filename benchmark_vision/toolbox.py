@@ -297,7 +297,7 @@ def run_dn_image_set(
     test_time = end_time - start_time
     return (
         cohen_kappa_score(test_preds, test_labels),
-        get_ece(test_probs, test_preds, test_labels),
+        get_ece(np.array(test_probs), test_preds, test_labels),
         train_time,
         test_time,
     )
@@ -394,7 +394,7 @@ def run_dn_image_es(
     test_time = end_time - start_time
     return (
         cohen_kappa_score(test_preds, test_labels),
-        get_ece(test_probs, test_preds, test_labels),
+        get_ece(np.array(test_probs), test_preds, test_labels),
         train_time,
         test_time,
     )
