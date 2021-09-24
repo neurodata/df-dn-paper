@@ -275,7 +275,7 @@ def run_dn_image_set(
     # test the model
     model.eval()
     first = True
-    prob_cal = nn.Softmax()
+    prob_cal = nn.Softmax(dim=1)
     start_time = time.perf_counter()
     test_preds = []
     test_labels = []
@@ -376,7 +376,7 @@ def run_dn_image_es(
     # test the model
     model.eval()
     first = True
-    prob_cal = nn.Softmax()
+    prob_cal = nn.Softmax(dim=1)
     start_time = time.perf_counter()
     test_preds = []
     test_labels = []
