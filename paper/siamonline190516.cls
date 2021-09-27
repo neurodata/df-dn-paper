@@ -678,7 +678,7 @@ Vol.\ #3, No.\ #4, pp.\ #5
 \newcommand\simods{SIAM J.\ M{\HLlittlest ATH}.\ D{\HLlittlest ATA} S{\HLlittlest CI}.}
 
         
-\setcounter{secnumdepth}{3}
+\setcounter{secnumdepth}{4}
 \newcounter {section}
 \newcounter {subsection}[section]
 \newcounter {subsubsection}[subsection]
