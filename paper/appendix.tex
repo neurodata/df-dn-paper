@@ -1,61 +1,78 @@
 \section{CIFAR-10/100 Benchmarks with Fixed Training Cost}
-\label{cifar_sc}
-We also compared methods such that each took about the same cost on two virtual machines for 10,000 training samples (Figure \ref{fig:cifar_sc}). The baseline was RF's training times as run on the 2-core Standard\_DS2\_v2 Azure compute instance (Table \ref{table:azure}). The SVM-RBF benchmarks were also run on the same compute instance for reference. As a result, the training wall times of CNNs, which often used the minimum epoch number, were always lower than those of RF. Due to the CNNs' different complexities, the correspondence between training costs became more accurate as the class number increased. The networks' training time trajectories also overlapped more completely. The results were qualitatively similar to CIFAR benchmarks with fixed training time (Figure \ref{fig:cifar_st}).
+\label{app:cifar_sc}
+We also compared methods such that each took about the same cost on two virtual machines for 10,000 training samples (Figure \ref{fig:cifar_sc}). The baseline is RF's training times as run on the 2-core Standard\_DS2\_v2 Azure compute instance (Table \ref{table:azure}). The SVM-RBF benchmarks were also run on the same compute instance for reference. As a result, the training wall times of CNNs, which often use the minimum epoch number, are always lower than those of RF. Due to the CNNs' different complexities, the correspondence between training costs becomes more accurate as the class number increases. The networks' training time trajectories also overlap more completely. The results are qualitatively similar to CIFAR benchmarks with fixed training time (Figure \ref{fig:cifar_st}).
 
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=0.8\textwidth]{figures/cifar_sc.pdf}
-  \caption{Performance of RF, SVM-RBF, and DN on multiclass CIFAR-10/100 classifications with fixed training cost.
-  Upper row represents classifier accuracy on a linear scale, and bottom row represents training wall times in seconds on a logarithmic scale. The x-axes correspond to logarithmic sample sizes for respective columns. Each panel shows average results over 45 random combinations. The left two columns use CIFAR-10, while the rightmost uses CIFAR-100.
+  \caption{Performance of forests and networks on multiclass CIFAR-10/100 classifications with fixed training cost.
+  Upper row shows classifier accuracy on a linear scale, and bottom row shows training wall times in seconds on a logarithmic scale. The x-axes correspond to logarithmic sample sizes for respective columns. Each panel shows average results over 45 random combinations. The left two columns use CIFAR-10, while the rightmost uses CIFAR-100.
   RF and SVM-RBF have higher classification accuracy and lower training wall times compared to CNNs at smaller sample sizes. Complex networks, however, surpass RF and SVM-RBF at larger sample sizes, and ResNet-18 always performs best in the end.
   }
 \label{fig:cifar_sc}
 \end{figure}
-\vfil\eject
+\clearpage
 
 \section{SVHN Benchmarks}
-\label{svhn}
-The SVHN dataset contains 73,257 digits for training and 26,032 for testing \citep{svhn}. The 3-class and 8-class tasks showed surprising trends for DN, as simpler CNNs surpassed ResNet-18 as the sample size increased. At higher sample sizes, the CNN with five convolutional layers had the best performance among all classifiers. DN accuracy was always higher than that of RF and SVM-RBF at the max sample size (Figure \ref{fig:svhn}). Although RF and SVM-RBF could perform better than DN at smaller sample sizes in the 3-class task, the advantage disappeared in the 8-class task. As seen in the CIFAR benchmarks, DN would be more adept at handling higher class numbers.
+\label{app:svhn}
+The SVHN dataset contains 73,257 digits for training and 26,032 for testing \citep{svhn}. The 3-class and 8-class tasks show surprising trends for networks, as simpler CNNs surpass ResNet-18 on classification accuracy as sample size increases. At higher sample sizes, 5-layer CNN has the best performance among all classifiers. Network accuracy is always higher than that of RF and SVM-RBF at 10,000 samples (Figure \ref{fig:svhn}). Although RF and SVM-RBF perform better than networks at smaller sample sizes in the 3-class task, the advantages disappear in the 8-class task. As seen in the CIFAR benchmarks (Figure \ref{fig:cifar}, \ref{fig:cifar_st}, \ref{fig:cifar_sc}), networks would be more adept at handling higher class numbers.
 
-The trends of training wall times were very similar to those of CIFAR benchmarks with unbounded time and cost (Figure \ref{fig:cifar}). RF's training times were always shorter than DN's, and more fluctuations occurred for CNN trajectories.
+The trends of training wall times are very similar to those of CIFAR benchmarks with unbounded time and cost (Figure \ref{fig:cifar}). Forests' training times are always shorter than networks', and more fluctuations occur for CNN trajectories.
 
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=0.6\textwidth]{figures/svhn.pdf}
-  \caption{Performance of RF, SVM-RBF, and DNs on multiclass SVHN classifications with unbounded time and cost.
-  Upper row represents classifier accuracy on a linear scale, and bottom row represents training wall times in seconds on a logarithmic scale. The x-axes correspond to logarithmic sample sizes for respective columns. Each column shows average results over 45 random combinations.
+  \caption{Performance of forests and networks on multiclass SVHN classifications with unbounded time and cost.
+  Upper row shows classifier accuracy on a linear scale, and bottom row shows training wall times in seconds on a logarithmic scale. The x-axes correspond to logarithmic sample sizes for respective columns. Each column shows average results over 45 random combinations.
   Compared to CNNs, RF and SVM-RBF perform better and faster at smaller sample sizes.
   }
 \label{fig:svhn}
 \end{figure}
-\vfil\eject
+\clearpage
 
-\section{FSDD Benchmarks with Mel-Spectrogram}
-\label{mel}
-As an alternative approach, we used PyTorch’s inbuilt function and converted the raw audio magnitudes into mel-spectrograms \citep{pytorch}. The process involved the aforementioned spectrogram conversions and used triangular filterbanks to modify the images. The results (Figure \ref{fig:mel}) were qualitatively similar to FSDD benchmarks with spectrogram (Figure \ref{fig:spoken_digit}) and MFCC (Figure \ref{fig:mfcc}) conversions.
+\section{FSDD Benchmarks with Mel-Spectrograms}
+\label{app:mel}
+As an alternative approach, we used PyTorch’s inbuilt function and converted the raw audio magnitudes into mel-spectrograms \citep{pytorch}. The process involves the aforementioned spectrogram conversions and uses triangular filterbanks to modify the images. The results (Figure \ref{fig:mel}) are qualitatively similar to FSDD benchmarks with spectrograms (Figure \ref{fig:spoken_digit}) and MFCCs (Figure \ref{fig:mfcc}).
 
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=0.6\textwidth]{figures/mel.pdf}
-  \caption{Performance of RF, SVM-RBF, and DN on multiclass FSDD classifications using mel-spectrogram.
+  \caption{Performance of forests and networks on multiclass FSDD classifications using mel-spectrograms.
   The y-axes represent classifier accuracy on a linear scale and the x-axes correspond to logarithmic sample sizes from 10 to 480. Each panel shows average results over 45 random class combinations and individual trajectories with lower alpha
   In the 3-class task, RF, SVM, 1-layer, and 5-layer CNNs all have very similar performances. In the 8-class task, RF achieves the highest accuracy. ResNet-18-Audio performs much worse than other classifiers.
   }
 \label{fig:mel}
 \end{figure}
-\vfil\eject
+\clearpage
 
-\section{FSDD Benchmarks with MFCC}
-\label{mfcc}
-As an alternative conversion, we used PyTorch’s inbuilt function and converted the raw audio magnitudes into MFCC \citep{pytorch}. The process calculated MFCC on the DB-scaled mel-spectrograms. The results (Figure \ref{fig:mfcc}) were qualitatively similar to FSDD benchmarks with spectrogram (Figure \ref{fig:spoken_digit}) and mel-spectrogram (Figure \ref{fig:mel}) conversions.
+\section{FSDD Benchmarks with MFCCs}
+\label{app:mfcc}
+As an alternative conversion, we used PyTorch’s inbuilt function and converted the raw audio magnitudes into MFCC \citep{pytorch}. The process calculates MFCCs on the DB-scaled mel-spectrograms. The results (Figure \ref{fig:mfcc}) are qualitatively similar to FSDD benchmarks with spectrograms (Figure \ref{fig:spoken_digit}) and mel-spectrograms (Figure \ref{fig:mel}).
 
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=0.6\textwidth]{figures/mfcc.pdf}
-  \caption{Performance of RF, SVM-RBF, and DN on multiclass FSDD classifications using mel-frequency cepstral coefficients (MFCC). 
+  \caption{Performance of forests and networks on multiclass FSDD classifications using mel-frequency cepstral coefficients (MFCC). 
   The y-axes represent classifier accuracy on a linear scale and the x-axes correspond to logarithmic sample sizes from 10 to 480. Each panel shows average results over 45 random class combinations and individual trajectories with lower alpha.
   SVM-RBF achieved the best performance in both tasks, but the advantage diminishes as the sample size increases. At the maximum sample size, RF, SVM, 1-layer, and 5-layer CNNs all have very similar accuracy. 2-layer CNN performs worse, while ResNet-18-Audio performs the worst.
   }
 \label{fig:mfcc}
 \end{figure}
-\vfil\eject
+\clearpage
+
+\section{Zebrafish Brain Maps}
+\label{app:brains}
+Figure \ref{fig:fluorian} illustrates neural selectivity to features of sensory input in a larval zebrafish, and indicates a learned partition and vote framework for brain functioning \citep{Naumann2016-oc}.
+Specifically, this image shows all motion-sensitive nodes ($n = 76,604$) in a brain. Each node is a dot, color coded for preferred motion direction.
+The image indicates that each node's activity indeed corresponds to a partition of feature space, which is actively refined through sensory experience and learning.
+A relationship with forests and networks, at least at a basic level, is clear.
+The utility of this relationship, for either machine learning or neuroscience, is the subject of endless conjecture and refutation.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/fish.jpg}
+  \caption{Whole-brain activity maps reveal processing stages underlying the optomotor response in a larval zebrafish.
+  }
+\label{fig:fluorian}
+\end{figure}
+\clearpage

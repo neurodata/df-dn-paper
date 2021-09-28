@@ -1,54 +1,60 @@
-\begin{thebibliography}{35}
+\begin{thebibliography}{60}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
 
-\bibitem[Wager and Athey(2017)]{Wager2017-qk}
-Stefan Wager and Susan Athey.
-\newblock {Estimation and Inference of Heterogeneous Treatment Effects using
-  Random Forests}.
-\newblock \emph{J. Am. Stat. Assoc.}, pages 1--15, April 2017.
+\bibitem[Friedman(2001)]{gbdt}
+Jerome~H. Friedman.
+\newblock Greedy function approximation: A gradient boosting machine.
+\newblock \emph{The Annals of Statistics}, 29\penalty0 (5):\penalty0
+  1189--1232, 2001.
 
-\bibitem[D{\'\i}az-Uriarte and de~Andr{\'e}s(2006)]{microarray}
-Ram{\'o}n D{\'\i}az-Uriarte and Sara~Alvarez de~Andr{\'e}s.
-\newblock Gene selection and classification of microarray data using random
-  forest.
-\newblock \emph{BMC Bioinformatics}, 7\penalty0 (3), 2006.
+\bibitem[Caruana and Niculescu-Mizil(2006)]{Caruana2006-wp}
+Rich Caruana and Alexandru Niculescu-Mizil.
+\newblock An empirical comparison of supervised learning algorithms.
+\newblock In \emph{Proceedings of the 23rd International Conference on Machine
+  Learning}, ICML '06, pages 161--168, New York, NY, USA, 2006. ACM.
 
-\bibitem[Menze et~al.(2009)Menze, Kelm, Masuch, Himmelreich, Bachert, Petrich,
-  and Hamprecht]{spectral}
-Bjoern~H Menze, B~Michael Kelm, Ralf Masuch, Uwe Himmelreich, Peter Bachert,
-  Wolfgang Petrich, and Fred~A Hamprecht.
-\newblock A comparison of random forest and its gini importance with standard
-  chemometric methods for the feature selection and classification of spectral
-  data.
-\newblock \emph{BMC Bioinformatics}, 10\penalty0 (213), 2009.
+\bibitem[Caruana et~al.(2008)Caruana, Karampatziakis, and
+  Yessenalina]{Caruana2008-tb}
+Rich Caruana, Nikos Karampatziakis, and Ainur Yessenalina.
+\newblock An empirical evaluation of supervised learning in high dimensions.
+\newblock In \emph{Proceedings of the 25th international conference on Machine
+  learning}, pages 96--103, New York, New York, USA, July 2008. ACM.
 
-\bibitem[Svetnik et~al.(2004)Svetnik, Liaw, Tong, and Wang]{svetnik}
-Vladimir Svetnik, Andy Liaw, Christopher Tong, and Ting Wang.
-\newblock Application of breiman's random forest to modeling structure-activity
-  relationships of pharmaceutical molecules.
-\newblock In Fabio Roli, Josef Kittler, and Terry Windeatt, editors,
-  \emph{Multiple Classifier Systems}, pages 334--343, Berlin, Heidelberg, 2004.
-  Springer Berlin Heidelberg.
+\bibitem[Fern{{\'a}}ndez-Delgado et~al.(2014)Fern{{\'a}}ndez-Delgado, Cernadas,
+  Barro, and Amorim]{JMLR:v15:delgado14a}
+Manuel Fern{{\'a}}ndez-Delgado, Eva Cernadas, Sen{{\'e}}n Barro, and Dinani
+  Amorim.
+\newblock Do we need hundreds of classifiers to solve real world classification
+  problems?
+\newblock \emph{Journal of Machine Learning Research}, 15\penalty0
+  (90):\penalty0 3133--3181, 2014.
+
+\bibitem[Chen and Guestrin(2016)]{Chen2016-fx}
+Tianqi Chen and Carlos Guestrin.
+\newblock Xgboost: A scalable tree boosting system.
+\newblock In \emph{Proceedings of the 22nd ACM SIGKDD International Conference
+  on Knowledge Discovery and Data Mining}, KDD '16, pages 785--794, New York,
+  NY, USA, August 2016. Association for Computing Machinery.
 
 \bibitem[Krizhevsky et~al.(2012)Krizhevsky, Sutskever, and
   Hinton]{Krizhevsky2012-sq}
 Alex Krizhevsky, Ilya Sutskever, and Geoffrey~E Hinton.
-\newblock {ImageNet Classification with Deep Convolutional Neural Networks}.
-\newblock In \emph{{Advances in Neural Information Processing Systems}}, pages
+\newblock Imagenet classification with deep convolutional neural networks.
+\newblock In \emph{Advances in Neural Information Processing Systems}, pages
   1097--1105, 2012.
 
 \bibitem[Zhang et~al.(2020)Zhang, Qin, Park, Han, Chiu, Pang, Le, and
   Wu]{Zhang2020-vg}
 Yu~Zhang, James Qin, Daniel~S Park, Wei Han, Chung-Cheng Chiu, Ruoming Pang,
   Quoc~V Le, and Yonghui Wu.
-\newblock {Pushing the Limits of Semi-Supervised Learning for Automatic Speech
-  Recognition}.
-\newblock note = {Arxiv preprint at \url{http://arxiv.org/abs/2010.10504}},
-  October 2020.
+\newblock Pushing the limits of semi-supervised learning for automatic speech
+  recognition.
+\newblock arXiv preprint at \url{http://arxiv.org/abs/2010.10504}, October
+  2020.
 
 \bibitem[Brown et~al.(2020)Brown, Mann, Ryder, Subbiah, Kaplan, Dhariwal,
   Neelakantan, Shyam, Sastry, Askell, Agarwal, Herbert-Voss, Krueger, Henighan,
@@ -61,14 +67,58 @@ Tom~B Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared Kaplan, Prafulla
   Christopher Hesse, Mark Chen, Eric Sigler, Mateusz Litwin, Scott Gray,
   Benjamin Chess, Jack Clark, Christopher Berner, Sam McCandlish, Alec Radford,
   Ilya Sutskever, and Dario Amodei.
-\newblock {Language Models are Few-Shot Learners}.
-\newblock note = {Arxiv preprint at \url{http://arxiv.org/abs/2005.14165}}, May
-  2020.
+\newblock Language models are few-shot learners.
+\newblock arXiv preprint at \url{http://arxiv.org/abs/2005.14165}, May 2020.
+
+\bibitem[Statt(2019)]{Statt2019-ox}
+Nick Statt.
+\newblock Openai's dota 2 ai steamrolls world champion e-sports team with
+  back-to-back victories.
+\newblock \url{https://bit.ly/3o0ZLHs}, April 2019.
 
 \bibitem[He et~al.(2015)He, Zhang, Ren, and Sun]{resnet}
 Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.
 \newblock Deep residual learning for image recognition.
-\newblock Arxiv preprint at \url{http://arxiv.org/abs/1512.03385}, 2015.
+\newblock arXiv preprint at \url{http://arxiv.org/abs/1512.03385}, 2015.
+
+\bibitem[Patel et~al.(2015)Patel, Nguyen, and Baraniuk]{Patel2015-jg}
+Ankit~B. Patel, Tan Nguyen, and Richard~G. Baraniuk.
+\newblock A probabilistic theory of deep learning.
+\newblock arXiv preprint at \url{http://arxiv.org/abs/1504.00641}, 2015.
+
+\bibitem[Zhou and Feng(2018)]{Zhou2018-ii}
+Zhi-Hua Zhou and Ji~Feng.
+\newblock Deep forest.
+\newblock \emph{Natl Sci Rev}, 6\penalty0 (1):\penalty0 74--86, October 2018.
+
+\bibitem[Shen et~al.(2021)Shen, Guo, Wang, Zhao, Wang, and Yuille]{Shen2019-mq}
+Wei Shen, Yilu Guo, Yan Wang, Kai Zhao, Bo~Wang, and Alan Yuille.
+\newblock Deep differentiable random forests for age estimation.
+\newblock \emph{IEEE Transactions on Pattern Analysis and Machine
+  Intelligence}, 43\penalty0 (2):\penalty0 404--419, 2021.
+
+\bibitem[Carreira-Perpinan and Tavallali(2018)]{Carreira-Perpinan2018-py}
+Miguel~A Carreira-Perpinan and Pooya Tavallali.
+\newblock Alternating optimization of decision trees, with application to
+  learning sparse oblique trees.
+\newblock In S~Bengio, H~Wallach, H~Larochelle, K~Grauman, N~Cesa-Bianchi, and
+  R~Garnett, editors, \emph{Advances in Neural Information Processing Systems
+  31}, pages 1218--1228. Curran Associates, Inc., 2018.
+
+\bibitem[Hehn and Hamprecht(2019)]{Hehn2019-kh}
+Thomas~M Hehn and Fred~A Hamprecht.
+\newblock End-to-end learning of deterministic decision trees.
+\newblock In \emph{Pattern Recognition}, pages 612--627. Springer International
+  Publishing, 2019.
+
+\bibitem[Priebe et~al.(2020)Priebe, Vogelstein, Engert, and
+  White]{Priebe2020.04.29.068460}
+Carey~E. Priebe, Joshua~T. Vogelstein, Florian Engert, and Christopher~M.
+  White.
+\newblock Modern machine learning: Partition \& vote.
+\newblock bioRxiv preprint at
+  \url{https://www.biorxiv.org/content/10.1101/2020.04.29.068460}, September
+  2020.
 
 \bibitem[Devroye(1983)]{slow_conv}
 Luc Devroye.
@@ -83,6 +133,86 @@ D.H. Wolpert and W.G. Macready.
 \newblock \emph{IEEE Transactions on Evolutionary Computation}, 1\penalty0
   (1):\penalty0 67--82, 1997.
 
+\bibitem[Stone(1977)]{Stone1977}
+C.~Stone.
+\newblock Consistent nonparametric regression.
+\newblock \emph{Annals of Statistics}, 5\penalty0 (2):\penalty0 595--645, 1977.
+
+\bibitem[Devroye et~al.(1997)Devroye, Gy\"orfi, and Lugosi]{DGL}
+L.~Devroye, L.~Gy\"orfi, and G.~Lugosi.
+\newblock \emph{A Probabilistic Theory of Pattern Recognition}.
+\newblock Springer, 1997.
+
+\bibitem[Breiman(2001)]{Breiman2001}
+Leo Breiman.
+\newblock Random forests.
+\newblock \emph{Machine Learning}, 45\penalty0 (1):\penalty0 5--32, 2001.
+
+\bibitem[Tomita et~al.(2017)Tomita, Maggioni, and Vogelstein]{Tomita2017-mv}
+Tyler~M Tomita, Mauro Maggioni, and Joshua~T Vogelstein.
+\newblock Roflmao: Robust oblique forests with linear matrix operations.
+\newblock In \emph{Proceedings of the 2017 SIAM International Conference on
+  Data Mining}, Proceedings, pages 498--506. Society for Industrial and Applied
+  Mathematics, June 2017.
+
+\bibitem[Tomita et~al.(2020)Tomita, Browne, Shen, Chung, Patsolic, Falk,
+  Priebe, Yim, Burns, Maggioni, and Vogelstein]{sporf}
+Tyler~M. Tomita, James Browne, Cencheng Shen, Jaewon Chung, Jesse~L. Patsolic,
+  Benjamin Falk, Carey~E. Priebe, Jason Yim, Randal Burns, Mauro Maggioni, and
+  Joshua~T. Vogelstein.
+\newblock Sparse projection oblique randomer forests.
+\newblock \emph{Journal of Machine Learning Research}, 21\penalty0
+  (104):\penalty0 1--39, 2020.
+
+\bibitem[LeCun et~al.(2015)LeCun, Bengio, and Hinton]{lecun2015deeplearning}
+Yann LeCun, Yoshua Bengio, and Geoffrey Hinton.
+\newblock Deep learning.
+\newblock \emph{Nature}, 521\penalty0 (7553):\penalty0 436--444, 2015.
+
+\bibitem[Sze et~al.(2017)Sze, Chen, Yang, and Emer]{SzeChe17Efficient}
+Vivienne Sze, Yu-Hsin Chen, Tien-Ju Yang, and Joel~S Emer.
+\newblock Efficient processing of deep neural networks: A tutorial and survey.
+\newblock \emph{Proceedings of the IEEE}, 105\penalty0 (12):\penalty0
+  2295--2329, 2017.
+
+\bibitem[Mont\'{u}far et~al.(2014)Mont\'{u}far, Pascanu, Cho, and
+  Bengio]{MPCB2014}
+Guido Mont\'{u}far, Razvan Pascanu, Kyunghyun Cho, and Yoshua Bengio.
+\newblock On the number of linear regions of deep neural networks.
+\newblock In \emph{Proceedings of the International Conference on Neural
+  Information Processing Systems}, pages 2924---2932, 2014.
+
+\bibitem[Mont\'{u}far(2017)]{M2017}
+Guido Mont\'{u}far.
+\newblock Notes on the number of linear regions of deep neural networks.
+\newblock In \emph{Sampling Theory and Applications}, Tallinn, Estonia, 2017.
+
+\bibitem[Serra et~al.(2018)Serra, Tjandraatmadja, and Ramalingam]{Serra2018-bg}
+Thiago Serra, Christian Tjandraatmadja, and Srikumar Ramalingam.
+\newblock Bounding and counting linear regions of deep neural networks.
+\newblock In Jennifer Dy and Andreas Krause, editors, \emph{IPAM}, volume~80 of
+  \emph{Proceedings of Machine Learning Research}, pages 4558--4566,
+  Stockholmsm{\"a}ssan, Stockholm Sweden, 2018. PMLR.
+
+\bibitem[Shi et~al.(2019)Shi, Li, and Li]{shi2019gradient}
+Yu~Shi, Jian Li, and Zhize Li.
+\newblock Gradient boosting with piece-wise linear regression trees.
+\newblock arXiv preprint at \url{http://arxiv.org/abs/1802.05640}, 2019.
+
+\bibitem[Rolnick and Kording(2020)]{Rolnick2019-ei}
+David Rolnick and Konrad~P Kording.
+\newblock Reverse-engineering deep relu networks.
+\newblock arXiv preprint at \url{https://arxiv.org/abs/1910.00744}, February
+  2020.
+
+\bibitem[Hanin and Rolnick(2019)]{Hanin2019-jx}
+Boris Hanin and David Rolnick.
+\newblock Complexity of linear regions in deep networks.
+\newblock In Kamalika Chaudhuri and Ruslan Salakhutdinov, editors,
+  \emph{Proceedings of the 36th International Conference on Machine Learning},
+  volume~97 of \emph{Proceedings of Machine Learning Research}, pages
+  2596--2604. PMLR, 09--15 Jun 2019.
+
 \bibitem[Vanschoren et~al.(2013)Vanschoren, van Rijn, Bischl, and
   Torgo]{OpenML2013}
 Joaquin Vanschoren, Jan~N. van Rijn, Bernd Bischl, and Luis Torgo.
@@ -94,14 +224,14 @@ Joaquin Vanschoren, Jan~N. van Rijn, Bernd Bischl, and Luis Torgo.
 Bernd Bischl, Giuseppe Casalicchio, Matthias Feurer, Frank Hutter, Michel Lang,
   Rafael~G. Mantovani, Jan~N. van Rijn, and Joaquin Vanschoren.
 \newblock Openml benchmarking suites.
-\newblock Arxiv preprint at \url{http://arxiv.org/abs/1708.03731}, 2019.
+\newblock arXiv preprint at \url{http://arxiv.org/abs/1708.03731}, 2019.
 
 \bibitem[Feurer et~al.(2019)Feurer, van Rijn, Kadra, Gijsbers, Mallik, Ravi,
   Mueller, Vanschoren, and Hutter]{OpenMLPython2019}
 Matthias Feurer, Jan~N. van Rijn, Arlind Kadra, Pieter Gijsbers, Neeratyoy
   Mallik, Sahithya Ravi, Andreas Mueller, Joaquin Vanschoren, and Frank Hutter.
 \newblock Openml-python: an extensible python api for openml.
-\newblock Arxiv preprint at \url{http://arxiv.org/abs/1911.02490}, 2019.
+\newblock arXiv preprint at \url{http://arxiv.org/abs/1911.02490}, 2019.
 
 \bibitem[Biau et~al.(2008)Biau, Devroye, and Lugosi]{biau}
 G{{\'e}}rard Biau, Luc Devroye, and G{{\'a}}bor Lugosi.
@@ -109,11 +239,12 @@ G{{\'e}}rard Biau, Luc Devroye, and G{{\'a}}bor Lugosi.
 \newblock \emph{Journal of Machine Learning Research}, 9\penalty0
   (66):\penalty0 2015--2033, 2008.
 
-\bibitem[Probst et~al.(2019)Probst, Wright, and Boulesteix]{parameter}
+\bibitem[Probst et~al.(2019{\natexlab{a}})Probst, Wright, and
+  Boulesteix]{Probst2019}
 Philipp Probst, Marvin~N. Wright, and Anne-Laure Boulesteix.
 \newblock Hyperparameters and tuning strategies for random forest.
 \newblock \emph{WIREs Data Mining and Knowledge Discovery}, 9\penalty0
-  (3):\penalty0 e1301, 2019.
+  (3):\penalty0 e1301, 2019{\natexlab{a}}.
 
 \bibitem[Bouthillier et~al.(2021)Bouthillier, Delaunay, Bronzi, Trofimov,
   Nichyporuk, Szeto, Sepah, Raff, Madan, Voleti, Kahou, Michalski, Serdyuk,
@@ -123,7 +254,7 @@ Xavier Bouthillier, Pierre Delaunay, Mirko Bronzi, Assya Trofimov, Brennan
   Voleti, Samira~Ebrahimi Kahou, Vincent Michalski, Dmitriy Serdyuk, Tal Arbel,
   Chris Pal, Ga{\"e}l Varoquaux, and Pascal Vincent.
 \newblock Accounting for variance in machine learning benchmarks.
-\newblock Arxiv preprint at \url{http://arxiv.org/abs/2103.03098}, 2021.
+\newblock arXiv preprint at \url{http://arxiv.org/abs/2103.03098}, 2021.
 
 \bibitem[Pedregosa et~al.(2011)Pedregosa, Varoquaux, Gramfort, Michel, Thirion,
   Grisel, Blondel, Prettenhofer, Weiss, Dubourg, Vanderplas, Passos,
@@ -157,6 +288,13 @@ Jacob Cohen.
 \newblock \emph{Educational and Psychological Measurement}, 20\penalty0
   (1):\penalty0 37--46, 1960.
 
+\bibitem[Naeini et~al.(2015)Naeini, Cooper, and
+  Hauskrecht]{naeini2015obtaining}
+Mahdi~Pakdaman Naeini, Gregory Cooper, and Milos Hauskrecht.
+\newblock Obtaining well calibrated probabilities using bayesian binning.
+\newblock In \emph{Twenty-Ninth AAAI Conference on Artificial Intelligence},
+  2015.
+
 \bibitem[Guo et~al.(2017)Guo, Pleiss, Sun, and Weinberger]{pmlr-v70-guo17a}
 Chuan Guo, Geoff Pleiss, Yu~Sun, and Kilian~Q. Weinberger.
 \newblock On calibration of modern neural networks.
@@ -168,7 +306,7 @@ Chuan Guo, Geoff Pleiss, Yu~Sun, and Kilian~Q. Weinberger.
 \bibitem[Krizhevsky(2012)]{cifar}
 Alex Krizhevsky.
 \newblock Learning multiple layers of features from tiny images.
-\newblock \emph{University of Toronto}, 05 2012.
+\newblock \emph{University of Toronto}, 2012.
 
 \bibitem[Netzer et~al.(2011)Netzer, Wang, Coates, Bissacco, Wu, and Ng]{svhn}
 Yuval Netzer, Tao Wang, Adam Coates, Alessandro Bissacco, Bo~Wu, and Andrew~Y.
@@ -191,6 +329,14 @@ Adam Paszke, Sam Gross, Francisco Massa, Adam Lerer, James Bradbury, Gregory
   Information Processing Systems 32}, pages 8024--8035. Curran Associates,
   Inc., 2019.
 
+\bibitem[Probst et~al.(2019{\natexlab{b}})Probst, Boulesteix, and
+  Bischl]{Probst2019hy}
+Philipp Probst, Anne-Laure Boulesteix, and Bernd Bischl.
+\newblock Tunability: Importance of hyperparameters of machine learning
+  algorithms.
+\newblock \emph{Journal of Machine Learning Research}, 20\penalty0
+  (53):\penalty0 1--32, 2019{\natexlab{b}}.
+
 \bibitem[Rice et~al.(2020)Rice, Wong, and Kolter]{pmlr-v119-rice20a}
 Leslie Rice, Eric Wong, and Zico Kolter.
 \newblock Overfitting in adversarially robust deep learning.
@@ -199,7 +345,7 @@ Leslie Rice, Eric Wong, and Zico Kolter.
   \emph{Proceedings of Machine Learning Research}, pages 8093--8104. PMLR,
   13--18 Jul 2020.
 
-\bibitem[Li et~al.(2020)Li, Soltanolkotabi, and Oymak]{li}
+\bibitem[Li et~al.(2020)Li, Soltanolkotabi, and Oymak]{li2020}
 Mingchen Li, Mahdi Soltanolkotabi, and Samet Oymak.
 \newblock Gradient descent with early stopping is provably robust to label
   noise for overparameterized neural networks.
@@ -252,19 +398,31 @@ Yann~A LeCun, L{\'e}on Bottou, Genevieve~B Orr, and Klaus-Robert M{\"u}ller.
 \newblock In \emph{Neural networks: Tricks of the trade}, pages 9--48.
   Springer, 2012.
 
-\bibitem[Friedman(2001)]{gbdt}
-Jerome~H. Friedman.
-\newblock Greedy function approximation: A gradient boosting machine.
-\newblock \emph{The Annals of Statistics}, 29\penalty0 (5):\penalty0
-  1189--1232, 2001.
+\bibitem[Vogelstein et~al.(2019)Vogelstein, Bridgeford, Pedigo, Chung, Levin,
+  Mensh, and Priebe]{Vogelstein2019-om}
+Joshua~T Vogelstein, Eric~W Bridgeford, Benjamin~D Pedigo, Jaewon Chung, Keith
+  Levin, Brett Mensh, and Carey~E Priebe.
+\newblock Connectal coding: discovering the structures linking cognitive
+  phenotypes to individual histories.
+\newblock \emph{Current Opinion in Neurobiology}, 55:\penalty0 199--212, 2019.
 
-\bibitem[Tomita et~al.(2020)Tomita, Browne, Shen, Chung, Patsolic, Falk,
-  Priebe, Yim, Burns, Maggioni, and Vogelstein]{sporf}
-Tyler~M. Tomita, James Browne, Cencheng Shen, Jaewon Chung, Jesse~L. Patsolic,
-  Benjamin Falk, Carey~E. Priebe, Jason Yim, Randal Burns, Mauro Maggioni, and
-  Joshua~T. Vogelstein.
-\newblock Sparse projection oblique randomer forests.
-\newblock \emph{Journal of Machine Learning Research}, 21\penalty0
-  (104):\penalty0 1--39, 2020.
+\bibitem[Mountcastle(1997)]{Mountcastle1997-by}
+Vernon Mountcastle.
+\newblock The columnar organization of the neocortex.
+\newblock \emph{Brain}, 120\penalty0 (4):\penalty0 701--722, 1997.
+
+\bibitem[Machens et~al.(2005)Machens, Romo, and Brody]{Machens2005-wk}
+Christian~K Machens, Ranulfo Romo, and Carlos~D Brody.
+\newblock Flexible control of mutual inhibition: a neural model of two-interval
+  discrimination.
+\newblock \emph{Science}, 307\penalty0 (5712):\penalty0 1121--1124, 2005.
+
+\bibitem[Naumann et~al.(2016)Naumann, Fitzgerald, Dunn, Rihel, Sompolinsky, and
+  Engert]{Naumann2016-oc}
+Eva~A Naumann, James~E Fitzgerald, Timothy~W Dunn, Jason Rihel, Haim
+  Sompolinsky, and Florian Engert.
+\newblock From whole-brain data to functional circuit models: The zebrafish
+  optomotor response.
+\newblock \emph{Cell}, 167\penalty0 (4):\penalty0 947--960.e20, 2016.
 
 \end{thebibliography}
