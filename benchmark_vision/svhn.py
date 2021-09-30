@@ -15,15 +15,16 @@ import torchvision.transforms as transforms
 
 
 def run_naive_rf():
-    naive_rf_acc_vs_n = list()
-    naive_rf_train_time = list()
-    naive_rf_test_time = list()
+    naive_rf_kappa = []
+    naive_rf_ece = []
+    naive_rf_train_time = []
+    naive_rf_test_time = []
     for classes in classes_space:
 
         # cohen_kappa vs num training samples (naive_rf)
         for samples in samples_space:
             RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
-            cohen_kappa, train_time, test_time = run_rf_image_set(
+            cohen_kappa, ece, train_time, test_time = run_rf_image_set(
                 RF,
                 svhn_train_images,
                 svhn_train_labels,
@@ -32,52 +33,26 @@ def run_naive_rf():
                 samples,
                 classes,
             )
-            naive_rf_acc_vs_n.append(cohen_kappa)
+            naive_rf_kappa.append(cohen_kappa)
+            naive_rf_ece.append(ece)
             naive_rf_train_time.append(train_time)
             naive_rf_test_time.append(test_time)
 
     print("naive_rf finished")
-    write_result(prefix + "naive_rf.txt", naive_rf_acc_vs_n)
+    write_result(prefix + "naive_rf_kappa.txt", naive_rf_kappa)
+    write_result(prefix + "naive_rf_ece.txt", naive_rf_ece)
     write_result(prefix + "naive_rf_train_time.txt", naive_rf_train_time)
     write_result(prefix + "naive_rf_test_time.txt", naive_rf_test_time)
 
 
-def run_svm():
-    svm_acc_vs_n = list()
-    svm_train_time = list()
-    svm_test_time = list()
-    for classes in classes_space:
-
-        # cohen_kappa vs num training samples (svm)
-        for samples in samples_space:
-            SVM = SVC()
-            cohen_kappa, train_time, test_time = run_rf_image_set(
-                SVM,
-                svhn_train_images,
-                svhn_train_labels,
-                svhn_test_images,
-                svhn_test_labels,
-                samples,
-                classes,
-            )
-            svm_acc_vs_n.append(cohen_kappa)
-            svm_train_time.append(train_time)
-            svm_test_time.append(test_time)
-
-    print("svm finished")
-    write_result(prefix + "svm.txt", svm_acc_vs_n)
-    write_result(prefix + "svm_train_time.txt", svm_train_time)
-    write_result(prefix + "svm_test_time.txt", svm_test_time)
-
-
 def run_cnn32():
-    cnn32_acc_vs_n = list()
-    cnn32_train_time = list()
-    cnn32_test_time = list()
+    cnn32_kappa = []
+    cnn32_ece = []
+    cnn32_train_time = []
+    cnn32_test_time = []
     for classes in classes_space:
 
         # cohen_kappa vs num training samples (cnn32)
-        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
         for samples in samples_space:
             # train data
             svhn_trainset = datasets.SVHN(
@@ -100,30 +75,32 @@ def run_cnn32():
                 svhn_testset,
                 samples,
             )
-            cohen_kappa, train_time, test_time = run_dn_image_es(
+            cohen_kappa, ece, train_time, test_time = run_dn_image_es(
                 cnn32,
                 train_loader,
                 valid_loader,
                 test_loader,
             )
-            cnn32_acc_vs_n.append(cohen_kappa)
+            cnn32_kappa.append(cohen_kappa)
+            cnn32_ece.append(ece)
             cnn32_train_time.append(train_time)
             cnn32_test_time.append(test_time)
 
     print("cnn32 finished")
-    write_result(prefix + "cnn32.txt", cnn32_acc_vs_n)
+    write_result(prefix + "cnn32_kappa.txt", cnn32_kappa)
+    write_result(prefix + "cnn32_ece.txt", cnn32_ece)
     write_result(prefix + "cnn32_train_time.txt", cnn32_train_time)
     write_result(prefix + "cnn32_test_time.txt", cnn32_test_time)
 
 
 def run_cnn32_2l():
-    cnn32_2l_acc_vs_n = list()
-    cnn32_2l_train_time = list()
-    cnn32_2l_test_time = list()
+    cnn32_2l_kappa = []
+    cnn32_2l_ece = []
+    cnn32_2l_train_time = []
+    cnn32_2l_test_time = []
     for classes in classes_space:
 
         # cohen_kappa vs num training samples (cnn32_2l)
-        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
         for samples in samples_space:
             # train data
             svhn_trainset = datasets.SVHN(
@@ -146,30 +123,32 @@ def run_cnn32_2l():
                 svhn_testset,
                 samples,
             )
-            cohen_kappa, train_time, test_time = run_dn_image_es(
+            cohen_kappa, ece, train_time, test_time = run_dn_image_es(
                 cnn32_2l,
                 train_loader,
                 valid_loader,
                 test_loader,
             )
-            cnn32_2l_acc_vs_n.append(cohen_kappa)
+            cnn32_2l_kappa.append(cohen_kappa)
+            cnn32_2l_ece.append(ece)
             cnn32_2l_train_time.append(train_time)
             cnn32_2l_test_time.append(test_time)
 
     print("cnn32_2l finished")
-    write_result(prefix + "cnn32_2l.txt", cnn32_2l_acc_vs_n)
+    write_result(prefix + "cnn32_2l_kappa.txt", cnn32_2l_kappa)
+    write_result(prefix + "cnn32_2l_ece.txt", cnn32_2l_ece)
     write_result(prefix + "cnn32_2l_train_time.txt", cnn32_2l_train_time)
     write_result(prefix + "cnn32_2l_test_time.txt", cnn32_2l_test_time)
 
 
 def run_cnn32_5l():
-    cnn32_5l_acc_vs_n = list()
-    cnn32_5l_train_time = list()
-    cnn32_5l_test_time = list()
+    cnn32_5l_kappa = []
+    cnn32_5l_ece = []
+    cnn32_5l_train_time = []
+    cnn32_5l_test_time = []
     for classes in classes_space:
 
         # cohen_kappa vs num training samples (cnn32_5l)
-        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
         for samples in samples_space:
             # train data
             svhn_trainset = datasets.SVHN(
@@ -192,30 +171,32 @@ def run_cnn32_5l():
                 svhn_testset,
                 samples,
             )
-            cohen_kappa, train_time, test_time = run_dn_image_es(
+            cohen_kappa, ece, train_time, test_time = run_dn_image_es(
                 cnn32_5l,
                 train_loader,
                 valid_loader,
                 test_loader,
             )
-            cnn32_5l_acc_vs_n.append(cohen_kappa)
+            cnn32_5l_kappa.append(cohen_kappa)
+            cnn32_5l_ece.append(ece)
             cnn32_5l_train_time.append(train_time)
             cnn32_5l_test_time.append(test_time)
 
     print("cnn32_5l finished")
-    write_result(prefix + "cnn32_5l.txt", cnn32_5l_acc_vs_n)
+    write_result(prefix + "cnn32_5l_kappa.txt", cnn32_5l_kappa)
+    write_result(prefix + "cnn32_5l_ece.txt", cnn32_5l_ece)
     write_result(prefix + "cnn32_5l_train_time.txt", cnn32_5l_train_time)
     write_result(prefix + "cnn32_5l_test_time.txt", cnn32_5l_test_time)
 
 
 def run_resnet18():
-    resnet18_acc_vs_n = list()
-    resnet18_train_time = list()
-    resnet18_test_time = list()
+    resnet18_kappa = []
+    resnet18_ece = []
+    resnet18_train_time = []
+    resnet18_test_time = []
     for classes in classes_space:
 
         # cohen_kappa vs num training samples (resnet18)
-        samples_space = np.geomspace(10, 10000, num=8, dtype=int)
         for samples in samples_space:
             # train data
             svhn_trainset = datasets.SVHN(
@@ -240,18 +221,20 @@ def run_resnet18():
                 svhn_testset,
                 samples,
             )
-            cohen_kappa, train_time, test_time = run_dn_image_es(
+            cohen_kappa, ece, train_time, test_time = run_dn_image_es(
                 res,
                 train_loader,
                 valid_loader,
                 test_loader,
             )
-            resnet18_acc_vs_n.append(cohen_kappa)
+            resnet18_kappa.append(cohen_kappa)
+            resnet18_ece.append(ece)
             resnet18_train_time.append(train_time)
             resnet18_test_time.append(test_time)
 
     print("resnet18 finished")
-    write_result(prefix + "resnet18.txt", resnet18_acc_vs_n)
+    write_result(prefix + "resnet18_kappa.txt", resnet18_kappa)
+    write_result(prefix + "resnet18_ece.txt", resnet18_ece)
     write_result(prefix + "resnet18_train_time.txt", resnet18_train_time)
     write_result(prefix + "resnet18_test_time.txt", resnet18_test_time)
 
@@ -290,7 +273,6 @@ if __name__ == "__main__":
     svhn_test_images = svhn_test_images.reshape(-1, 32 * 32 * 3)
 
     run_naive_rf()
-    run_svm()
 
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]

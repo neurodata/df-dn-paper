@@ -13,9 +13,10 @@ import torchvision.transforms as transforms
 
 
 def run_cnn32():
-    cnn32_acc_vs_n = list()
-    cnn32_train_time = list()
-    cnn32_test_time = list()
+    cnn32_kappa = []
+    cnn32_ece = []
+    cnn32_train_time = []
+    cnn32_test_time = []
     for classes in classes_space:
 
         # cohen_kappa vs num training samples (cnn32)
@@ -42,27 +43,30 @@ def run_cnn32():
                 cifar_testset,
                 samples,
             )
-            cohen_kappa, train_time, test_time = run_dn_image_set(
+            cohen_kappa, ece, train_time, test_time = run_dn_image_set(
                 cnn32,
                 train_loader,
                 test_loader,
                 time_limit=time_limit,
                 ratio=ratio,
             )
-            cnn32_acc_vs_n.append(cohen_kappa)
+            cnn32_kappa.append(cohen_kappa)
+            cnn32_ece.append(ece)
             cnn32_train_time.append(train_time)
             cnn32_test_time.append(test_time)
 
     print("cnn32 finished")
-    write_result(prefix + "cnn32" + suffix, cnn32_acc_vs_n)
+    write_result(prefix + "cnn32_kappa" + suffix, cnn32_kappa)
+    write_result(prefix + "cnn32_ece" + suffix, cnn32_ece)
     write_result(prefix + "cnn32_train_time" + suffix, cnn32_train_time)
     write_result(prefix + "cnn32_test_time" + suffix, cnn32_test_time)
 
 
 def run_cnn32_2l():
-    cnn32_2l_acc_vs_n = list()
-    cnn32_2l_train_time = list()
-    cnn32_2l_test_time = list()
+    cnn32_2l_kappa = []
+    cnn32_2l_ece = []
+    cnn32_2l_train_time = []
+    cnn32_2l_test_time = []
     for classes in classes_space:
 
         # cohen_kappa vs num training samples (cnn32_2l)
@@ -89,27 +93,30 @@ def run_cnn32_2l():
                 cifar_testset,
                 samples,
             )
-            cohen_kappa, train_time, test_time = run_dn_image_set(
+            cohen_kappa, ece, train_time, test_time = run_dn_image_set(
                 cnn32_2l,
                 train_loader,
                 test_loader,
                 time_limit=time_limit,
                 ratio=ratio,
             )
-            cnn32_2l_acc_vs_n.append(cohen_kappa)
+            cnn32_2l_kappa.append(cohen_kappa)
+            cnn32_2l_ece.append(ece)
             cnn32_2l_train_time.append(train_time)
             cnn32_2l_test_time.append(test_time)
 
     print("cnn32_2l finished")
-    write_result(prefix + "cnn32_2l" + suffix, cnn32_2l_acc_vs_n)
+    write_result(prefix + "cnn32_2l_kappa" + suffix, cnn32_2l_kappa)
+    write_result(prefix + "cnn32_2l_ece" + suffix, cnn32_2l_ece)
     write_result(prefix + "cnn32_2l_train_time" + suffix, cnn32_2l_train_time)
     write_result(prefix + "cnn32_2l_test_time" + suffix, cnn32_2l_test_time)
 
 
 def run_cnn32_5l():
-    cnn32_5l_acc_vs_n = list()
-    cnn32_5l_train_time = list()
-    cnn32_5l_test_time = list()
+    cnn32_5l_kappa = []
+    cnn32_5l_ece = []
+    cnn32_5l_train_time = []
+    cnn32_5l_test_time = []
     for classes in classes_space:
 
         # cohen_kappa vs num training samples (cnn32_5l)
@@ -136,27 +143,30 @@ def run_cnn32_5l():
                 cifar_testset,
                 samples,
             )
-            cohen_kappa, train_time, test_time = run_dn_image_set(
+            cohen_kappa, ece, train_time, test_time = run_dn_image_set(
                 cnn32_5l,
                 train_loader,
                 test_loader,
                 time_limit=time_limit,
                 ratio=ratio,
             )
-            cnn32_5l_acc_vs_n.append(cohen_kappa)
+            cnn32_5l_kappa.append(cohen_kappa)
+            cnn32_5l_ece.append(ece)
             cnn32_5l_train_time.append(train_time)
             cnn32_5l_test_time.append(test_time)
 
     print("cnn32_5l finished")
-    write_result(prefix + "cnn32_5l" + suffix, cnn32_5l_acc_vs_n)
+    write_result(prefix + "cnn32_5l_kappa" + suffix, cnn32_5l_kappa)
+    write_result(prefix + "cnn32_5l_ece" + suffix, cnn32_5l_ece)
     write_result(prefix + "cnn32_5l_train_time" + suffix, cnn32_5l_train_time)
     write_result(prefix + "cnn32_5l_test_time" + suffix, cnn32_5l_test_time)
 
 
 def run_resnet18():
-    resnet18_acc_vs_n = list()
-    resnet18_train_time = list()
-    resnet18_test_time = list()
+    resnet18_kappa = []
+    resnet18_ece = []
+    resnet18_train_time = []
+    resnet18_test_time = []
     for classes in classes_space:
 
         # cohen_kappa vs num training samples (resnet18)
@@ -185,19 +195,21 @@ def run_resnet18():
                 cifar_testset,
                 samples,
             )
-            cohen_kappa, train_time, test_time = run_dn_image_set(
+            cohen_kappa, ece, train_time, test_time = run_dn_image_set(
                 res,
                 train_loader,
                 test_loader,
                 time_limit=time_limit,
                 ratio=ratio,
             )
-            resnet18_acc_vs_n.append(cohen_kappa)
+            resnet18_kappa.append(cohen_kappa)
+            resnet18_ece.append(ece)
             resnet18_train_time.append(train_time)
             resnet18_test_time.append(test_time)
 
     print("resnet18 finished")
-    write_result(prefix + "resnet18" + suffix, resnet18_acc_vs_n)
+    write_result(prefix + "resnet18_kappa" + suffix, resnet18_kappa)
+    write_result(prefix + "resnet18_ece" + suffix, resnet18_ece)
     write_result(prefix + "resnet18_train_time" + suffix, resnet18_train_time)
     write_result(prefix + "resnet18_test_time" + suffix, resnet18_test_time)
 

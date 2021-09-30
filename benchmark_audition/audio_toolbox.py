@@ -2,6 +2,7 @@
 Coauthors: Haoyin Xu
            Yu-Chung Peng
            Madi Kusmanov
+           Jayanta Dey
 """
 import numpy as np
 from sklearn.metrics import cohen_kappa_score
@@ -153,6 +154,34 @@ def combinations_45(iterable, r):
         yield tuple(pool[i] for i in indices)
 
 
+def get_ece(predicted_posterior, predicted_label, true_label, num_bins=40):
+    """
+    Return expected calibration error (ECE)
+    """
+    poba_hist = []
+    accuracy_hist = []
+    bin_size = 1 / num_bins
+    total_sample = len(true_label)
+    posteriors = predicted_posterior.max(axis=1)
+
+    score = 0
+    for bin in range(num_bins):
+        indx = np.where(
+            (posteriors > bin * bin_size) & (posteriors <= (bin + 1) * bin_size)
+        )[0]
+
+        acc = (
+            np.nan_to_num(np.mean(predicted_label[indx] == true_label[indx]))
+            if indx.size != 0
+            else 0
+        )
+        conf = np.nan_to_num(np.mean(posteriors[indx])) if indx.size != 0 else 0
+        score += len(indx) * np.abs(acc - conf)
+
+    score /= total_sample
+    return score
+
+
 def run_rf_image_set(
     model,
     train_images,
@@ -206,7 +235,14 @@ def run_rf_image_set(
     end_time = time.perf_counter()
     test_time = end_time - start_time
 
-    return cohen_kappa_score(test_labels, test_preds), train_time, test_time
+    test_probs = model.predict_proba(test_images)
+
+    return (
+        cohen_kappa_score(test_labels, test_preds),
+        get_ece(test_probs, test_preds, test_labels),
+        train_time,
+        test_time,
+    )
 
 
 def run_dn_image_es(
@@ -277,22 +313,33 @@ def run_dn_image_es(
 
     # test the model
     model.eval()
+    prob_cal = nn.Softmax(dim=1)
     start_time = time.perf_counter()
     test_preds = []
-    test_labels = []
     with torch.no_grad():
         for i in range(0, len(test_data), batch):
             inputs = test_data[i : i + batch].to(dev)
             labels = test_labels[i : i + batch].to(dev)
-            test_labels = np.concatenate((test_labels, labels.tolist()))
 
             outputs = model(inputs)
             _, predicted = torch.max(outputs.data, 1)
             test_preds = np.concatenate((test_preds, predicted.tolist()))
 
+            test_prob = prob_cal(outputs)
+            if i == 0:
+                test_probs = test_prob.tolist()
+            else:
+                test_probs = np.concatenate((test_probs, test_prob.tolist()))
+
     end_time = time.perf_counter()
     test_time = end_time - start_time
-    return cohen_kappa_score(test_preds, test_labels), train_time, test_time
+    test_labels = np.array(test_labels.tolist())
+    return (
+        cohen_kappa_score(test_preds, test_labels),
+        get_ece(test_probs, test_preds, test_labels),
+        train_time,
+        test_time,
+    )
 
 
 def prepare_data(

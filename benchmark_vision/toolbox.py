@@ -1,6 +1,7 @@
 """
 Coauthors: Haoyin Xu
            Yu-Chung Peng
+           Jayanta Dey
 """
 import time
 import numpy as np
@@ -138,6 +139,34 @@ def produce_mean(ls):
     return np.mean(ls_space, axis=0)
 
 
+def get_ece(predicted_posterior, predicted_label, true_label, num_bins=40):
+    """
+    Return expected calibration error (ECE)
+    """
+    poba_hist = []
+    accuracy_hist = []
+    bin_size = 1 / num_bins
+    total_sample = len(true_label)
+    posteriors = predicted_posterior.max(axis=1)
+
+    score = 0
+    for bin in range(num_bins):
+        indx = np.where(
+            (posteriors > bin * bin_size) & (posteriors <= (bin + 1) * bin_size)
+        )[0]
+
+        acc = (
+            np.nan_to_num(np.mean(predicted_label[indx] == true_label[indx]))
+            if indx.size != 0
+            else 0
+        )
+        conf = np.nan_to_num(np.mean(posteriors[indx])) if indx.size != 0 else 0
+        score += len(indx) * np.abs(acc - conf)
+
+    score /= total_sample
+    return score
+
+
 def run_rf_image_set(
     model,
     train_images,
@@ -191,7 +220,14 @@ def run_rf_image_set(
     end_time = time.perf_counter()
     test_time = end_time - start_time
 
-    return cohen_kappa_score(test_labels, test_preds), train_time, test_time
+    test_probs = model.predict_proba(test_images)
+
+    return (
+        cohen_kappa_score(test_labels, test_preds),
+        get_ece(test_probs, test_preds, test_labels),
+        train_time,
+        test_time,
+    )
 
 
 def run_dn_image_set(
@@ -238,6 +274,8 @@ def run_dn_image_set(
 
     # test the model
     model.eval()
+    first = True
+    prob_cal = nn.Softmax(dim=1)
     start_time = time.perf_counter()
     test_preds = []
     test_labels = []
@@ -252,9 +290,21 @@ def run_dn_image_set(
             _, predicted = torch.max(outputs.data, 1)
             test_preds = np.concatenate((test_preds, predicted.tolist()))
 
+            test_prob = prob_cal(outputs)
+            if first:
+                test_probs = test_prob.tolist()
+                first = False
+            else:
+                test_probs = np.concatenate((test_probs, test_prob.tolist()))
+
     end_time = time.perf_counter()
     test_time = end_time - start_time
-    return cohen_kappa_score(test_preds, test_labels), train_time, test_time
+    return (
+        cohen_kappa_score(test_preds, test_labels),
+        get_ece(test_probs, test_preds, test_labels),
+        train_time,
+        test_time,
+    )
 
 
 def run_dn_image_es(
@@ -325,6 +375,8 @@ def run_dn_image_es(
 
     # test the model
     model.eval()
+    first = True
+    prob_cal = nn.Softmax(dim=1)
     start_time = time.perf_counter()
     test_preds = []
     test_labels = []
@@ -339,9 +391,21 @@ def run_dn_image_es(
             _, predicted = torch.max(outputs.data, 1)
             test_preds = np.concatenate((test_preds, predicted.tolist()))
 
+            test_prob = prob_cal(outputs)
+            if first:
+                test_probs = test_prob.tolist()
+                first = False
+            else:
+                test_probs = np.concatenate((test_probs, test_prob.tolist()))
+
     end_time = time.perf_counter()
     test_time = end_time - start_time
-    return cohen_kappa_score(test_preds, test_labels), train_time, test_time
+    return (
+        cohen_kappa_score(test_preds, test_labels),
+        get_ece(test_probs, test_preds, test_labels),
+        train_time,
+        test_time,
+    )
 
 
 def create_loaders_set(
