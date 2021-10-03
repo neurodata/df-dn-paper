@@ -2,6 +2,18 @@
 Author: Michael Ainsworth
 """
 
+#%% Define executrion variables (to save memory & execution time)
+reload_data = False # indicator of whether to upload the data again
+nodes_combination = [20, 100, 180, 260, 340, 400] # default is [20, 100, 180, 260, 340, 400]
+
+
+#%% function to return to default values
+def 
+
+#%% function so save cc18_all_parameters file
+
+#%% Imports
+
 import numpy as np
 import matplotlib.pyplot as plt
 from random import sample
@@ -58,11 +70,13 @@ def sample_large_datasets(X_data, y_data):
 
 
 # Load data from CC18 data set suite
-X_data_list, y_data_list, dataset_name = load_cc18()
+if (reload_data or 'task_id' not in locals()): # Load the data only if required (by reload_data or if it is not defined)
+    X_data_list, y_data_list, dataset_name = load_cc18()
+
 
 
 # Generate all combinations of nodes to tune over
-test_list = [20, 100, 180, 260, 340, 400]
+test_list = nodes_combination;
 two_layer = list(itertools.combinations(test_list, 2))
 three_layer = list(itertools.combinations(test_list, 3))
 
