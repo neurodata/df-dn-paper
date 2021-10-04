@@ -125,3 +125,7 @@ if  save_methods['json']:
         json.dump(best_parameters, fp)
 if save_methods['csv']:
     pd.DataFrame(dict_example).to_csv(path_save+'.csv')
+#file = open("metrics/cc18_all_parameters_try.txt", "r")
+#
+#contents = file.read()
+#dictionary = ast.literal_eval(contents)
