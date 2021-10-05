@@ -18,9 +18,12 @@ import itertools
 import pandas as pd
 import json
 from tqdm import tqdm
+from os.path import exists
+import ast
+import os
 
 from basic_functions_script import *
-
+from save_hyperparameterst import *
 #%% function to return to default values
 def return_to_default():
     nodes_combination = [20, 100, 180, 260, 340, 400]
@@ -45,6 +48,7 @@ if return_default:
 path_save="metrics/cc18_all_parameters"
 
 save_methods={'text_dict':1,'csv':1,'json':1}
+save_methods_rewrite={'text_dict':0,'csv':0,'json':0}
 #%% Models
 """
 Deep Neural Network
@@ -116,16 +120,4 @@ for dataset_index, dataset in enumerate(dataset_indices):
                                                                               varargin,varCV,classifiers,X,y,dataset_index)
 
 
-# Save optimal parameters to txt file
-if  save_methods['text_dict']:      
-    with open(path_save+".txt", "w") as f:       
-            f.write("%s\n" % best_parameters)
-if  save_methods['json']:
-    with open(path_save+".json", 'w') as fp:
-        json.dump(best_parameters, fp)
-if save_methods['csv']:
-    pd.DataFrame(dict_example).to_csv(path_save+'.csv')
-#file = open("metrics/cc18_all_parameters_try.txt", "r")
-#
-#contents = file.read()
-#dictionary = ast.literal_eval(contents)
+save_best_parameters(save_methods,save_methods_rewrite,path_save,best_parameters)
