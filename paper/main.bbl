@@ -1,4 +1,4 @@
-\begin{thebibliography}{60}
+\begin{thebibliography}{61}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -142,6 +142,12 @@ C.~Stone.
 L.~Devroye, L.~Gy\"orfi, and G.~Lugosi.
 \newblock \emph{A Probabilistic Theory of Pattern Recognition}.
 \newblock Springer, 1997.
+
+\bibitem[Amit and Geman(1997)]{Amit1997}
+Yali Amit and Donald Geman.
+\newblock Shape quantization and recognition with randomized trees.
+\newblock \emph{Neural Computation}, 9\penalty0 (7):\penalty0 1545--1588, 07
+  1997.
 
 \bibitem[Breiman(2001)]{Breiman2001}
 Leo Breiman.

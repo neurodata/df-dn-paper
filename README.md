@@ -1,4 +1,4 @@
-# Decision Forests vs. Deep Networks: Conceptual Similarities and Empirical Differences at Small Sample Sizes
+# When are Deep Networks really better than Decision Forests at small sample sizes, and how?
 
 [![arXiv](https://img.shields.io/badge/arXiv-2108.13637-red.svg?style=flat)](https://arxiv.org/abs/2108.13637)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
