@@ -37,7 +37,7 @@ subsample=[1.0] #[0.5,0.8,1.0]
 return_default=False;
 if return_default:
     nodes_combination,dataset_indices_max,max_shape_to_run,models_to_run,subsample,alpha_range_nn=return_to_default()
-path_save="metrics/cc18_all_parameters"
+path_save="metrics/cc18_all_parameters_new"
 
 save_methods={'text_dict':1,'csv':1,'json':1}
 save_methods_rewrite={'text_dict':0,'csv':0,'json':0}

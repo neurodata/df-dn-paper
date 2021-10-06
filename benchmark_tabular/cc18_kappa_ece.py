@@ -23,13 +23,17 @@ import openml
 import pandas as pd
 
 from basic_functions_script import *
-from save_hyperparameterst import *
+from save_hyperparameters import *
+
 #%%
-with open(path_save+".json",'r') as json_file:
+path_save="metrics/cc18_all_parameters_new"
+path_params="metrics/dict_parameters"
+
+with open(path_params+".json",'r') as json_file:
     dictionary_params = json.load(json_file)
     
                 
-path = "metrics/cc18_all_parameters"
+path = path_save# "metrics/cc18_all_parameters"
 type_file = '.txt'
 dataset_indices_max = dictionary_params['dataset_indices_max']
 max_shape_to_run = dictionary_params['max_shape_to_run']
@@ -42,7 +46,7 @@ shape_2_evolution = 5
 n_splits=5
 
 models_to_run={'RF':0,'DN':0,'GBDT':1}
-def model_define(model_name,best_parameters,additional_parameters):
+def model_define(model_name,best_parameters):
     if model_name=='RF':
         model =  RandomForestClassifier(**best_params_dict[model_name][dataset], n_estimators=500, n_jobs=-1   )
     elif model_name=='DN':
