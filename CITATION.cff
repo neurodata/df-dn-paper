@@ -58,7 +58,7 @@ identifiers:
   -
     type: url
     value: "https://arxiv.org/pdf/2108.13637.pdf"
-date-released: 2021-08-31
+date-released: 2021-10-05
 keywords:
   - Python
   - classification
@@ -68,6 +68,6 @@ keywords:
 license: MIT
 message: "If you use this software, please cite it using these metadata."
 repository-code: "https://github.com/neurodata/rf-dn-paper"
-title: "Decision Forests vs. Deep Networks: Conceptual Similarities and Empirical Differences at Small Sample Sizes"
+title: "When are Deep Networks really better than Decision Forests at small sample sizes, and how?"
 version: "0.0.1"
 ...
