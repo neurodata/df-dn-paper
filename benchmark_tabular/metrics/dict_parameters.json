@@ -1,0 +1,1 @@
+{"reload_data": false, "nodes_combination": [20], "dataset_indices_max": 2, "max_shape_to_run": 10000, "alpha_range_nn": [0.1], "subsample": [1.0]}

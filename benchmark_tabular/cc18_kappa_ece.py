@@ -2,7 +2,11 @@
 Coauthors: Michael Ainsworth
            Jayanta Dey
 """
-
+"""
+Updates:
+    Noga Mudrik
+"""
+# Imports
 import numpy as np
 import matplotlib.pyplot as plt
 from random import sample
@@ -11,43 +15,45 @@ from sklearn import datasets
 from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier,GradientBoostingClassifier
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.metrics import cohen_kappa_score
 import ast
 import openml
+import pandas as pd
 
+from basic_functions_script import *
+from save_hyperparameterst import *
+#%%
+with open(path_save+".json",'r') as json_file:
+    dictionary_params = json.load(json_file)
+    
+                
+path = "metrics/cc18_all_parameters"
+type_file = '.txt'
+dataset_indices_max = dictionary_params['dataset_indices_max']
+max_shape_to_run = dictionary_params['max_shape_to_run']
+file_type_to_load = '.txt'
 
-def load_cc18():
-    """
-    Import datasets from OpenML-CC18 dataset suite
-    """
-    X_data_list = []
-    y_data_list = []
-    dataset_name = []
+# Number of repetitions for each CV fold at each sample size
+reps = 5
+shape_2_all_sample_sizes = 8
+shape_2_evolution = 5
+n_splits=5
 
-    for task_num, task_id in enumerate(
-        tqdm(openml.study.get_suite("OpenML-CC18").tasks)
-    ):
-        try:
-            successfully_loaded = True
-            dataset = openml.datasets.get_dataset(
-                openml.tasks.get_task(task_id).dataset_id
-            )
-            dataset_name.append(dataset.name)
-            X, y, is_categorical, _ = dataset.get_data(
-                dataset_format="array", target=dataset.default_target_attribute
-            )
-            _, y = np.unique(y, return_inverse=True)
-            X = np.nan_to_num(X)
-        except TypeError:
-            successfully_loaded = False
-        if successfully_loaded and np.shape(X)[1] > 0:
-            X_data_list.append(X)
-            y_data_list.append(y)
+models_to_run={'RF':0,'DN':0,'GBDT':1}
+def model_define(model_name,best_parameters,additional_parameters):
+    if model_name=='RF':
+        model =  RandomForestClassifier(**best_params_dict[model_name][dataset], n_estimators=500, n_jobs=-1   )
+    elif model_name=='DN':
+        model = MLPClassifier(**best_params_dict[model_name][dataset])
+    elif model_name=='GBDT':
+        model = GradientBoostingClassifier(**best_params_dict[model_name][dataset],n_estimators=500)
+    else:
+        raise ValueError('Invalid Model Name')
+    return model
 
-    return X_data_list, y_data_list, dataset_name
-
+#%% Functions
 
 def read_params_txt(filename):
     """
@@ -62,6 +68,31 @@ def read_params_txt(filename):
         params.append(temp)
     return params
 
+def read_params_dict_txt(path="metrics/cc18_all_parameters", type_file='.txt'): # Path should not include the file type (like .txt)
+    """
+    Read optimized parameters as saved in a dict 
+    """
+    
+    if type_file=='.txt':
+        file = open(path+".txt", "r")
+        contents = file.read()
+        best_params_dict = ast.literal_eval(contents)
+
+    elif type_file=='.csv':            
+        df_old=pd.read_csv(path+".csv", index=False)
+        best_params_dict=df_old.to_dict()
+        
+    elif type_file=='.json':
+        
+        with open(path+".json",'r') as json_file:
+            best_params_dict = json.load(json_file)
+        
+    else:
+        raise NameError('Invalid type file in "type_files" argument: %s'%type_file)
+    return best_params_dict
+           
+        
+        
 
 def random_sample_new(data, training_sample_sizes):
     """
@@ -95,8 +126,7 @@ def get_ece(predicted_posterior, predicted_label, true_label, num_bins=40):
 
     Function borrowed from: https://github.com/neurodata/kdg/blob/main/kdg/utils.py
     """
-    poba_hist = []
-    accuracy_hist = []
+
     bin_size = 1 / num_bins
     total_sample = len(true_label)
     posteriors = predicted_posterior.max(axis=1)
@@ -119,34 +149,31 @@ def get_ece(predicted_posterior, predicted_label, true_label, num_bins=40):
     return score
 
 
-def sample_large_datasets(X_data, y_data):
+def sample_large_datasets(X_data, y_data,max_shape_to_run = 10000):
     """
     For large datasets with over 10000 samples, resample the data to only include
     10000 random samples.
     """
     inds = [i for i in range(X_data.shape[0])]
-    fin = sorted(sample(inds, 10000))
+    fin = sorted(sample(inds, max_shape_to_run))
     return X_data[fin], y_data[fin]
 
 
 # Import CC18 data and pretuned hyperparameters
 X_data_list, y_data_list, dataset_name = load_cc18()
-all_params = read_params_txt("metrics/cc18_all_parameters.txt")
-train_indices = [i for i in range(72)]
 
+best_params_dict = read_params_dict_txt(path,file_type_to_load)
+cohen_ece_results_dict={metric:{model_name:np.zeros((reps)) for model_name in best_params_dict.keys()} for metric in ['cohen_kappa','ece']}
 
-# Number of repetitions for each CV fold at each sample size
-reps = 5
+#all_params = read_params_txt("metrics/cc18_all_parameters.txt")
+
+train_indices = [i for i in range(dataset_indices_max)]
 
 
 # Create empty arrays to index sample sizes, kappa values, and ece scores
-all_sample_sizes = np.zeros((len(train_indices), 8))
-
-rf_evolution = np.zeros((8 * len(train_indices), 5))
-dn_evolution = np.zeros((8 * len(train_indices), 5))
-
-rf_evolution_ece = np.zeros((8 * len(train_indices), 5))
-dn_evolution_ece = np.zeros((8 * len(train_indices), 5))
+all_sample_sizes = np.zeros((len(train_indices), shape_2_all_sample_sizes))
+evolution_dict={metric:
+    {model_name:np.zeros((shape_2_all_sample_sizes * len(train_indices), shape_2_evolution)) for model_name in best_params_dict.keys()} for metric in ['cohen_kappa','ece']}
 
 
 # For each dataset, train and predict for every sample size
@@ -159,7 +186,7 @@ for dataset_index, dataset in enumerate(train_indices):
     y = y_data_list[dataset]
 
     # If data set has over 10000 samples, resample to contain 10000
-    if X.shape[0] > 10000:
+    if X.shape[0] > max_shape_to_run:
         X, y = sample_large_datasets(X, y)
 
     scaler = StandardScaler()
@@ -167,7 +194,7 @@ for dataset_index, dataset in enumerate(train_indices):
     X = scaler.transform(X)
 
     # Implement stratified 5-fold cross validation
-    kf = StratifiedKFold(n_splits=5, shuffle=True)
+    kf = StratifiedKFold(n_splits=n_splits, shuffle=True)
     k_index = 0
     for train_index, test_index in kf.split(X, y):
 
@@ -175,7 +202,7 @@ for dataset_index, dataset in enumerate(train_indices):
         y_train, y_test = y[train_index], y[test_index]
 
         # Generate training sample sizes, logorithmically spaced
-        temp = np.log10((len(np.unique(y))) * 5)
+        temp = np.log10((len(np.unique(y))) * reps)
         t = (np.log10(X_train.shape[0]) - temp) / 7
         training_sample_sizes = []
         for i in range(8):
@@ -189,53 +216,22 @@ for dataset_index, dataset in enumerate(train_indices):
             X_train_new = X_train[ss_inds[sample_size_index]]
             y_train_new = y_train[ss_inds[sample_size_index]]
 
-            rf_reps = np.zeros((reps))
-            dn_reps = np.zeros((reps))
-
-            rf_reps_ece = np.zeros((reps))
-            dn_reps_ece = np.zeros((reps))
-
             # Repeat for number of repetitions, averaging results
-            for ii in range(reps):
-                rf = RandomForestClassifier(
-                    **all_params[dataset][1], n_estimators=500, n_jobs=-1
-                )
-                mlp = MLPClassifier(**all_params[dataset][0])
+            for model_name,model_best_params in best_params_dict.items():
+                if models_to_run[model_name]:
+                    for ii in range(reps):
 
-                rf.fit(X_train_new, y_train_new)
-                y_pred_rf = rf.predict(X_test)
-                proba_rf = rf.predict_proba(X_test)
-
-                mlp.fit(X_train_new, y_train_new)
-                y_pred = mlp.predict(X_test)
-                proba_dn = mlp.predict_proba(X_test)
-
-                k_rf = cohen_kappa_score(y_test, y_pred_rf)
-                rf_reps[ii] = k_rf
-
-                k = cohen_kappa_score(y_test, y_pred)
-                dn_reps[ii] = k
-
-                ece_rf = get_ece(proba_rf, y_pred_rf, y_test)
-                rf_reps_ece[ii] = ece_rf
-
-                ece_dn = get_ece(proba_dn, y_pred, y_test)
-                dn_reps_ece[ii] = ece_dn
-
-            # Record Cohen's Kappa score and ECE for both RF and DN
-            rf_evolution[sample_size_index + 8 * dataset_index][k_index] = np.mean(
-                rf_reps
-            )
-            dn_evolution[sample_size_index + 8 * dataset_index][k_index] = np.mean(
-                dn_reps
-            )
-            rf_evolution_ece[sample_size_index + 8 * dataset_index][k_index] = np.mean(
-                rf_reps_ece
-            )
-            dn_evolution_ece[sample_size_index + 8 * dataset_index][k_index] = np.mean(
-                dn_reps_ece
-            )
-
+                        model = model_define(model_name,best_parameters)      
+                        model.fit(X_train_new, y_train_new)
+                        predictions = model.predict(X_test)
+                        predict_probas = model.predict_proba(X_test)
+                        cohen_ece_results_dict
+                        cohen_kappa = cohen_kappa_score(y_test,predictions)
+                        cohen_ece_results_dict['cohen_kappa'][model_name][ii] = cohen_kappa
+                        ece = get_ece(predict_probas, predictions, y_test)
+                        cohen_ece_results_dict['ece'][model_name][ii] = ece
+                    evolution_dict['cohen_kappa'][model_name][sample_size_index + shape_2_all_sample_sizes * dataset_index][k_index] = np.mean(cohen_ece_results_dict['cohen_kappa'][model_name]) 
+                    evolution_dict['ece'][model_name][sample_size_index + shape_2_all_sample_sizes * dataset_index][k_index] = np.mean(cohen_ece_results_dict['cohen_kappa'][model_name]) 
         k_index += 1
 
     # Record sample sizes used
@@ -244,7 +240,6 @@ for dataset_index, dataset in enumerate(train_indices):
 
 # Save sample sizes and model results in txt files
 np.savetxt("metrics/cc18_sample_sizes.txt", all_sample_sizes)
-np.savetxt("results/cc18_dn_kappa.txt", dn_evolution)
-np.savetxt("results/cc18_rf_kappa.txt", rf_evolution)
-np.savetxt("results/cc18_dn_ece.txt", dn_evolution_ece)
-np.savetxt("results/cc18_rf_ece.txt", rf_evolution_ece)
+save_methods={'text_dict':1,'csv':0,'json':0}
+save_methods_rewrite={'text_dict':1,'csv':0,'json':0}
+save_best_parameters(save_methods,save_methods_rewrite,"metrics/kappa_and_ece",evolution_dict)

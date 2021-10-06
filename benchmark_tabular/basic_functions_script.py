@@ -93,3 +93,24 @@ def open_dictionary_best_params(path="metrics/cc18_all_parameters_try.txt"):
     contents = file.read()
     dictionary = ast.literal_eval(contents)
     return dictionary
+
+#%% function to return to default values
+def return_to_default():
+    nodes_combination = [20, 100, 180, 260, 340, 400]
+    dataset_indices_max = 72 
+    max_shape_to_run = 10000
+    alpha_range_nn = [0.0001, 0.001, 0.01, 0.1]
+    subsample=[0.5,0.8,1.0]
+    models_to_run={'RF':1,'DN':1,'GBDT':1}
+    return nodes_combination,dataset_indices_max,max_shape_to_run,models_to_run,subsample,alpha_range_nn
+
+#%% Function to save variables to dict for later use
+def save_vars_to_dict(reload_data = False,nodes_combination = [20],dataset_indices_max=2,max_shape_to_run=10000,alpha_range_nn=[0.1],subsample=[1.0],path_to_save='metrics/dict_parameters.json'):
+    dict_to_save={'reload_data' : False,
+     'nodes_combination' : [20],
+     'dataset_indices_max' : 2,
+     'max_shape_to_run' : 10000,
+     'alpha_range_nn' : [0.1],
+     'subsample' : [1.0]}
+    with open(path_to_save, 'w') as fp:
+            json.dump(dict_to_save, fp)

@@ -23,17 +23,9 @@ import ast
 import os
 
 from basic_functions_script import *
-from save_hyperparameterst import *
-#%% function to return to default values
-def return_to_default():
-    nodes_combination = [20, 100, 180, 260, 340, 400]
-    dataset_indices_max = 72 
-    max_shape_to_run = 10000
-    alpha_range_nn = [0.0001, 0.001, 0.01, 0.1]
-    subsample=[0.5,0.8,1.0]
-    models_to_run={'RF':1,'DN':1,'GBDT':1}
-    return nodes_combination,dataset_indices_max,max_shape_to_run,models_to_run,subsample,alpha_range_nn
+from save_hyperparameters import *
 
+    
 #%% Define executrion variables (to save memory & execution time)
 reload_data = False # indicator of whether to upload the data again
 nodes_combination = [20]#[20, 100, 180, 260, 340, 400] # default is [20, 100, 180, 260, 340, 400]
@@ -63,7 +55,9 @@ node_range = test_list + two_layer + three_layer
 Change below to add a model
 """
 models_to_run={'RF':0,'DN':0,'GBDT':1} # Define which models to run
-classifiers={'DN':MLPClassifier(max_iter=200), 'RF':RandomForestClassifier(n_estimators=500), 'GBDT': GradientBoostingClassifier(n_estimators=500)}
+
+classifiers={'DN':MLPClassifier(max_iter=200), 'RF':RandomForestClassifier(n_estimators=500), 
+             'GBDT': GradientBoostingClassifier(n_estimators=500)}
 
 varCV={'DN':{'n_jobs':-1,'verbose':1,'cv':None},
             'RF':{'n_jobs':-1,'verbose':1,'cv':None},
@@ -121,3 +115,4 @@ for dataset_index, dataset in enumerate(dataset_indices):
 
 
 save_best_parameters(save_methods,save_methods_rewrite,path_save,best_parameters)
+save_vars_to_dict(reload_data ,nodes_combination ,dataset_indices_max,max_shape_to_run,alpha_range_nn,subsample,'metrics/dict_parameters.json')
