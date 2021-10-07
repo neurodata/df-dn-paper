@@ -1,7 +1,10 @@
 """
 Author: Michael Ainsworth
 """
-
+"""
+Updates:
+    Noga Mudrik
+"""
 #%% Imports
 import numpy as np
 import matplotlib.pyplot as plt
