@@ -2,96 +2,13 @@
 Coauthors: Michael Ainsworth
            Haoyin Xu
 """
+from toolbox import *
 
-import numpy as np
-import matplotlib.pyplot as plt
-from random import sample
-from tqdm.notebook import tqdm
-from sklearn import datasets
 from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold
-import ast
-import openml
 import time
-
-
-def load_cc18():
-    """
-    Import datasets from OpenML-CC18 dataset suite
-    """
-    X_data_list = []
-    y_data_list = []
-    dataset_name = []
-
-    for data_id in openml.study.get_suite("OpenML-CC18").data:
-        try:
-            successfully_loaded = True
-            dataset = openml.datasets.get_dataset(data_id, download_data=False)
-            dataset_name.append(dataset.name)
-            X, y, is_categorical, _ = dataset.get_data(
-                dataset_format="array", target=dataset.default_target_attribute
-            )
-            _, y = np.unique(y, return_inverse=True)
-            X = np.nan_to_num(X)
-        except TypeError:
-            successfully_loaded = False
-        if successfully_loaded and np.shape(X)[1] > 0:
-            X_data_list.append(X)
-            y_data_list.append(y)
-
-    return X_data_list, y_data_list, dataset_name
-
-
-def read_params_txt(filename):
-    """
-    Read and parse optimized parameters from text file
-    """
-    params = []
-    f = open(filename, "r").read()
-    f = f.split("\n")
-    f = f[:-1]
-    for ind, i in enumerate(f):
-        temp = ast.literal_eval(f[ind])
-        params.append(temp)
-    return params
-
-
-def random_sample_new(data, training_sample_sizes):
-    """
-    Given X_data and a list of training sample size, randomly sample indices to be used.
-    Larger sample sizes include all indices from smaller sample sizes.
-    """
-    temp_inds = []
-
-    ordered = [i for i in range(len(data))]
-    minus = 0
-    for ss in range(len(training_sample_sizes)):
-        x = sorted(sample(ordered, training_sample_sizes[ss] - minus))
-        minus += len(x)
-        temp_inds.append(x)
-        ordered = list(set(ordered) - set(x))
-
-    final_inds = []
-    temp = []
-
-    for i in range(len(temp_inds)):
-        cur = temp_inds[i]
-        final_inds.append(sorted(cur + temp))
-        temp = sorted(cur + temp)
-
-    return final_inds
-
-
-def sample_large_datasets(X_data, y_data):
-    """
-    For large datasets with over 10000 samples, resample the data to only include
-    10000 random samples.
-    """
-    inds = [i for i in range(X_data.shape[0])]
-    fin = sorted(sample(inds, 10000))
-    return X_data[fin], y_data[fin]
 
 
 # Load data from CC18 data set suite
