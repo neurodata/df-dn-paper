@@ -20,7 +20,7 @@ def load_cc18():
     for data_id in openml.study.get_suite("OpenML-CC18").data:
         try:
             successfully_loaded = True
-            dataset = openml.datasets.get_dataset(data_id, download_data=False)
+            dataset = openml.datasets.get_dataset(data_id)
             dataset_name.append(dataset.name)
             X, y, is_categorical, _ = dataset.get_data(
                 dataset_format="array", target=dataset.default_target_attribute
