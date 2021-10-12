@@ -28,6 +28,7 @@ test_times = {model_name:None for model_name in dictionary_params['classifiers_n
 shape_2_evolution = dictionary_params['shape_2_evolution'] 
 shape_2_all_sample_sizes = dictionary_params['shape_2_all_sample_sizes']
 save_times_rewrite={'text_dict':0,'csv':0,'json':0}
+save_methods={'text_dict':1,'csv':1,'json':1}
 #%% Functions
 
 
@@ -164,7 +165,7 @@ for dataset_index, dataset in enumerate(dataset_indices):
 
 
 # Save results as txt files
-save_best_parameters(save_methods = 'text_dict',save_methods_rewrite = save_times_rewrite ,path_save = "results/times" ,best_parameters= train_test_times )
+save_best_parameters(save_methods =save_methods,save_methods_rewrite = save_times_rewrite ,path_save = "results/times" ,best_parameters= train_test_times )
         
 #np.savetxt("results/cc18_rf_times_train.txt", rf_times_train)
 #np.savetxt("results/cc18_rf_times_test.txt", rf_times_test)
