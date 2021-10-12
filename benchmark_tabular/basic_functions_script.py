@@ -105,12 +105,28 @@ def return_to_default():
     return nodes_combination,dataset_indices_max,max_shape_to_run,models_to_run,subsample,alpha_range_nn
 
 #%% Function to save variables to dict for later use
-def save_vars_to_dict(reload_data = False,nodes_combination = [20],dataset_indices_max=2,max_shape_to_run=10000,alpha_range_nn=[0.1],subsample=[1.0],path_to_save='metrics/dict_parameters.json'):
-    dict_to_save={'reload_data' : False,
-     'nodes_combination' : [20],
-     'dataset_indices_max' : 2,
-     'max_shape_to_run' : 10000,
-     'alpha_range_nn' : [0.1],
-     'subsample' : [1.0]}
+def save_vars_to_dict(classifiers,  varargin, reload_data = False,nodes_combination = [20],dataset_indices_max=2,max_shape_to_run=10000,alpha_range_nn=[0.1],subsample=[1.0],path_to_save='metrics/dict_parameters.json',shape_2_evolution=5, shape_2_all_sample_sizes= 8 ):
+    dict_to_save={'reload_data' : reload_data,
+     'nodes_combination' : nodes_combination,
+     'dataset_indices_max' : dataset_indices_max,
+     'max_shape_to_run' : max_shape_to_run,
+     'alpha_range_nn' : alpha_range_nn,
+     'subsample' : subsample, 
+     'classifiers_names':tuple(classifiers.keys()),
+     'varargin':varargin, 
+     'shape_2_evolution': shape_2_evolution,
+     'shape_2_all_sample_sizes': shape_2_all_sample_sizes}
+    
     with open(path_to_save, 'w') as fp:
         json.dump(dict_to_save, fp)
+        
+def model_define(model_name,best_params_dict,dataset):
+    if model_name=='RF':
+        model =  RandomForestClassifier(**best_params_dict[model_name][dataset], n_estimators=500, n_jobs=-1   )
+    elif model_name=='DN':
+        model = MLPClassifier(**best_params_dict[model_name][dataset])
+    elif model_name=='GBDT':
+        model = GradientBoostingClassifier(**best_params_dict[model_name][dataset],n_estimators=500)
+    else:
+        raise ValueError('Invalid Model Name')
+    return model

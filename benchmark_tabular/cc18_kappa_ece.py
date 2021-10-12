@@ -21,11 +21,14 @@ from sklearn.metrics import cohen_kappa_score
 import ast
 import openml
 import pandas as pd
+import json 
 
 from basic_functions_script import *
 from save_hyperparameters import *
 
 #%%
+reload_data = False # indicator of whether to upload the data again
+
 path_save="metrics/cc18_all_parameters_new"
 path_params="metrics/dict_parameters"
 
@@ -46,16 +49,7 @@ shape_2_evolution = 5
 n_splits=5
 
 models_to_run={'RF':0,'DN':0,'GBDT':1}
-def model_define(model_name,best_parameters):
-    if model_name=='RF':
-        model =  RandomForestClassifier(**best_params_dict[model_name][dataset], n_estimators=500, n_jobs=-1   )
-    elif model_name=='DN':
-        model = MLPClassifier(**best_params_dict[model_name][dataset])
-    elif model_name=='GBDT':
-        model = GradientBoostingClassifier(**best_params_dict[model_name][dataset],n_estimators=500)
-    else:
-        raise ValueError('Invalid Model Name')
-    return model
+
 
 #%% Functions
 
@@ -164,7 +158,8 @@ def sample_large_datasets(X_data, y_data,max_shape_to_run = 10000):
 
 
 # Import CC18 data and pretuned hyperparameters
-X_data_list, y_data_list, dataset_name = load_cc18()
+if (reload_data or 'dataset_name' not in locals()):
+    X_data_list, y_data_list, dataset_name = load_cc18()
 
 best_params_dict = read_params_dict_txt(path,file_type_to_load)
 cohen_ece_results_dict={metric:{model_name:np.zeros((reps)) for model_name in best_params_dict.keys()} for metric in ['cohen_kappa','ece']}

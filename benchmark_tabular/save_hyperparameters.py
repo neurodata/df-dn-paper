@@ -17,14 +17,13 @@ def save_best_parameters(save_methods,save_methods_rewrite,path_save,best_parame
         if  os.path.exists(path_save+".txt") and save_methods_rewrite['text_dict']==0:
             file = open(path_save+".txt", "r")
             contents = file.read()
-            display(contents)
+            #display(contents)
             dictionary = ast.literal_eval(contents)
             best_parameters_to_save={**dictionary,**best_parameters} # This will overwrite existing models but not models that were removed
         else:
             best_parameters_to_save=best_parameters
         with open(path_save+".txt", "w") as f:       
-            f.write("%s\n" % best_parameters_to_save)
-            
+            f.write("%s\n" % best_parameters_to_save)            
             
     if  save_methods['json']:
         if  os.path.exists(path_save+".json") and save_methods_rewrite['json']==0:

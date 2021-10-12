@@ -69,6 +69,8 @@ varCV={'DN':{'n_jobs':-1,'verbose':1,'cv':None},
 varargin = {'node_range':node_range, 'alpha_range_nn':alpha_range_nn,'subsample':subsample}
 
 
+save_vars_to_dict(classifiers, varargin , reload_data ,nodes_combination ,dataset_indices_max,max_shape_to_run,alpha_range_nn,subsample,'metrics/dict_parameters.json')
+
 
 #%% function so save cc18_all_parameters file
 
@@ -118,4 +120,3 @@ for dataset_index, dataset in enumerate(dataset_indices):
 
 
 save_best_parameters(save_methods,save_methods_rewrite,path_save,best_parameters)
-save_vars_to_dict(reload_data ,nodes_combination ,dataset_indices_max,max_shape_to_run,alpha_range_nn,subsample,'metrics/dict_parameters.json')

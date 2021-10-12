@@ -2,6 +2,8 @@
 Author: Michael Ainsworth
 """
 
+#%% Imports 
+
 import numpy as np
 import matplotlib.pyplot as plt
 from random import sample
@@ -14,37 +16,19 @@ from sklearn.model_selection import StratifiedKFold
 import ast
 import openml
 import time
+import json 
 
-
-def load_cc18():
-    """
-    Import datasets from OpenML-CC18 dataset suite
-    """
-    X_data_list = []
-    y_data_list = []
-    dataset_name = []
-
-    for task_num, task_id in enumerate(
-        tqdm(openml.study.get_suite("OpenML-CC18").tasks)
-    ):
-        try:
-            successfully_loaded = True
-            dataset = openml.datasets.get_dataset(
-                openml.tasks.get_task(task_id).dataset_id
-            )
-            dataset_name.append(dataset.name)
-            X, y, is_categorical, _ = dataset.get_data(
-                dataset_format="array", target=dataset.default_target_attribute
-            )
-            _, y = np.unique(y, return_inverse=True)
-            X = np.nan_to_num(X)
-        except TypeError:
-            successfully_loaded = False
-        if successfully_loaded and np.shape(X)[1] > 0:
-            X_data_list.append(X)
-            y_data_list.append(y)
-
-    return X_data_list, y_data_list, dataset_name
+from basic_functions_script import *
+from save_hyperparameters import *
+path_params = 'metrics/dict_parameters'
+with open(path_params+".json",'r') as json_file:
+    dictionary_params = json.load(json_file)
+train_times = {model_name:None for model_name in dictionary_params['classifiers_names']}
+test_times = {model_name:None for model_name in dictionary_params['classifiers_names']}
+shape_2_evolution = dictionary_params['shape_2_evolution'] 
+shape_2_all_sample_sizes = dictionary_params['shape_2_all_sample_sizes']
+save_times_rewrite={'text_dict':0,'csv':0,'json':0}
+#%% Functions
 
 
 def read_params_txt(filename):
@@ -96,22 +80,36 @@ def sample_large_datasets(X_data, y_data):
     fin = sorted(sample(inds, 10000))
     return X_data[fin], y_data[fin]
 
-
+def calculate_time(model,X_train,y_train, X_test):
+    start_time = time.perf_counter()
+    model.fit(X_train, y_train)
+    end_time = time.perf_counter()
+    train_time = end_time - start_time
+    
+    
+    start_time = time.perf_counter()
+    y_pred = model.predict(X_test)
+    end_time = time.perf_counter()
+    test_time = end_time - start_time
+            
+    return train_time,test_time, y_pred
+            
+            
 # Load data from CC18 data set suite
-X_data_list, y_data_list, dataset_name = load_cc18()
-dataset_indices = [i for i in range(72)]
+if (dictionary_params['reload_data'] or 'dataset_name' not in locals()):
+    X_data_list, y_data_list, dataset_name = load_cc18()
+if 'best_params_dict' not in locals():
+    best_params_dict = read_params_dict_txt(path,file_type_to_load)
+    
+dataset_indices = [i for i in range(dictionary_params['dataset_indices_max'])]
 
 # Import pretuned hyperparameters
 all_params = read_params_txt("metrics/cc18_all_parameters.txt")
 
 
 # Empty arrays to index times into
-rf_times_train = np.zeros((8 * len(dataset_indices), 5))
-rf_times_test = np.zeros((8 * len(dataset_indices), 5))
-
-dn_times_train = np.zeros((8 * len(dataset_indices), 5))
-dn_times_test = np.zeros((8 * len(dataset_indices), 5))
-
+train_test_times = {metric:
+    {model_name:np.zeros((shape_2_all_sample_sizes * len(dataset_indices), shape_2_evolution)) for model_name in best_params_dict.keys()} for metric in ['train','test']}
 
 # For each dataset, determine wall times at each sample size
 for dataset_index, dataset in enumerate(dataset_indices):
@@ -122,9 +120,9 @@ for dataset_index, dataset in enumerate(dataset_indices):
     y = y_data_list[dataset]
 
     # If data set has over 10000 samples, resample to contain 10000
-    if X.shape[0] > 10000:
+    if X.shape[0] > dictionary_params['max_shape_to_run']:
         X, y = sample_large_datasets(X, y)
-
+    # Scaling
     scaler = StandardScaler()
     scaler.fit(X)
     X = scaler.transform(X)
@@ -141,7 +139,7 @@ for dataset_index, dataset in enumerate(dataset_indices):
         temp = np.log10((len(np.unique(y))) * 5)
         t = (np.log10(X_train.shape[0]) - temp) / 7
         training_sample_sizes = []
-        for i in range(8):
+        for i in range(shape_2_all_sample_sizes):
             training_sample_sizes.append(round(np.power(10, temp + i * t)))
 
         ss_inds = random_sample_new(X_train, training_sample_sizes)
@@ -151,48 +149,24 @@ for dataset_index, dataset in enumerate(dataset_indices):
 
             X_train_new = X_train[ss_inds[sample_size_index]]
             y_train_new = y_train[ss_inds[sample_size_index]]
+            
+            for model_name in best_params_dict.keys():
+                #parameters = create_parameters(model_name,varargin)
+                model = model_define(model_name,best_params_dict,dataset)
+                train_time, test_time, y_pred = calculate_time(model,X_train_new,y_train_new, X_test)
+                train_times[model_name] = train_time
+                test_times[model_name] = test_time
+                train_test_times['train'][model_name][sample_size_index + shape_2_all_sample_sizes * dataset_index][k_index] = train_time
+                train_test_times['test'][model_name][sample_size_index + shape_2_all_sample_sizes * dataset_index][k_index] = test_time
 
-            rf = RandomForestClassifier(
-                **all_params[dataset][1], n_estimators=500, n_jobs=-1
-            )
-
-            start_time = time.perf_counter()
-            rf.fit(X_train_new, y_train_new)
-            end_time = time.perf_counter()
-            rf_train_time = end_time - start_time
-
-            start_time = time.perf_counter()
-            y_pred_rf = rf.predict(X_test)
-            end_time = time.perf_counter()
-            rf_test_time = end_time - start_time
-
-            mlp = MLPClassifier(**all_params[dataset][0])
-
-            start_time = time.perf_counter()
-            mlp.fit(X_train_new, y_train_new)
-            end_time = time.perf_counter()
-            dn_train_time = end_time - start_time
-
-            start_time = time.perf_counter()
-            y_pred_mlp = mlp.predict(X_test)
-            end_time = time.perf_counter()
-            dn_test_time = end_time - start_time
-
-            rf_times_train[sample_size_index + 8 * dataset_index][
-                k_index
-            ] = rf_train_time
-            rf_times_test[sample_size_index + 8 * dataset_index][k_index] = rf_test_time
-
-            dn_times_train[sample_size_index + 8 * dataset_index][
-                k_index
-            ] = dn_train_time
-            dn_times_test[sample_size_index + 8 * dataset_index][k_index] = dn_test_time
 
         k_index += 1
 
 
 # Save results as txt files
-np.savetxt("results/cc18_rf_times_train.txt", rf_times_train)
-np.savetxt("results/cc18_rf_times_test.txt", rf_times_test)
-np.savetxt("results/cc18_dn_times_train.txt", dn_times_train)
-np.savetxt("results/cc18_dn_times_test.txt", dn_times_test)
+save_best_parameters(save_methods = 'text_dict',save_methods_rewrite = save_times_rewrite ,path_save = "results/times" ,best_parameters= train_test_times )
+        
+#np.savetxt("results/cc18_rf_times_train.txt", rf_times_train)
+#np.savetxt("results/cc18_rf_times_test.txt", rf_times_test)
+#np.savetxt("results/cc18_dn_times_train.txt", dn_times_train)
+#np.savetxt("results/cc18_dn_times_test.txt", dn_times_test)
