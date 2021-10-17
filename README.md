@@ -36,3 +36,5 @@ For auditory benchmarks, remember to specify both the class number and the featu
 ```
 python fsdd.py -m 3 -f spectrogram
 ```
+
+In addition, the FSDD [dataset](https://github.com/Jakobovski/free-spoken-digit-dataset/releases/tag/v1.0.10) needs to be downloaded locally.
