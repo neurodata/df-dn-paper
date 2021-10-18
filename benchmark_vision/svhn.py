@@ -7,13 +7,42 @@ from svhn_toolbox import *
 import argparse
 import random
 from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier,  GradientBoostingClassifier
 
 import torchvision.models as models
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
+def run_naive_GBDT():
+    naive_GBDT_kappa = []
+    naive_GBDT_ece = []
+    naive_GBDT_train_time = []
+    naive_GBDT_test_time = []
+    for classes in classes_space:
 
+        # cohen_kappa vs num training samples (naive_rf)
+        for samples in samples_space:
+            GBDT = GradientBoostingClassifier(n_estimators=100)
+            cohen_kappa, ece, train_time, test_time = run_rf_GBDT_image_set(
+                GBDT,
+                svhn_train_images,
+                svhn_train_labels,
+                svhn_test_images,
+                svhn_test_labels,
+                samples,
+                classes,
+            )
+            naive_GBDT_kappa.append(cohen_kappa)
+            naive_GBDT_ece.append(ece)
+            naive_GBDT_train_time.append(train_time)
+            naive_GBDT_test_time.append(test_time)
+
+    print("naive_GBDT finished")
+    write_result(prefix + "naive_GBDT_kappa.txt", naive_GBDT_kappa)
+    write_result(prefix + "naive_GBDT_ece.txt", naive_GBDT_ece)
+    write_result(prefix + "naive_GBDT_train_time.txt", naive_GBDT_train_time)
+    write_result(prefix + "naive_GBDT_test_time.txt", naive_GBDT_test_time)
+    
 def run_naive_rf():
     naive_rf_kappa = []
     naive_rf_ece = []
@@ -24,7 +53,7 @@ def run_naive_rf():
         # cohen_kappa vs num training samples (naive_rf)
         for samples in samples_space:
             RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
-            cohen_kappa, ece, train_time, test_time = run_rf_image_set(
+            cohen_kappa, ece, train_time, test_time = run_rf_GBDT_image_set(
                 RF,
                 svhn_train_images,
                 svhn_train_labels,
@@ -290,3 +319,4 @@ if __name__ == "__main__":
     )
 
     run_resnet18()
+    run_naive_GBDT()

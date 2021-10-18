@@ -167,7 +167,7 @@ def get_ece(predicted_posterior, predicted_label, true_label, num_bins=40):
     return score
 
 
-def run_rf_image_set(
+def run_rf_GBDT_image_set(
     model,
     train_images,
     train_labels,

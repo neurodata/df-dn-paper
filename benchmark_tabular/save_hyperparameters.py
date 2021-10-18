@@ -42,3 +42,11 @@ def save_best_parameters(save_methods,save_methods_rewrite,path_save,best_parame
         else:
             df_to_save=df_new_data    
         df_to_save.to_csv(path_save+'.csv',index=False)
+        
+def open_data(path,format_file):
+    if format_file=='text_dict':
+        file = open(path+".txt", "r")
+        contents = file.read()
+        #display(contents)
+        dictionary = ast.literal_eval(contents)
+    return dictionary

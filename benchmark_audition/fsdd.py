@@ -7,7 +7,7 @@ from audio_toolbox import *
 import argparse
 import numpy as np
 from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier,  GradientBoostingClassifier
 from sklearn.preprocessing import scale
 import torch
 import torch.nn as nn
@@ -22,7 +22,37 @@ def write_result(filename, acc_ls):
     with open(filename, "a") as testwritefile:
         for acc in acc_ls:
             testwritefile.write(str(acc) + "\n")
+            
+def run_naive_GBDT():
+    naive_GBDT_kappa = []
+    naive_GBDT_ece = []
+    naive_GBDT_train_time = []
+    naive_GBDT_test_time = []
+    for classes in classes_space:
 
+        # cohen_kappa vs num training samples (naive_rf)
+        for samples in samples_space:
+            # train data
+            GBDT = GradientBoostingClassifier(n_estimators=100)
+            cohen_kappa, ece, train_time, test_time = run_rf_GBDT_image_set(
+                GBDT,
+                fsdd_train_images,
+                fsdd_train_labels,
+                fsdd_test_images,
+                fsdd_test_labels,
+                samples,
+                classes,
+            )
+            naive_GBDT_kappa.append(cohen_kappa)
+            naive_GBDT_ece.append(ece)
+            naive_GBDT_train_time.append(train_time)
+            naive_GBDT_test_time.append(test_time)
+
+    print("naive_GBDT finished")
+    write_result(prefix + "naive_GBDT_kappa.txt", naive_GBDT_kappa)
+    write_result(prefix + "naive_GBDT_ece.txt", naive_GBDT_ece)
+    write_result(prefix + "naive_GBDT_train_time.txt", naive_GBDT_train_time)
+    write_result(prefix + "naive_GBDT_test_time.txt", naive_GBDT_test_time)
 
 def run_naive_rf():
     naive_rf_kappa = []
@@ -35,7 +65,7 @@ def run_naive_rf():
         for samples in samples_space:
             # train data
             RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
-            cohen_kappa, ece, train_time, test_time = run_rf_image_set(
+            cohen_kappa, ece, train_time, test_time = run_rf_GBDT_image_set(
                 RF,
                 fsdd_train_images,
                 fsdd_train_labels,
@@ -265,6 +295,8 @@ def run_resnet18():
 
 
 if __name__ == "__main__":
+    models_to_run = {'rf':1, 'dn':1,'GBDT':1}
+    
     torch.multiprocessing.freeze_support()
 
     parser = argparse.ArgumentParser()
@@ -326,9 +358,13 @@ if __name__ == "__main__":
     # reshape in 2d array
     fsdd_test_images = testx.reshape(-1, 32 * 32)
     fsdd_test_labels = testy.copy()
-
-    run_naive_rf()
-    run_cnn32()
-    run_cnn32_2l()
-    run_cnn32_5l()
-    run_resnet18()
+    models_to_run = {'rf':0, 'dn':0,'GBDT':1}
+    if models_to_run['rf']:
+        run_naive_rf()
+    if models_to_run['dn']:
+        run_cnn32()
+        run_cnn32_2l()
+        run_cnn32_5l()
+        run_resnet18()
+    if models_to_run['GBDT']:
+        run_naive_GBDT()
