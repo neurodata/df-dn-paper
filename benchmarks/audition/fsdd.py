@@ -8,7 +8,7 @@ from audio_toolbox import *
 import argparse
 import numpy as np
 from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier,  GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.preprocessing import scale
 import torch
 import torch.nn as nn
@@ -23,6 +23,7 @@ def write_result(filename, acc_ls):
     with open(filename, "a") as testwritefile:
         for acc in acc_ls:
             testwritefile.write(str(acc) + "\n")
+
 
 def run_gbdt():
     gbdt_kappa = []
@@ -54,6 +55,7 @@ def run_gbdt():
     write_result(prefix + "gbdt_ece.txt", gbdt_ece)
     write_result(prefix + "gbdt_train_time.txt", gbdt_train_time)
     write_result(prefix + "gbdt_test_time.txt", gbdt_test_time)
+
 
 def run_naive_rf():
     naive_rf_kappa = []
@@ -296,7 +298,7 @@ def run_resnet18():
 
 
 if __name__ == "__main__":
-    models_to_run = {'rf':1, 'dn':1,'gbdt':1}
+    models_to_run = {"rf": 1, "dn": 1, "gbdt": 1}
 
     torch.multiprocessing.freeze_support()
 
@@ -359,13 +361,13 @@ if __name__ == "__main__":
     # reshape in 2d array
     fsdd_test_images = testx.reshape(-1, 32 * 32)
     fsdd_test_labels = testy.copy()
-    models_to_run = {'rf':0, 'dn':0,'gbdt':1}
-    if models_to_run['rf']:
+    models_to_run = {"rf": 0, "dn": 0, "gbdt": 1}
+    if models_to_run["rf"]:
         run_naive_rf()
-    if models_to_run['dn']:
+    if models_to_run["dn"]:
         run_cnn32()
         run_cnn32_2l()
         run_cnn32_5l()
         run_resnet18()
-    if models_to_run['gbdt']:
+    if models_to_run["gbdt"]:
         run_gbdt()

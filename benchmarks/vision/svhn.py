@@ -8,11 +8,12 @@ from svhn_toolbox import *
 import argparse
 import random
 from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier,  GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 
 import torchvision.models as models
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
+
 
 def run_gbdt():
     gbdt_kappa = []
@@ -43,6 +44,7 @@ def run_gbdt():
     write_result(prefix + "gbdt_ece.txt", gbdt_ece)
     write_result(prefix + "gbdt_train_time.txt", gbdt_train_time)
     write_result(prefix + "gbdt_test_time.txt", gbdt_test_time)
+
 
 def run_naive_rf():
     naive_rf_kappa = []

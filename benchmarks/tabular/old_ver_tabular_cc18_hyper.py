@@ -10,18 +10,26 @@ Author: Michael Ainsworth
 """
 
 #%% Define executrion variables (to save memory & execution time)
-reload_data = False # indicator of whether to upload the data again
-nodes_combination = [20, 100, 180, 260, 340, 400] # default is [20, 100, 180, 260, 340, 400]
-dataset_indices_max=72 
-max_shape_to_run=10000
-alpha_range_nn=[0.0001, 0.001, 0.01, 0.1]
+reload_data = False  # indicator of whether to upload the data again
+nodes_combination = [
+    20,
+    100,
+    180,
+    260,
+    340,
+    400,
+]  # default is [20, 100, 180, 260, 340, 400]
+dataset_indices_max = 72
+max_shape_to_run = 10000
+alpha_range_nn = [0.0001, 0.001, 0.01, 0.1]
 #%% function to return to default values
 def return_to_default():
     nodes_combination = [20, 100, 180, 260, 340, 400]
-    dataset_indices_max = 72 
+    dataset_indices_max = 72
     max_shape_to_run = 10000
     alpha_range_nn = [0.0001, 0.001, 0.01, 0.1]
-    return nodes_combination,dataset_indices_max,max_shape_to_run
+    return nodes_combination, dataset_indices_max, max_shape_to_run
+
 
 #%% function so save cc18_all_parameters file
 
@@ -87,7 +95,9 @@ Organize the data
 """
 
 # Load data from CC18 data set suite
-if (reload_data or 'task_id' not in locals()): # Load the data only if required (by reload_data or if it is not defined)
+if (
+    reload_data or "task_id" not in locals()
+):  # Load the data only if required (by reload_data or if it is not defined)
     X_data_list, y_data_list, dataset_name = load_cc18()
 
 
@@ -103,7 +113,7 @@ dataset_indices = [i for i in range(dataset_indices_max)]
 Deep Neural Network
 """
 # Generate all combinations of nodes to tune over
-test_list = nodes_combination;
+test_list = nodes_combination
 two_layer = list(itertools.combinations(test_list, 2))
 three_layer = list(itertools.combinations(test_list, 3))
 
@@ -120,7 +130,7 @@ for dataset_index, dataset in enumerate(dataset_indices):
     # If data set has over 10000 samples, resample to contain 10000
     if X.shape[0] > max_shape_to_run:
         X, y = sample_large_datasets(X, y)
-        
+
     # Standart Scaler
     scaler = StandardScaler()
     scaler.fit(X)

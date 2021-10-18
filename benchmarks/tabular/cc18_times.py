@@ -2,7 +2,7 @@
 Author: Michael Ainsworth
 """
 
-#%% Imports 
+#%% Imports
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,19 +16,22 @@ from sklearn.model_selection import StratifiedKFold
 import ast
 import openml
 import time
-import json 
+import json
 
 from basic_functions_script import *
 from save_hyperparameters import *
-path_params = 'metrics/dict_parameters'
-with open(path_params+".json",'r') as json_file:
+
+path_params = "metrics/dict_parameters"
+with open(path_params + ".json", "r") as json_file:
     dictionary_params = json.load(json_file)
-train_times = {model_name:None for model_name in dictionary_params['classifiers_names']}
-test_times = {model_name:None for model_name in dictionary_params['classifiers_names']}
-repos_cv = dictionary_params['shape_2_evolution'] 
-len_samp_size = dictionary_params['shape_2_all_sample_sizes']
-save_times_rewrite={'text_dict':1,'csv':1,'json':0}
-save_methods={'text_dict':1,'csv':1,'json':0}
+train_times = {
+    model_name: None for model_name in dictionary_params["classifiers_names"]
+}
+test_times = {model_name: None for model_name in dictionary_params["classifiers_names"]}
+repos_cv = dictionary_params["shape_2_evolution"]
+len_samp_size = dictionary_params["shape_2_all_sample_sizes"]
+save_times_rewrite = {"text_dict": 1, "csv": 1, "json": 0}
+save_methods = {"text_dict": 1, "csv": 1, "json": 0}
 #%% Functions
 
 
@@ -81,37 +84,39 @@ def sample_large_datasets(X_data, y_data):
     fin = sorted(sample(inds, 10000))
     return X_data[fin], y_data[fin]
 
-def calculate_time(model,X_train,y_train, X_test):
+
+def calculate_time(model, X_train, y_train, X_test):
     start_time = time.perf_counter()
     model.fit(X_train, y_train)
     end_time = time.perf_counter()
     train_time = end_time - start_time
-    
-    
+
     start_time = time.perf_counter()
     y_pred = model.predict(X_test)
     end_time = time.perf_counter()
     test_time = end_time - start_time
-            
-    return train_time,test_time, y_pred
-            
-            
+
+    return train_time, test_time, y_pred
+
+
 # Load data from CC18 data set suite
-if (dictionary_params['reload_data'] or 'dataset_name' not in locals()):
+if dictionary_params["reload_data"] or "dataset_name" not in locals():
     X_data_list, y_data_list, dataset_name = load_cc18()
-path_best_parameters = 'metrics/cc18_all_parameters_new'
-if 'best_params_dict' not in locals():
-    best_params_dict = open_data(path_best_parameters,'text_dict')
-    
-dataset_indices = [i for i in range(dictionary_params['dataset_indices_max'])]
+path_best_parameters = "metrics/cc18_all_parameters_new"
+if "best_params_dict" not in locals():
+    best_params_dict = open_data(path_best_parameters, "text_dict")
+
+dataset_indices = [i for i in range(dictionary_params["dataset_indices_max"])]
 
 # Import pretuned hyperparameters
 all_params = read_params_txt("metrics/cc18_all_parameters.txt")
 
 
 # Empty arrays to index times into
-train_test_times = {metric:
-    {model_name:{} for model_name in best_params_dict.keys()} for metric in ['train','test']}
+train_test_times = {
+    metric: {model_name: {} for model_name in best_params_dict.keys()}
+    for metric in ["train", "test"]
+}
 
 # For each dataset, determine wall times at each sample size
 for dataset_index, dataset in enumerate(dataset_indices):
@@ -122,7 +127,7 @@ for dataset_index, dataset in enumerate(dataset_indices):
     y = y_data_list[dataset]
 
     # If data set has over 10000 samples, resample to contain 10000
-    if X.shape[0] > dictionary_params['max_shape_to_run']:
+    if X.shape[0] > dictionary_params["max_shape_to_run"]:
         X, y = sample_large_datasets(X, y)
     # Scaling
     scaler = StandardScaler()
@@ -151,27 +156,44 @@ for dataset_index, dataset in enumerate(dataset_indices):
 
             X_train_new = X_train[ss_inds[sample_size_index]]
             y_train_new = y_train[ss_inds[sample_size_index]]
-            
+
             for model_name in best_params_dict.keys():
-                #parameters = create_parameters(model_name,varargin)
-                model = model_define(model_name,best_params_dict,dataset)
-                train_time, test_time, y_pred = calculate_time(model,X_train_new,y_train_new, X_test)
+                # parameters = create_parameters(model_name,varargin)
+                model = model_define(model_name, best_params_dict, dataset)
+                train_time, test_time, y_pred = calculate_time(
+                    model, X_train_new, y_train_new, X_test
+                )
                 train_times[model_name] = train_time
                 test_times[model_name] = test_time
-                if sample_size_index not in train_test_times['train'][model_name].keys():
-                    train_test_times['train'][model_name][sample_size_index] = np.zeros(repos_cv)
-                    train_test_times['test'][model_name][sample_size_index] = np.zeros(repos_cv)
-                train_test_times['train'][model_name][sample_size_index][k_index] = train_time
-                train_test_times['test'][model_name][sample_size_index][k_index] = test_time
-
+                if (
+                    sample_size_index
+                    not in train_test_times["train"][model_name].keys()
+                ):
+                    train_test_times["train"][model_name][sample_size_index] = np.zeros(
+                        repos_cv
+                    )
+                    train_test_times["test"][model_name][sample_size_index] = np.zeros(
+                        repos_cv
+                    )
+                train_test_times["train"][model_name][sample_size_index][
+                    k_index
+                ] = train_time
+                train_test_times["test"][model_name][sample_size_index][
+                    k_index
+                ] = test_time
 
         k_index += 1
 
 
 # Save results as txt files
-save_best_parameters(save_methods =save_methods,save_methods_rewrite = save_times_rewrite ,path_save = "results/times" ,best_parameters= train_test_times )
-        
-#np.savetxt("results/cc18_rf_times_train.txt", rf_times_train)
-#np.savetxt("results/cc18_rf_times_test.txt", rf_times_test)
-#np.savetxt("results/cc18_dn_times_train.txt", dn_times_train)
-#np.savetxt("results/cc18_dn_times_test.txt", dn_times_test)
+save_best_parameters(
+    save_methods=save_methods,
+    save_methods_rewrite=save_times_rewrite,
+    path_save="results/times",
+    best_parameters=train_test_times,
+)
+
+# np.savetxt("results/cc18_rf_times_train.txt", rf_times_train)
+# np.savetxt("results/cc18_rf_times_test.txt", rf_times_test)
+# np.savetxt("results/cc18_dn_times_train.txt", dn_times_train)
+# np.savetxt("results/cc18_dn_times_test.txt", dn_times_test)
