@@ -31,8 +31,8 @@ from save_hyperparameters import *
 
 #%% Define executrion variables (to save memory & execution time)
 reload_data = False  # indicator of whether to upload the data again
-nodes_combination = [20] # default is [20, 100, 180, 260, 340, 400]
-dataset_indices_max = 72  # 72
+nodes_combination = [5] # default is [20, 100, 180, 260, 340, 400]
+dataset_indices_max = 20  # 72
 max_shape_to_run = 10000
 alpha_range_nn = [0.1]  # , 0.001, 0.01, 0.1]
 subsample = [1.0]  # [0.5,0.8,1.0]

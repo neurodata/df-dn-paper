@@ -175,9 +175,7 @@ train_indices = [i for i in range(dataset_indices_max)]
 all_sample_sizes = np.zeros((len(train_indices), shape_2_all_sample_sizes))
 evolution_dict = {
     metric: {
-        model_name: np.zeros(
-            (shape_2_all_sample_sizes * len(train_indices), shape_2_evolution)
-        )
+        model_name: {}
         for model_name in best_params_dict.keys()
     }
     for metric in ["cohen_kappa", "ece"]
@@ -260,6 +258,10 @@ for dataset_index, dataset in enumerate(train_indices):
 np.savetxt("metrics/cc18_sample_sizes.txt", all_sample_sizes)
 save_methods = {"text_dict": 1, "csv": 0, "json": 0}
 save_methods_rewrite = {"text_dict": 1, "csv": 0, "json": 0}
+
+
+#dictionary_test = {key:{key2:tuple(value) for key2,value in inner_res.items()} for key,inner_res in evolution_dict.items()}
+
 save_best_parameters(
     save_methods, save_methods_rewrite, "metrics/kappa_and_ece", evolution_dict
 )
