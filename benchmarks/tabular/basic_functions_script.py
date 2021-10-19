@@ -68,10 +68,11 @@ def do_calcs_per_model(
     X,
     y,
     dataset_index,
+    p = None
 ):
     model = classifiers[model_name]
     varCVmodel = varCV[model_name]
-    parameters = create_parameters(model_name, varargin)
+    parameters = create_parameters(model_name, varargin, p )
     clf = RandomizedSearchCV(
         model,
         parameters,
