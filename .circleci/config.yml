@@ -41,7 +41,6 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install -r dev-requirements.txt
-            pip install -e .
       - save_cache:
           key: v1-3.8-dependency-cache-{{ checksum "dev-requirements.txt" }}
           paths:
