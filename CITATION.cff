@@ -53,7 +53,7 @@ authors:
     affiliation: "Johns Hopkins University, Baltimore, MD"
     family-names: Priebe
     given-names: Carey
-cff-version: "1.1.0"
+cff-version: "1.2.0"
 identifiers:
   -
     type: url
@@ -69,5 +69,4 @@ license: MIT
 message: "If you use this software, please cite it using these metadata."
 repository-code: "https://github.com/neurodata/rf-dn-paper"
 title: "When are Deep Networks really better than Decision Forests at small sample sizes, and how?"
-version: "0.0.1"
 ...
