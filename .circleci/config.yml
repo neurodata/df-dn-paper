@@ -1,0 +1,64 @@
+version: 2.1
+
+orbs:
+  codecov: codecov/codecov@3.1.1
+
+jobs:
+  build:
+    parameters:
+      version:
+        type: string
+    docker:
+      - image: cimg/python:<< parameters.version >>
+    steps:
+      - checkout
+      - restore_cache:
+          key: v1-<< parameters.version >>-min-dependency-cache-{{ checksum "dev-requirements.txt" }}
+      - run:
+          name: install python dependencies
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install --upgrade pip
+            pip install -r dev-requirements.txt
+      - save_cache:
+          key: v1-<< parameters.version >>-min-dependency-cache-{{ checksum "dev-requirements.txt" }}
+          paths:
+            - "venv"
+  test-module:
+    parameters:
+      module:
+        type: string
+    docker:
+      - image: cimg/python:3.8
+    steps:
+      - checkout
+      - restore_cache:
+          key: v1-3.8-dependency-cache-{{ checksum "dev-requirements.txt" }}
+      - run:
+          name: install python dependencies
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r dev-requirements.txt
+            pip install -e .
+      - save_cache:
+          key: v1-3.8-dependency-cache-{{ checksum "dev-requirements.txt" }}
+          paths:
+            - "venv"
+      - run:
+          name: run code linting
+          command: |
+            . venv/bin/activate
+            black --check --diff ./<< parameters.module >>
+workflows:
+  build-test:
+    jobs:
+      - build:
+          name: "v3.8"
+          version: "3.8"
+      - test-module:
+          name: "benchmarks"
+          module: "benchmarks"
+          requires:
+            - "v3.8"
