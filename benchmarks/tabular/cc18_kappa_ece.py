@@ -217,7 +217,7 @@ for dataset_index, dataset in enumerate(train_indices):
         ss_inds = random_sample_new(X_train, training_sample_sizes)
 
         # Iterate through each sample size per dataset
-        for sample_size_index, max_sample_size in enumerate(training_sample_sizes):
+        for sample_size_index, real_sample_size in enumerate(training_sample_sizes):
 
             X_train_new = X_train[ss_inds[sample_size_index]]
             y_train_new = y_train[ss_inds[sample_size_index]]
@@ -227,7 +227,7 @@ for dataset_index, dataset in enumerate(train_indices):
                 if models_to_run[model_name]:
                     for ii in range(reps):
 
-                        model = model_define(model_name, best_parameters)
+                        model = model_define(model_name, best_params_dict, dataset_index )
                         model.fit(X_train_new, y_train_new)
                         predictions = model.predict(X_test)
                         predict_probas = model.predict_proba(X_test)
@@ -238,16 +238,20 @@ for dataset_index, dataset in enumerate(train_indices):
                         ] = cohen_kappa
                         ece = get_ece(predict_probas, predictions, y_test)
                         cohen_ece_results_dict["ece"][model_name][ii] = ece
-                    evolution_dict["cohen_kappa"][model_name][
-                        sample_size_index + shape_2_all_sample_sizes * dataset_index
-                    ][k_index] = np.mean(
+                    if real_sample_size not in evolution_dict["cohen_kappa"][model_name].keys():
+                        evolution_dict["cohen_kappa"][model_name][real_sample_size] = []
+                        evolution_dict["ece"][model_name][real_sample_size] = []
+                        
+                    evolution_dict["cohen_kappa"][model_name][real_sample_size].append(np.mean(
                         cohen_ece_results_dict["cohen_kappa"][model_name]
-                    )
-                    evolution_dict["ece"][model_name][
-                        sample_size_index + shape_2_all_sample_sizes * dataset_index
-                    ][k_index] = np.mean(
+                    ))
+                    evolution_dict["ece"][model_name][real_sample_size].append(np.mean(
                         cohen_ece_results_dict["cohen_kappa"][model_name]
-                    )
+                    ))
+                    if k_index==reps: # Changing the results to tuple enabling easier saving to txt / json and ectacting the fata after that. 
+                        evolution_dict["cohen_kappa"][model_name][real_sample_size] = tuple(evolution_dict["cohen_kappa"][model_name][real_sample_size])
+                        evolution_dict["ece"][model_name][real_sample_size] = tuple(evolution_dict["ece"][model_name][real_sample_size])
+                        
         k_index += 1
 
     # Record sample sizes used

@@ -49,7 +49,7 @@ if return_default:
     ) = return_to_default()
 path_save = "metrics/cc18_all_parameters_new"
 
-save_methods = {"text_dict": 1, "csv": 1, "json": 1}
+save_methods = {"text_dict": 1, "csv": 0, "json": 0}
 save_methods_rewrite = {"text_dict": 0, "csv": 0, "json": 0}
 #%% Models
 """
