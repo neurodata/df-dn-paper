@@ -13,6 +13,11 @@ When are Deep Networks really better than Decision Forests at small sample sizes
    :alt: CircleCI
 
 
+ .. image:: https://img.shields.io/netlify/e77b134b-1e9b-4ae9-b378-822615333dbd
+    :target: https://app.netlify.com/sites/dfdn/deploys
+    :alt: Netlify
+
+
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
    :target: https://github.com/psf/black
    :alt: Code style: black
