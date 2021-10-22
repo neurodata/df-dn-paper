@@ -4,29 +4,30 @@ When are Deep Networks really better than Decision Forests at small sample sizes
 
 
 .. image:: https://img.shields.io/badge/arXiv-2108.13637-red.svg?style=flat
-   :target: https://arxiv.org/abs/2108.13637
-   :alt: arXiv
+  :target: https://arxiv.org/abs/2108.13637
+  :alt: arXiv
 
 
 .. image:: https://circleci.com/gh/neurodata/rf-dn-paper/tree/main.svg?style=shield
-   :target: https://circleci.com/gh/neurodata/rf-dn-paper/tree/main
-   :alt: CircleCI
+  :target: https://circleci.com/gh/neurodata/rf-dn-paper/tree/main
+  :alt: CircleCI
 
 
- .. image:: https://img.shields.io/netlify/e77b134b-1e9b-4ae9-b378-822615333dbd
-    :target: https://app.netlify.com/sites/dfdn/deploys
-    :alt: Netlify
+.. image:: https://img.shields.io/netlify/e77b134b-1e9b-4ae9-b378-822615333dbd
+  :target: https://app.netlify.com/sites/dfdn/deploys
+  :alt: Netlify
 
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-   :target: https://github.com/psf/black
-   :alt: Code style: black
+  :target: https://github.com/psf/black
+  :alt: Code style: black
 
 
 .. image:: https://img.shields.io/badge/License-MIT-blue
-   :target: https://opensource.org/licenses/MIT
-   :alt: License
+  :target: https://opensource.org/licenses/MIT
+  :alt: License
 
+.. doc-start
 
 **This is preliminary work. More details will be available.**
 
@@ -42,25 +43,25 @@ You can manually download the latest benchmark code by cloning the repository:
 
 .. code-block::
 
-   git clone https://github.com/neurodata/rf-dn-paper
-   cd rf-dn-paper
+  git clone https://github.com/neurodata/rf-dn-paper
+  cd rf-dn-paper
 
 To replicate the benchmarks, you can install the required packages with specified versions:
 
 .. code-block::
 
-   pip install -r requirements.txt
+  pip install -r requirements.txt
 
 For vision benchmarks, remember to specify the class number:
 
 .. code-block::
 
-   python cifar_10.py -m 3
+  python cifar_10.py -m 3
 
 For auditory benchmarks, remember to specify both the class number and the feature type:
 
 .. code-block::
 
-   python fsdd.py -m 3 -f spectrogram
+  python fsdd.py -m 3 -f spectrogram
 
 In addition, the FSDD `dataset <https://github.com/Jakobovski/free-spoken-digit-dataset/releases/tag/v1.0.10>`_ needs to be downloaded locally.
