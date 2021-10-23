@@ -200,3 +200,16 @@ def model_define(model_name, best_params_dict, dataset):
     else:
         raise ValueError("Invalid Model Name")
     return model
+
+
+def mod_dict(res_dict, type_to_compare):
+    tot_dict = {}
+    for model_name in res_dict.keys():
+        modified_subdict = {}
+        for dataset in res_dict[model_name].keys():
+            data_set_dict = res_dict[model_name][dataset]
+            data_set_dict = {key:val for key,val in data_set_dict.items() if isinstance(val,type_to_compare)}
+            modified_subdict[dataset] = data_set_dict        
+        tot_dict[model_name] = modified_subdict
+    return tot_dict
+        

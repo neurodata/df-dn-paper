@@ -45,7 +45,7 @@ shape_2_all_sample_sizes = 8
 shape_2_evolution = 5
 n_splits = 5
 
-models_to_run = {"RF": 0, "DN": 0, "GBDT": 1}
+models_to_run = {"RF": 1, "DN": 1, "GBDT": 1}
 
 
 #%% Functions
@@ -161,10 +161,7 @@ if reload_data or "dataset_name" not in locals():
     X_data_list, y_data_list, dataset_name = load_cc18()
 
 best_params_dict = read_params_dict_txt(path, file_type_to_load)
-cohen_ece_results_dict = {
-    metric: {model_name: np.zeros((reps)) for model_name in best_params_dict.keys()}
-    for metric in ["cohen_kappa", "ece"]
-}
+
 
 # all_params = read_params_txt("metrics/cc18_all_parameters.txt")
 
@@ -218,7 +215,9 @@ for dataset_index, dataset in enumerate(train_indices):
 
         # Iterate through each sample size per dataset
         for sample_size_index, real_sample_size in enumerate(training_sample_sizes):
-
+            cohen_ece_results_dict = {
+                    metric: {model_name: np.zeros((reps)) for model_name in best_params_dict.keys()}
+                    for metric in ["cohen_kappa", "ece"]}
             X_train_new = X_train[ss_inds[sample_size_index]]
             y_train_new = y_train[ss_inds[sample_size_index]]
 
@@ -231,31 +230,41 @@ for dataset_index, dataset in enumerate(train_indices):
                         model.fit(X_train_new, y_train_new)
                         predictions = model.predict(X_test)
                         predict_probas = model.predict_proba(X_test)
-                        cohen_ece_results_dict
+                        
                         cohen_kappa = cohen_kappa_score(y_test, predictions)
                         cohen_ece_results_dict["cohen_kappa"][model_name][
                             ii
                         ] = cohen_kappa
                         ece = get_ece(predict_probas, predictions, y_test)
                         cohen_ece_results_dict["ece"][model_name][ii] = ece
-                    if real_sample_size not in evolution_dict["cohen_kappa"][model_name].keys():
-                        evolution_dict["cohen_kappa"][model_name][real_sample_size] = []
-                        evolution_dict["ece"][model_name][real_sample_size] = []
+                    if dataset not in evolution_dict["cohen_kappa"][model_name].keys():
+                        evolution_dict["cohen_kappa"][model_name][dataset] = {}
+                        evolution_dict["ece"][model_name][dataset] = {}
+                    if real_sample_size not in evolution_dict["cohen_kappa"][model_name][dataset].keys():
+                        evolution_dict["cohen_kappa"][model_name][dataset][real_sample_size] = []
+                        evolution_dict["ece"][model_name][dataset][real_sample_size] = []
                         
-                    evolution_dict["cohen_kappa"][model_name][real_sample_size].append(np.mean(
+                    evolution_dict["cohen_kappa"][model_name][dataset][real_sample_size].append(np.mean(
                         cohen_ece_results_dict["cohen_kappa"][model_name]
                     ))
-                    evolution_dict["ece"][model_name][real_sample_size].append(np.mean(
-                        cohen_ece_results_dict["cohen_kappa"][model_name]
+                    evolution_dict["ece"][model_name][dataset][real_sample_size].append(np.mean(
+                        cohen_ece_results_dict["ece"][model_name]
                     ))
-                    if k_index==reps: # Changing the results to tuple enabling easier saving to txt / json and ectacting the fata after that. 
-                        evolution_dict["cohen_kappa"][model_name][real_sample_size] = tuple(evolution_dict["cohen_kappa"][model_name][real_sample_size])
-                        evolution_dict["ece"][model_name][real_sample_size] = tuple(evolution_dict["ece"][model_name][real_sample_size])
-                        
+                    if len(evolution_dict["cohen_kappa"][model_name][dataset][real_sample_size])==reps: # Changing the results to tuple enabling easier saving to txt / json and ectacting the fata after that. 
+                        evolution_dict["cohen_kappa"][model_name][dataset][real_sample_size] = tuple(evolution_dict["cohen_kappa"][model_name][dataset][real_sample_size])
+                        evolution_dict["ece"][model_name][dataset][real_sample_size] = tuple(evolution_dict["ece"][model_name][dataset][real_sample_size])
+                    else: 
+                        del evolution_dict["cohen_kappa"][model_name][dataset][real_sample_size]
         k_index += 1
 
     # Record sample sizes used
     all_sample_sizes[dataset_index][:] = np.array(training_sample_sizes)
+
+new_dict = {}
+for key_met in evoluton_dict.keys():
+    new_dict[key_met] = mod_dict(evolution_dict[key_met],tuple)
+
+
 
 
 # Save sample sizes and model results in txt files
@@ -267,5 +276,5 @@ save_methods_rewrite = {"text_dict": 1, "csv": 0, "json": 0}
 #dictionary_test = {key:{key2:tuple(value) for key2,value in inner_res.items()} for key,inner_res in evolution_dict.items()}
 
 save_best_parameters(
-    save_methods, save_methods_rewrite, "metrics/kappa_and_ece", evolution_dict
+    save_methods, save_methods_rewrite, "metrics/kappa_and_ece", new_dict
 )
