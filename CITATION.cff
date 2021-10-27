@@ -67,6 +67,6 @@ keywords:
   - "deep networks"
 license: MIT
 message: "If you use the benchmark code of DF/DN, please cite it using these metadata."
-repository-code: "https://github.com/neurodata/rf-dn-paper"
+repository-code: "https://github.com/neurodata/df-dn-paper"
 title: "When are Deep Networks really better than Decision Forests at small sample sizes, and how?"
 ...
