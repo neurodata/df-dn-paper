@@ -32,7 +32,7 @@ Overview
   :alt: License
 
 
-Conceptual & empirical comparisons between **D**\ ecision **F**\ orests & **D**\ eep **N**\ etworks.
+**DF/DN:** conceptual & empirical comparisons between **D**\ ecision **F**\ orests & **D**\ eep **N**\ etworks.
 
 **This is preliminary work. More details will be available.**
 
@@ -73,5 +73,14 @@ For auditory benchmarks, remember to specify both the class number and the featu
 In addition, the FSDD `dataset <https://github.com/Jakobovski/free-spoken-digit-dataset/releases/tag/v1.0.10>`_ needs to be downloaded locally.
 
 
+Benchmarks
+==========
+
+
 .. toctree::
    :maxdepth: 1
+
+   cc18_figures
+   cifar_figures
+   svhn_figure
+   fsdd_figures

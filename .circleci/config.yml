@@ -27,7 +27,9 @@ jobs:
             - "venv"
   test-module:
     parameters:
-      module:
+      benchmarks:
+        type: string
+      docs:
         type: string
     docker:
       - image: cimg/python:3.8
@@ -49,7 +51,8 @@ jobs:
           name: run code linting
           command: |
             . venv/bin/activate
-            black --check --diff ./<< parameters.module >>
+            black --check --diff ./<< parameters.benchmarks >>
+            black --check --diff ./<< parameters.docs >>
 workflows:
   build-test:
     jobs:
@@ -58,6 +61,7 @@ workflows:
           version: "3.8"
       - test-module:
           name: "benchmarks"
-          module: "benchmarks"
+          benchmarks: "benchmarks"
+          docs: "docs"
           requires:
             - "v3.8"

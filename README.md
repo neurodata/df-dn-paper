@@ -6,10 +6,11 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/licenses/MIT)
 
-Conceptual & empirical comparisons between **D**ecision **F**orests & **D**eep **N**etworks.
+**DF/DN:** conceptual & empirical comparisons between **D**ecision **F**orests & **D**eep **N**etworks.
 
 **This is preliminary work. More details will be available.**
 
 - **Documentation:** https://dfdn.neurodata.io/
 - **Abstract:** https://dfdn.neurodata.io/#abstract
 - **Replication Guide:** https://dfdn.neurodata.io/#replicate
+- **Benchmark Figures:** https://dfdn.neurodata.io/#benchmarks
