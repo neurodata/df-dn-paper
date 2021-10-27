@@ -77,11 +77,11 @@ html_context = {
         ),
         (
             '<i class="fa fa-exclamation-circle fa-fw"></i> Issue Tracker',
-            "https://github.com/neurodata/rf-dn-paper/issues",
+            "https://github.com/neurodata/df-dn-paper/issues",
         ),
         (
             '<i class="fa fa-github fa-fw"></i> Source Code',
-            "https://github.com/neurodata/rf-dn-paper",
+            "https://github.com/neurodata/df-dn-paper",
         ),
     ],
     # Enable the "Edit in GitHub link within the header of each page.
@@ -91,7 +91,7 @@ html_context = {
     # /{{ github_repo }}/blob/{{ github_version }}{{ conf_py_path }}{{ pagename }}
     # {{ suffix }}
     "github_user": "neurodata",
-    "github_repo": "rf-dn-paper",
+    "github_repo": "df-dn-paper",
     "github_version": "main/",
     "conf_py_path": "docs/",
 }
