@@ -1,7 +1,7 @@
 .. DF/DN documentation master file, created by
-   sphinx-quickstart on Fri Oct 22 10:16:30 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+  sphinx-quickstart on Fri Oct 22 10:16:30 2021.
+  You can adapt this file completely to your liking, but it should at least
+  contain the root `toctree` directive.
 
 Overview
 ========
@@ -76,11 +76,27 @@ In addition, the FSDD `dataset <https://github.com/Jakobovski/free-spoken-digit-
 Benchmarks
 ==========
 
+Tabular
+-------
 
 .. toctree::
-   :maxdepth: 1
+  :maxdepth: 1
 
-   cc18_figures
-   cifar_figures
-   svhn_figure
-   fsdd_figures
+  cc18_figures
+
+Vision
+------
+
+.. toctree::
+  :maxdepth: 1
+
+  cifar_figures
+  svhn_figure
+
+Audition
+--------
+
+.. toctree::
+  :maxdepth: 1
+
+  fsdd_figures
