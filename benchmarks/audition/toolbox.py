@@ -4,13 +4,14 @@ Coauthors: Haoyin Xu
            Madi Kusmanov
            Jayanta Dey
 """
-import numpy as np
-from sklearn.metrics import cohen_kappa_score
 import time
-import torch
 import os
 import cv2
 import librosa
+import numpy as np
+from sklearn.metrics import cohen_kappa_score
+
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -91,20 +92,20 @@ class SimpleCNN32Filter2Layers(nn.Module):
         return x
 
 
-class SimpleCNN32Filter5Layers(torch.nn.Module):
+class SimpleCNN32Filter5Layers(nn.Module):
     """
     Define a simple CNN arhcitecture with 5 layers
     """
 
     def __init__(self, num_classes):
         super(SimpleCNN32Filter5Layers, self).__init__()
-        self.conv1 = torch.nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1)
-        self.conv2 = torch.nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
-        self.conv3 = torch.nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
-        self.conv4 = torch.nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
-        self.conv5 = torch.nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
-        self.fc1 = torch.nn.Linear(8192, 200)
-        self.fc2 = torch.nn.Linear(200, num_classes)
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.conv4 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        self.conv5 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.fc1 = nn.Linear(8192, 200)
+        self.fc2 = nn.Linear(200, num_classes)
         self.maxpool = nn.MaxPool2d((2, 2))
         self.bn = nn.BatchNorm2d(32)
         self.bn2 = nn.BatchNorm2d(64)
