@@ -6,7 +6,6 @@ from toolbox import *
 
 import argparse
 import random
-from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 
 import torchvision.models as models
@@ -24,7 +23,7 @@ def run_naive_rf():
         # cohen_kappa vs num training samples (naive_rf)
         for samples in samples_space:
             RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
-            cohen_kappa, ece, train_time, test_time = run_rf_gbdt_image_set(
+            cohen_kappa, ece, train_time, test_time = run_rf_image_set(
                 RF,
                 cifar_train_images,
                 cifar_train_labels,

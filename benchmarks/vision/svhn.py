@@ -1,49 +1,16 @@
 """
 Coauthors: Haoyin Xu
            Yu-Chung Peng
-           Noga Mudrik
 """
 from svhn_toolbox import *
 
 import argparse
 import random
-from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 import torchvision.models as models
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
-
-
-def run_gbdt():
-    gbdt_kappa = []
-    gbdt_ece = []
-    gbdt_train_time = []
-    gbdt_test_time = []
-    for classes in classes_space:
-
-        # cohen_kappa vs num training samples (naive_rf)
-        for samples in samples_space:
-            gbdt = GradientBoostingClassifier(n_estimators=100)
-            cohen_kappa, ece, train_time, test_time = run_rf_gbdt_image_set(
-                gbdt,
-                svhn_train_images,
-                svhn_train_labels,
-                svhn_test_images,
-                svhn_test_labels,
-                samples,
-                classes,
-            )
-            gbdt_kappa.append(cohen_kappa)
-            gbdt_ece.append(ece)
-            gbdt_train_time.append(train_time)
-            gbdt_test_time.append(test_time)
-
-    print("gbdt finished")
-    write_result(prefix + "gbdt_kappa.txt", gbdt_kappa)
-    write_result(prefix + "gbdt_ece.txt", gbdt_ece)
-    write_result(prefix + "gbdt_train_time.txt", gbdt_train_time)
-    write_result(prefix + "gbdt_test_time.txt", gbdt_test_time)
 
 
 def run_naive_rf():
@@ -56,7 +23,7 @@ def run_naive_rf():
         # cohen_kappa vs num training samples (naive_rf)
         for samples in samples_space:
             RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
-            cohen_kappa, ece, train_time, test_time = run_rf_gbdt_image_set(
+            cohen_kappa, ece, train_time, test_time = run_rf_image_set(
                 RF,
                 svhn_train_images,
                 svhn_train_labels,
@@ -322,4 +289,3 @@ if __name__ == "__main__":
     )
 
     run_resnet18()
-    run_gbdt()

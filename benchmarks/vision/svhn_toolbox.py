@@ -15,7 +15,7 @@ from toolbox import (
     combinations_45,
     load_result,
     produce_mean,
-    run_rf_gbdt_image_set,
+    run_rf_image_set,
     run_dn_image_es,
 )
 
