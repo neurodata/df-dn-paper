@@ -182,7 +182,7 @@ evolution_dict = {
 # For each dataset, train and predict for every sample size
 # Record outputs using Cohen's Kappa and ECE
 for dataset_index, dataset in enumerate(train_indices):
-
+    #dataset_index+=12
     print("\n\nCurrent Dataset: ", dataset)
 
     X = X_data_list[dataset]
@@ -225,18 +225,21 @@ for dataset_index, dataset in enumerate(train_indices):
             for model_name, model_best_params in best_params_dict.items():
                 if models_to_run[model_name]:
                     for ii in range(reps):
-
-                        model = model_define(model_name, best_params_dict, dataset_index )
-                        model.fit(X_train_new, y_train_new)
-                        predictions = model.predict(X_test)
-                        predict_probas = model.predict_proba(X_test)
-                        
-                        cohen_kappa = cohen_kappa_score(y_test, predictions)
-                        cohen_ece_results_dict["cohen_kappa"][model_name][
-                            ii
-                        ] = cohen_kappa
-                        ece = get_ece(predict_probas, predictions, y_test)
-                        cohen_ece_results_dict["ece"][model_name][ii] = ece
+                        try:
+                            model = model_define(model_name, best_params_dict, dataset_index )
+                            model.fit(X_train_new, y_train_new)
+                            predictions = model.predict(X_test)
+                            predict_probas = model.predict_proba(X_test)
+                            
+                            cohen_kappa = cohen_kappa_score(y_test, predictions)
+                            cohen_ece_results_dict["cohen_kappa"][model_name][
+                                ii
+                            ] = cohen_kappa
+                            ece = get_ece(predict_probas, predictions, y_test)
+                            cohen_ece_results_dict["ece"][model_name][ii] = ece
+                        except ValueError:
+                            print(model_name)
+                            print(ii)
                     if dataset not in evolution_dict["cohen_kappa"][model_name].keys():
                         evolution_dict["cohen_kappa"][model_name][dataset] = {}
                         evolution_dict["ece"][model_name][dataset] = {}
@@ -253,8 +256,8 @@ for dataset_index, dataset in enumerate(train_indices):
                     if len(evolution_dict["cohen_kappa"][model_name][dataset][real_sample_size])==reps: # Changing the results to tuple enabling easier saving to txt / json and ectacting the fata after that. 
                         evolution_dict["cohen_kappa"][model_name][dataset][real_sample_size] = tuple(evolution_dict["cohen_kappa"][model_name][dataset][real_sample_size])
                         evolution_dict["ece"][model_name][dataset][real_sample_size] = tuple(evolution_dict["ece"][model_name][dataset][real_sample_size])
-                    else: 
-                        del evolution_dict["cohen_kappa"][model_name][dataset][real_sample_size]
+                    #else: 
+                    #    del evolution_dict["cohen_kappa"][model_name][dataset][real_sample_size]
         k_index += 1
 
     # Record sample sizes used
