@@ -373,11 +373,11 @@ Rich Caruana, Steve Lawrence, and C.~Giles.
 \newblock In T.~Leen, T.~Dietterich, and V.~Tresp, editors, \emph{Advances in
   Neural Information Processing Systems}, volume~13. MIT Press, 2001.
 
-\bibitem[Jackson et~al.(2018)Jackson, Souza, Flaks, Pan, Nicolas, and
+\bibitem[Jackson et~al.(2020)Jackson, Souza, Flaks, Pan, Nicolas, and
   Thite]{FSDD}
 Zohar Jackson, C{\'e}sar Souza, Jason Flaks, Yuxin Pan, Hereman Nicolas, and
   Adhish Thite.
-\newblock Jakobovski/free-spoken-digit-dataset: v1.0.8, August 2018.
+\newblock Jakobovski/free-spoken-digit-dataset: v1.0.10, August 2020.
 
 \bibitem[Nasr et~al.(2021)Nasr, Quwaider, and Qureshi]{nasr}
 Seham Nasr, Muhannad Quwaider, and Rizwan Qureshi.
