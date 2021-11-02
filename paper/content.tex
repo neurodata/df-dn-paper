@@ -165,6 +165,18 @@ A lower number represents higher calibration, where a perfectly calibrated model
 Lastly, training wall times were recorded for both models. This metric calculated the fitting time for the given model after hyperparameter tuning, measured in seconds.
 
 \subsubsection{Results}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=1.0\textwidth]{figures/cc18}
+  \caption{Performance of forests and networks, evaluated using Cohen's Kappa \textbf{(left)}, expected calibration error (ECE) \textbf{(center)}, and training wall times \textbf{(right)}. 
+  For all plots, thin lines represent individual datasets, and shaded regions highlight the 25th through 75th percentiles. Left plot shows Cohen's Kappa versus sample size. Higher values mean better performance. Center plot shows ECE versus sample size. Lower values mean better calibration. Thick lines in both plots are the interpolated means. Right plot shows training wall times versus sample size. Thick lines are the interpolated medians. 
+  At larger sample sizes, Cohen's Kappa shows that forests are more accurate, while ECE suggests that networks are better calibrated. For training wall times, networks are faster than forests at small sample sizes but slower at larger sample sizes.
+  }
+\label{fig:tab}
+\end{figure}
+% \vfil\eject
+
 \paragraph{Cohen's Kappa and ECE}
 Sample sizes are plotted on a logarithmic scale, whereas Cohen's Kappa and ECE performance are plotted linearly (Figure \ref{fig:tab}). As seen from these results, there is a high level of variability between tabular datasets at each sample size. At larger sample sizes, forests tend to win Cohen's Kappa and excel at accuracy, but networks would win ECE and achieve better calibration.
 % @sampan: This sentence makes no sense. From the figures it looks as though Kappa and ECE perform similarly and as sample size increases, Networks has higher wall times. I think it is difficult to make the case that "RF wins" without some sort of test of whether the trend you see is significant.
@@ -172,17 +184,6 @@ Sample sizes are plotted on a logarithmic scale, whereas Cohen's Kappa and ECE p
 
 \paragraph{Training Wall Times}
 Sample size have little impact on forest training wall times, yet there exists an overhead cost of slightly less than one second to fit these models (Figure \ref{fig:tab}). Networks, on the other hand, are an order of magnitude faster than forests at small sample sizes, but quickly increase to be an order of magnitude slower as sample size increase.
-
-\begin{figure}[htb]
-\centering
-\includegraphics[width=1.0\textwidth]{figures/cc18}
-  \caption{Performance of forests and networks, evaluated using Cohen's Kappa \textbf{(left)}, expected calibration error (ECE) \textbf{(center)}, and training wall times \textbf{(right)}. 
-  For all plots, thin lines represent individual datasets, and shaded regions highlight the 25th through 75th percentiles. Left plot illustrates Cohen's Kappa versus sample size. Higher values mean better performance at the given sample size. Center plot illustrates ECE versus sample size. Lower values mean better calibration. Thick lines in both plots are the interpolated means over all datasets. Right plot shows training wall times versus sample size. Thick lines are the interpolated medians. 
-  Cohen's Kappa shows that forests are more accurate at larger sample sizes, while ECE suggests that networks are better calibrated at larger sample sizes. For training wall times, networks are faster than forests at small sample sizes but slower at larger sample sizes.
-  }
-\label{fig:tab}
-\end{figure}
-% \vfil\eject
 
 Given the OpenML-CC18 tabular dataset suite, there appears to be little relationship between average model performance and sample size. However, tabular benchmarks (Figure \ref{fig:tab}) show trends differentiating the classifiers' ECE scores, which suggest that forests could produce better-calibrated models at small sample sizes. Should model calibration be the priority, this difference yields a framework for selecting the optimal method given the available sample size on general tabular data. The behavior of training wall times also suggests a trade-off for method choices. At larger sample sizes, network training times would scale much faster. If time is a limiting factor, then forests may be the ideal selection for novel tabular data at larger sample sizes.
 
@@ -200,9 +201,9 @@ Each high-dimensional image sample would be represented by RGB pixels and thus c
 We experimented with multi-class classifications in 3-class, 8-class, and 90-class settings. We sampled the 3-class and 8-class training sets from the CIFAR-10 and SVHN datasets, and the 90-class training sets from the CIFAR-100 dataset. For each classification task, we ensured 45 random combinations of class labels and up to 10,000 training samples, stratifying data equally across the classes.
 
 % For classical architectures, we used \texttt{RandomForestClassifier} and \texttt{SVC} (``rbf'' kernel) from the scikit-learn python package \citep{scikit-learn}.
-We used \texttt{RandomForestClassifier} from the scikit-learn python package \citep{scikit-learn}. For the deep learning models, four convolutional neural network (CNN) architectures using ReLU activation were employed: three simpler models built with varying parameters and ResNet-18 \citep{Priebe2020.04.29.068460, resnet}. We adapted the pre-trained ResNet-18 classifier from PyTorch (BSD-3) as a robust choice and optimized its last layer with our training sets \citep{pytorch}. Among the three simpler CNNs, the first network is a simple architecture consisting of one convolutional layer of 32 filters with ReLU and one fully connected layer. The second CNN consists of two convolutional layers each with 32 filters and ReLU, followed by two fully connected layers with 100 and 10 nodes, respectively. Lastly, we constructed a CNN with five convolutional layers that scale up to 128 feature maps, and each layer is followed by batch normalization and ReLU. All convolutions end with one or two fully connected layers with ReLU.
+We used \texttt{RandomForestClassifier} from the scikit-learn python package \citep{scikit-learn}. For the deep learning models, four convolutional neural network (CNN) architectures using ReLU activation were employed: three simpler models built with varying parameters and ResNet-18 \citep{Priebe2020.04.29.068460, resnet}. We adapted the pre-trained ResNet-18 classifier from PyTorch (BSD-3) as a robust choice and optimized its last layer with our training sets \citep{pytorch}. Among the three simpler CNNs, the 1-layer CNN consists of one convolutional layer of 32 filters and one fully connected layer. The 2-layer CNN consists of two convolutional layers each with 32 filters, followed by two fully connected layers with 100 and 10 nodes, respectively. Lastly, the 5-layer CNN scales up to 128 feature maps, and each layer is followed by batch normalization.
 
-For the high-dimensional vision data, our main principle of hyperparameter setup is to minimize tuning and benchmark models with their default values ``out of the box'' \citep{Probst2019hy}. For RF, we used its default parameters of the scikit-learn library for all model aspects except the number of concurrent jobs ran in parallel utilizing all the cores \citep{scikit-learn}. We benchmarked these models on two Microsoft Azure compute instances: a 2-core Standard\_DS2\_v2 (Intel Xeon E5-2673 v3) and a 6-core Standard\_NC6 (Intel Xeon E5-2690 v3) (Table \ref{table:azure}).
+For the high-dimensional vision data, we minimized tuning and benchmarked models with their default values ``out of the box'' \citep{Probst2019hy}. For RF, we used scikit-learn's default parameters for all model aspects except parallelizing with all the cores \citep{scikit-learn}. We benchmarked forests on two Microsoft Azure compute instances: a 2-core Standard\_DS2\_v2 (Intel Xeon E5-2673 v3) and a 6-core Standard\_NC6 (Intel Xeon E5-2690 v3) (Table \ref{table:azure}).
 
 \begin{table}[htb]
 \centering
@@ -219,21 +220,12 @@ Standard\_NC6 & 6 & 56 & 340 & 1 & 12 \\
 \label{table:azure}
 \end{table}
 
-We implemented all of our network models with a learning rate of 0.001 and a batch size of 64, using stochastic gradient descent with a momentum of 0.9 and cross-entropy loss. These hyperparameters were chosen either by default or commonly seen in literature, and for our training iterations, our settings provided the model with enough time to visually converge on the loss \citep{Krizhevsky2012-sq, pmlr-v119-rice20a}.
+We implemented all network models with a learning rate of 0.001 and a batch size of 64, using stochastic gradient descent with a momentum of 0.9 and cross-entropy loss. These hyperparameters were chosen either by default or commonly seen in literature, and for training iterations, our settings provided the model with enough time to visually converge on the loss \citep{Krizhevsky2012-sq, pmlr-v119-rice20a}.
 We first implemented the networks with 30 epochs and activated early stopping when validation loss did not improve in three epochs in a row \citep{li2020, lutz, caruana}. In these tasks, we randomly selected 30\% of the provided test sets as validation data and only used the held-out 70\% for benchmarks.
 % @sampan: Justification for those numbers?
 
 Alternative approaches restricted CNN epochs by calibrating their training wall times or money cost, conforming to those of RF as run on different compute instances. The alternative approaches used the full data of the provided test sets for benchmarks. All approaches were benchmarked on the 1-core GPU component of a Microsoft Azure compute instance: Standard\_NC6 (NVIDIA Tesla K80).
 We utilized the GPU with the PyTorch CUDA library \citep{pytorch}.
-
-\paragraph{Evaluation Criteria}
-We evaluated the performance by classification accuracy and training wall times. The training wall times calculated the fitting time for the given model after hyperparameter tuning, measured in seconds. The provided test sets were used.
-
-\subsubsection{Results}
-\paragraph{Unbounded Time and Cost}
-% @sampan: Why did you use classification accuracy instead of Cohen's Kappa or ECE? Made great justification in the previous section about the differences between the 2
-% The classification accuracy of RF and SVM-RBF are very similar, and SVM-RBF surpasses RF by a small margin at larger sample sizes. 
-RF outperforms the networks at smaller sample sizes (Figure \ref{fig:cifar}). However, CNN accuracy often overcomes that of the classical models eventually. Higher class numbers decrease the accuracy of all models implemented, but the advantage of RF at smaller sample sizes also diminishes as the number of classes increases. ResNet-18 with early stops completely surpasses both classical models in the 90-class classification task. Among the networks, more convolutional layers produce higher accuracy, and the performance of 5-layer CNN is very close to that of ResNet-18. ResNet-18 always surpasses other models at 10,000 samples.
 
 \begin{figure}[htb]
 \centering
@@ -246,16 +238,20 @@ RF outperforms the networks at smaller sample sizes (Figure \ref{fig:cifar}). Ho
 \end{figure}
 % \vfil\eject
 
+\paragraph{Evaluation Criteria}
+We evaluated the performance by classification accuracy and training wall times. The training wall times calculated the fitting time for the given model after hyperparameter tuning, measured in seconds. The provided test sets were used.
+
+\subsubsection{Results}
+
+\paragraph{Unbounded Time and Cost}
+% @sampan: Why did you use classification accuracy instead of Cohen's Kappa or ECE? Made great justification in the previous section about the differences between the 2
+% The classification accuracy of RF and SVM-RBF are very similar, and SVM-RBF surpasses RF by a small margin at larger sample sizes. 
+RF outperforms the networks at smaller sample sizes (Figure \ref{fig:cifar}). However, CNN accuracy often overcomes that of the classical models eventually. Higher class numbers decrease the accuracy of all models implemented, but the advantage of RF at smaller sample sizes also diminishes as the number of classes increases. ResNet-18 with early stops completely surpasses both classical models in the 90-class classification task. Among the networks, more convolutional layers produce higher accuracy, and the performance of 5-layer CNN is very close to that of ResNet-18. ResNet-18 always surpasses other models at 10,000 samples.
+
 % Although RF and SVM-RBF have similar overall accuracy, SVM-RBF's training wall times quadratically increase with the sample sizes and eventually surpass all other models' (Figure \ref{fig:cifar}). 
 The training wall times of parallelized RF stay relatively constant until acquiring faster growths at larger sample sizes (Figure \ref{fig:cifar}). With early stopping, CNNs would produce training time descents at around 100 samples and increase along with sample size again with slower growth rates. The training time trajectories of CNNs partially overlap each other and always stay higher than those of RF. Only the 90-class task produces noticeable differences for CNNs' training wall times, which become more visible at larger sample sizes.
 
 % @sampan: I would organize this section instead of talkign about all the accuracy panels and wall times, going column by column. Basically, talking about three class, how that RF and SVM performed similarly but SVM wall times increased quadratically. See similar trends as # classes increased, etc. I think if you are going to spend time talking about wall times, you should mention the theoritical computational complexity of each algorithm before. Then you can say that "as expected, SVM trained in quadratic time"
-
-\paragraph{Fixed Training Time}
-We then compared methods such that each took about the same time on the same virtual machine for 10,000 training samples. The baseline is RF's training times when run on the 6-core Standard\_NC6 Azure compute (Table \ref{table:azure}).
-All training wall times conform to one shape (Figure \ref{fig:cifar_st}). Under the resource constraints, all the accuracy trajectories of CNNs are lower than those in the unbounded benchmarks (Figure \ref{fig:cifar}). Only at around 1,000 samples does CNN accuracy surpass that of RF, whereas 100 samples is the dividing point for benchmarks without restraints. ResNet-18 still has the highest accuracy at 10,000 samples, surpassing all other classifiers eventually. The results with fixed training cost are qualitatively similar (Figure \ref{fig:cifar_sc}).
-
-Vision benchmarks with the CIFAR datasets show that networks would benefit from larger sample sizes and higher class numbers. More complex networks like ResNet-18 would achieve better performance (Figure \ref{fig:cifar}). In contrast, RF maintains the advantage on classification accuracy at small sample sizes, especially when the training times are fixed (Figure \ref{fig:cifar_st}). 
 
 \begin{figure}[htb]
 \centering
@@ -267,6 +263,12 @@ Vision benchmarks with the CIFAR datasets show that networks would benefit from 
 \label{fig:cifar_st}
 \end{figure}
 % \vfil\eject
+
+\paragraph{Fixed Training Time}
+We then compared methods such that each took about the same time on the same virtual machine for 10,000 training samples. The baseline is RF's training times when run on the 6-core Standard\_NC6 Azure compute (Table \ref{table:azure}).
+All training wall times conform to one shape (Figure \ref{fig:cifar_st}). Under the resource constraints, all the accuracy trajectories of CNNs are lower than those in the unbounded benchmarks (Figure \ref{fig:cifar}). Only at around 1,000 samples does CNN accuracy surpass that of RF, whereas 100 samples is the dividing point for benchmarks without restraints. ResNet-18 still has the highest accuracy at 10,000 samples, surpassing all other classifiers eventually. The results with fixed training cost are qualitatively similar (Figure \ref{fig:cifar_sc}).
+
+Vision benchmarks with the CIFAR datasets show that networks would benefit from larger sample sizes and higher class numbers. More complex networks like ResNet-18 would achieve better performance (Figure \ref{fig:cifar}). In contrast, RF maintains the advantage on classification accuracy at small sample sizes, especially when the training times are fixed (Figure \ref{fig:cifar_st}).
 
 \subsection{Audition}
 \label{audition}
