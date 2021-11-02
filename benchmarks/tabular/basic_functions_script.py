@@ -68,11 +68,11 @@ def do_calcs_per_model(
     X,
     y,
     dataset_index,
-    p = None
+    p=None,
 ):
     model = classifiers[model_name]
     varCVmodel = varCV[model_name]
-    parameters = create_parameters(model_name, varargin, p )
+    parameters = create_parameters(model_name, varargin, p)
     clf = RandomizedSearchCV(
         model,
         parameters,
@@ -208,8 +208,11 @@ def mod_dict(res_dict, type_to_compare):
         modified_subdict = {}
         for dataset in res_dict[model_name].keys():
             data_set_dict = res_dict[model_name][dataset]
-            data_set_dict = {key:val for key,val in data_set_dict.items() if isinstance(val,type_to_compare)}
-            modified_subdict[dataset] = data_set_dict        
+            data_set_dict = {
+                key: val
+                for key, val in data_set_dict.items()
+                if isinstance(val, type_to_compare)
+            }
+            modified_subdict[dataset] = data_set_dict
         tot_dict[model_name] = modified_subdict
     return tot_dict
-        
