@@ -6,7 +6,6 @@ Coauthors: Haoyin Xu
 from audio_toolbox import *
 import argparse
 import numpy as np
-from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import scale
 import torch

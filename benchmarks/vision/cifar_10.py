@@ -6,7 +6,6 @@ from toolbox import *
 
 import argparse
 import random
-from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 
 import torchvision.models as models
