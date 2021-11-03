@@ -19,7 +19,7 @@ class SimpleCNN32Filter(nn.Module):
     """
 
     def __init__(self, num_classes):
-        super(SimpleCNN32Filter, self).__init__()
+        super().__init__()
         self.conv1 = nn.Conv2d(3, 32, kernel_size=10, stride=2)
         self.fc1 = nn.Linear(144 * 32, num_classes)
 
@@ -36,7 +36,7 @@ class SimpleCNN32Filter2Layers(nn.Module):
     """
 
     def __init__(self, num_classes):
-        super(SimpleCNN32Filter2Layers, self).__init__()
+        super().__init__()
         self.conv1 = nn.Conv2d(3, 32, kernel_size=5, stride=1)
         self.conv2 = nn.Conv2d(32, 32, kernel_size=5, stride=2)
         self.fc1 = nn.Linear(12 * 12 * 32, 100)
@@ -58,7 +58,7 @@ class SimpleCNN32Filter5Layers(nn.Module):
     """
 
     def __init__(self, num_classes):
-        super(SimpleCNN32Filter5Layers, self).__init__()
+        super().__init__()
         self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
