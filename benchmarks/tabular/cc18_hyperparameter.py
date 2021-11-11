@@ -25,8 +25,8 @@ from os.path import exists
 import ast
 import os
 
-from basic_functions_script import *
-from save_hyperparameters import *
+from toolbox import *
+
 
 
 #%% Define executrion variables (to save memory & execution time)
@@ -112,7 +112,7 @@ all_params = {model_name: {} for model_name, val in models_to_run.items() if val
 """
 Organize the data
 """
-# Load data from CC18 data set suite
+#%% Load data from CC18 data set suite
 if (
     reload_data or "dataset_name" not in locals()
 ):  # Load the data only if required (by reload_data or if it is not defined)
