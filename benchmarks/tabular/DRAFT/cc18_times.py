@@ -18,8 +18,8 @@ import openml
 import time
 import json
 
-from basic_functions_script import *
-from save_hyperparameters import *
+
+from  toolbox import *
 
 #%% Paramters for execution
 
