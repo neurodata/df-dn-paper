@@ -15,7 +15,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier
 import openml
 import itertools
 import pandas as pd
@@ -24,6 +24,7 @@ from tqdm import tqdm
 from os.path import exists
 import ast
 import os
+import xgboost as xgb
 
 from toolbox import *
 
@@ -70,12 +71,18 @@ classifiers = {
     "DN": MLPClassifier(max_iter=200),
     "RF": RandomForestClassifier(n_estimators=500),
     "GBDT": GradientBoostingClassifier(n_estimators=500),
-}
+    'xgb': xgb.XGBRegressor( tree_method="hist", eval_metric=mean_absolute_error),
+    'HistGradBC':HistGradientBoostingClassifier(max_iter=200 )
+    }
+
+
 
 varCV = {
     "DN": {"n_jobs": -1, "verbose": 1, "cv": None},
     "RF": {"n_jobs": -1, "verbose": 1, "cv": None},
     "GBDT": {"n_jobs": None, "verbose": 1, "cv": None},
+    'xgb': {"n_jobs": -1, "verbose": 1, "cv": None},
+    'HistGradBC': {"n_jobs": None, "verbose": 1, "cv": None}
 }
 
 varargin = {
