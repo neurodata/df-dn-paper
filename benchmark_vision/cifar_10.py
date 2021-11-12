@@ -243,7 +243,7 @@ if __name__ == "__main__":
     torch.multiprocessing.freeze_support()
 
     # Example usage: python cifar_10.py -m 3
-    # test commit: use python3 on non-windows platforms
+    # test commit: use python3 on non-windows platform
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", help="class number")
     args = parser.parse_args()
