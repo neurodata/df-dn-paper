@@ -1,0 +1,11 @@
+searchSpaceFile: search_space.json
+trialCommand: python cifar_10.py -m 10
+trialConcurrency: 1
+maxTrialNumber: 100
+maxExperimentDuration: 1h
+tuner:
+  name: Random Search
+  classArgs:
+    optimize_mode: minimize
+trainingService:  
+  platform: local
