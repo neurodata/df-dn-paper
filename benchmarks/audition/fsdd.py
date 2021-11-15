@@ -16,12 +16,6 @@ import random
 warnings.filterwarnings("ignore")
 
 
-def write_result(filename, acc_ls):
-    with open(filename, "a") as testwritefile:
-        for acc in acc_ls:
-            testwritefile.write(str(acc) + "\n")
-
-
 def run_naive_rf():
     naive_rf_kappa = []
     naive_rf_ece = []
