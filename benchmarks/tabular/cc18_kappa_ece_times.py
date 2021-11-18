@@ -12,7 +12,7 @@ from sklearn import datasets
 from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.metrics import cohen_kappa_score
 import ast
@@ -23,6 +23,7 @@ import json
 from  toolbox import *
 
 #%%
+num_classes =  10
 reload_data = False  # indicator of whether to upload the data again
 
 path_save = "metrics/cc18_all_parameters_new"
@@ -109,7 +110,7 @@ for dataset_index, dataset in enumerate(train_indices):
         for i in range(8):
             training_sample_sizes.append(round(np.power(10, temp + i * t)))
 
-        ss_inds = random_sample_new(X_train,y_train, training_sample_sizes)
+        ss_inds = random_sample_new(X_train,y_train, training_sample_sizes, classes = num_classes)
 
         # Iterate through each sample size per dataset
         for sample_size_index, real_sample_size in enumerate(training_sample_sizes):

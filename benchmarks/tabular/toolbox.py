@@ -14,7 +14,8 @@ from tqdm.notebook import tqdm
 from sklearn import datasets
 from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier
+import xgboost as xgb
 from sklearn.model_selection import StratifiedKFold
 import ast
 import openml

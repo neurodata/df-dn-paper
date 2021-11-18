@@ -71,7 +71,7 @@ classifiers = {
     "DN": MLPClassifier(max_iter=200),
     "RF": RandomForestClassifier(n_estimators=500),
     "GBDT": GradientBoostingClassifier(n_estimators=500),
-    'xgb': xgb.XGBRegressor( tree_method="hist", eval_metric=mean_absolute_error),
+    'xgb': xgb.XGBClassifier( booster='gbtree', base_score=0.5),
     'HistGradBC':HistGradientBoostingClassifier(max_iter=200 )
     }
 

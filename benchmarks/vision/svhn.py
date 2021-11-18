@@ -6,12 +6,42 @@ from svhn_toolbox import *
 
 import argparse
 import random
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
+import xgboost as xgb
 
 import torchvision.models as models
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
+def run_xgb():
+    xgb_kappa = []
+    xgb_ece = []
+    xgb_train_time = []
+    xgb_test_time = []
+    for classes in classes_space:
+
+        # cohen_kappa vs num training samples (naive_rf)
+        for samples in samples_space:
+            xgb = xgb.XGBClassifier( booster='gbtree', base_score=0.5)
+            cohen_kappa, ece, train_time, test_time = run_rf_image_set(
+                xgb,
+                svhn_train_images,
+                svhn_train_labels,
+                svhn_test_images,
+                svhn_test_labels,
+                samples,
+                classes,
+            )
+            xgb_kappa.append(cohen_kappa)
+            xgb_ece.append(ece)
+            xgb_train_time.append(train_time)
+            xgb_test_time.append(test_time)
+
+    print("xgb finished")
+    write_result(prefix + "xgb_kappa.txt", xgb_kappa)
+    write_result(prefix + "xgb_ece.txt", xgb_ece)
+    write_result(prefix + "xgb_train_time.txt", xgb_train_time)
+    write_result(prefix + "xgb_test_time.txt", xgb_test_time)
 
 def run_naive_rf():
     naive_rf_kappa = []
