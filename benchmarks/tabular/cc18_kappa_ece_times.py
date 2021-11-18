@@ -214,8 +214,8 @@ new_dict_times = mod_dict(train_test_times, tuple)
 
 # Save sample sizes and model results in txt files
 np.savetxt("metrics/cc18_sample_sizes.txt", all_sample_sizes)
-save_methods = {"text_dict": 1, "csv": 0, "json": 0}
-save_methods_rewrite = {"text_dict": 1, "csv": 0, "json": 0}
+save_methods = {"text_dict": 0, "csv": 0, "json": 1}
+save_methods_rewrite = {"text_dict": 1, "csv": 0, "json": 1}
 
 save_best_parameters(
     save_methods, save_methods_rewrite, "results/cc18_kappa_and_ece", new_dict
