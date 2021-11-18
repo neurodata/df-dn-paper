@@ -109,7 +109,7 @@ for dataset_index, dataset in enumerate(train_indices):
         for i in range(8):
             training_sample_sizes.append(round(np.power(10, temp + i * t)))
 
-        ss_inds = random_sample_new(X_train, training_sample_sizes)
+        ss_inds = random_sample_new(X_train,y_train, training_sample_sizes)
 
         # Iterate through each sample size per dataset
         for sample_size_index, real_sample_size in enumerate(training_sample_sizes):

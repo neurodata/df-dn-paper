@@ -24,7 +24,7 @@ import pandas as pd
 import seaborn as sns
 from os.path import exists
 from tqdm import tqdm
-
+from collections import Counter
 #%% Functions to compare to original text files
 def open_data(path,format_file):
     if format_file=='text_dict':
@@ -69,7 +69,7 @@ def read_params_txt(filename):
     return params
 
 
-def random_sample_new(data, training_sample_sizes):
+def random_sample_new_old(data, training_sample_sizes):
     """
     Given X_data and a list of training sample size, randomly sample indices to be used.
     Larger sample sizes include all indices from smaller sample sizes.
@@ -88,13 +88,85 @@ def random_sample_new(data, training_sample_sizes):
     temp = []
 
     for i in range(len(temp_inds)):
-        cur = temp_inds[i]
+        cur = temp_inds[i] # cur is the current addition of indices
         final_inds.append(sorted(cur + temp))
-        temp = sorted(cur + temp)
-
+        temp = sorted(cur + temp) # temp is the cumulative list of indices
+    # final_inds is a list of lists of indices
     return final_inds
 
 
+#partitions = np.array_split(np.array(range(samples)), num_classes)
+occurences = dict(Counter(y_train))
+# Obtain only train images and labels for selected classes
+i = 0
+for cls in classes:
+    class_idx = np.argwhere(train_labels == cls).flatten()
+    np.random.shuffle(class_idx)
+    curr_indices = class_idx[: len(partitions[i])]
+    final_inds.append(curr_indices)        
+    
+#        image_ls.append(class_img)
+#        label_ls.append(np.repeat(cls, len(partitions[i])))
+    i += 1
+    
+def random_sample_new(X_train, y_train, training_sample_sizes, classes = 10, seed_rand = 0):
+    """
+    Peforms multiclass predictions for a random forest classifier
+    with fixed total samples
+    """
+    random.seed(seed_rand)
+    np.random.seed(seed_rand)
+    training_sample_sizes = sorted(training_sample_sizes)
+    if isinstance(classes,(int,float) ):
+        classes_all = np.unique(y_train)
+        classes_spec = np.random.choice(classes_all,10)
+        num_classes = classes
+    elif isinstance(classes, (tuple,list, numpy.ndarray)):
+        classes_spec = classes
+        num_classes = len(classes)
+    else:
+        raise TypeError('Unrecognized classes type: %s'%type(classes))
+        
+    basic_indices = np.argwhere(np.array(y_train)>1).T[0]
+    previous_partitions_len = np.zeros(num_classes)
+    previous_inds = {class_val:[] for class_val in clasees_spec}
+    prev_samp_size = 0
+    final_inds = []
+    for samp_size_count, samp_size in enumerate(training_sample_sizes):
+        #real_samp_size = samp_size - prev_samp_size
+        partitions = np.array_split(np.array(range(samp_size)), num_classes)
+        
+        # partition real include the number of additional indices we need to find
+        partitions_real = [len(part_new)-previous_partitions_len[class_c] for class_c,part_new in partitions ]
+        if samp_size <= len(basic_indices):
+            indices_classes_addition_all = [] # For each samples size = what indices are taken for all classes together
+            for class_count, class_val in enumerate(classes_spec):
+                indices_class = np.argwhere(np.array(y_train) == class_val).T[0]
+                indices_class_original = [ind_class for ind_class in indices_class if ind_class not in previous_inds[class_val]]
+                np.random.shuffle(indices_class_original)
+                if  partitions_real[class_count] <= len(indices_class_original):
+                    indices_class_addition = indices_class_original[:partitions_real[class_count] ]
+                    previous_inds[class_val].extend(indices_class_addition)
+                    indices_classes_addition_all.extend(indices_class_addition)
+                
+                else:
+                    raise ValueError('Class %s does not have enough samples'%str(class_val))
+            if final_inds:
+                indices_prev = final_inds[-1].copy()
+            else:
+                indices_prev = []
+                
+            indices_class_addtion_and_prev = indices_prev + indices_class_addition
+            final_inds.append(indices_class_addtion_and_prev)
+            previous_partitions_len = [len(parti) for parti in partitions]    
+            prev_samp_size = samp_size
+                
+        else:
+            raise ValueError('Samp size is too high given the data')     
+        
+    return final_inds
+        
+        
 def sample_large_datasets(X_data, y_data):
     """
     For large datasets with over 10000 samples, resample the data to only include
