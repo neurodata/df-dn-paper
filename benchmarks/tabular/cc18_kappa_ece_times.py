@@ -45,7 +45,7 @@ shape_2_all_sample_sizes = dictionary_params["shape_2_all_sample_sizes"]
 shape_2_evolution = dictionary_params["shape_2_evolution"]
 n_splits = dictionary_params["shape_2_evolution"]
 
-models_to_run = {"RF": 1, "DN": 1, "GBDT": 1}
+models_to_run = {"RF": 1, "DN": 1, "GBDT": 1,'xgb':1, 'HistGradBC':0, 'TabNet':1}
 
 
 #%% Create data structures

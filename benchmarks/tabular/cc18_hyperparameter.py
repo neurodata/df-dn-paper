@@ -25,6 +25,8 @@ from os.path import exists
 import ast
 import os
 import xgboost as xgb
+from pytorch_tabnet.tab_model import TabNetClassifier
+
 
 from toolbox import *
 
@@ -50,8 +52,8 @@ if return_default:
     ) = return_to_default()
 path_save = "metrics/cc18_all_parameters_new"
 
-save_methods = {"text_dict": 1, "csv": 0, "json": 0}
-save_methods_rewrite = {"text_dict": 0, "csv": 0, "json": 0}
+save_methods = {"text_dict": 0, "csv": 0, "json": 1}
+save_methods_rewrite = {"text_dict": 0, "csv": 0, "json": 1}
 #%% Models
 """
 Deep Neural Network
@@ -65,14 +67,15 @@ node_range = test_list + two_layer + three_layer
 """
 Change below to add a model
 """
-models_to_run = {"RF": 1, "DN": 1, "GBDT": 1}  # Define which models to run
+models_to_run = {"RF": 1, "DN": 1, "GBDT": 1,'xgb':1, 'HistGradBC':0, 'TabNet':1}  # Define which models to run
 
 classifiers = {
     "DN": MLPClassifier(max_iter=200),
     "RF": RandomForestClassifier(n_estimators=500),
     "GBDT": GradientBoostingClassifier(n_estimators=500),
     'xgb': xgb.XGBClassifier( booster='gbtree', base_score=0.5),
-    'HistGradBC':HistGradientBoostingClassifier(max_iter=200 )
+    'HistGradBC':HistGradientBoostingClassifier(max_iter=200 ),
+    'TabNet': TabNetClassifier() 
     }
 
 
@@ -82,7 +85,9 @@ varCV = {
     "RF": {"n_jobs": -1, "verbose": 1, "cv": None},
     "GBDT": {"n_jobs": None, "verbose": 1, "cv": None},
     'xgb': {"n_jobs": -1, "verbose": 1, "cv": None},
-    'HistGradBC': {"n_jobs": None, "verbose": 1, "cv": None}
+    'HistGradBC': {"n_jobs": None, "verbose": 1, "cv": None},
+    'TabNet': {"n_jobs": None, "verbose": None, "cv": None}
+    
 }
 
 varargin = {
