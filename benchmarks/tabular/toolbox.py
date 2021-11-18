@@ -25,6 +25,8 @@ import seaborn as sns
 from os.path import exists
 from tqdm import tqdm
 from collections import Counter
+import warnings
+
 #%% Functions to compare to original text files
 def open_data(path,format_file):
     if format_file=='text_dict':
@@ -109,11 +111,12 @@ for cls in classes:
 #        label_ls.append(np.repeat(cls, len(partitions[i])))
     i += 1
     
-def random_sample_new(X_train, y_train, training_sample_sizes, classes = 10, seed_rand = 0):
+def random_sample_new(X_train, y_train, training_sample_sizes, classes = 10, seed_rand = 0, min_rep_per_class = 1):
     """
     Peforms multiclass predictions for a random forest classifier
     with fixed total samples
     """
+    
     random.seed(seed_rand)
     np.random.seed(seed_rand)
     training_sample_sizes = sorted(training_sample_sizes)
@@ -126,12 +129,20 @@ def random_sample_new(X_train, y_train, training_sample_sizes, classes = 10, see
         num_classes = len(classes)
     else:
         raise TypeError('Unrecognized classes type: %s'%type(classes))
-        
+    if num_classes > len(np.unique(y_train)):
+        warnings.warn("Number of required classes is higher than possible. Num. of classes was re-defined as the number of unique classes")
+        num_classes = len(np.unique(y_train))
+        classes_spec = classes_spec[:num_classes]
+       
     basic_indices = np.argwhere(np.array(y_train)>1).T[0]
     previous_partitions_len = np.zeros(num_classes)
     previous_inds = {class_val:[] for class_val in clasees_spec}
     prev_samp_size = 0
     final_inds = []
+    if np.floor(np.min(samp_size)/num_classes) < min_rep_per_class:
+        warnings.warn("Not enough samples for each class, decreasing number of classes")
+        num_classes = np.floor(np.min(samp_size)/min_rep_per_class)
+        classes_spec = classes_spec[:num_classes]
     for samp_size_count, samp_size in enumerate(training_sample_sizes):
         #real_samp_size = samp_size - prev_samp_size
         partitions = np.array_split(np.array(range(samp_size)), num_classes)
