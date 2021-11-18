@@ -302,6 +302,8 @@ if __name__ == "__main__":
     svhn_test_images = svhn_test_images.reshape(-1, 32 * 32 * 3)
 
     run_naive_rf()
+    run_xgb()
+
 
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]

@@ -276,6 +276,8 @@ if __name__ == "__main__":
 
     run_naive_rf()
 
+
+
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
