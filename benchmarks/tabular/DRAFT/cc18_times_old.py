@@ -36,7 +36,6 @@ save_times_rewrite = {"text_dict": 1, "csv": 1, "json": 0}
 save_methods = {"text_dict": 1, "csv": 1, "json": 0}
 
 
-
 #%% Load data from CC18 data set suite
 if dictionary_params["reload_data"] or "dataset_name" not in locals():
     X_data_list, y_data_list, dataset_name = load_cc18()

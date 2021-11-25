@@ -19,7 +19,7 @@ import time
 import json
 
 
-from  toolbox import *
+from toolbox import *
 
 #%% Paramters for execution
 
@@ -34,7 +34,6 @@ repos_cv = dictionary_params["shape_2_evolution"]
 len_samp_size = dictionary_params["shape_2_all_sample_sizes"]
 save_times_rewrite = {"text_dict": 1, "csv": 1, "json": 0}
 save_methods = {"text_dict": 1, "csv": 1, "json": 0}
-
 
 
 #%% Load data from CC18 data set suite

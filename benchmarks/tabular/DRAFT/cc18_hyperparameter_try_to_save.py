@@ -15,7 +15,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier
+from sklearn.ensemble import (
+    RandomForestClassifier,
+    GradientBoostingClassifier,
+    HistGradientBoostingClassifier,
+)
 import openml
 import itertools
 import pandas as pd
@@ -29,7 +33,6 @@ from pytorch_tabnet.tab_model import TabNetClassifier
 
 
 from toolbox import *
-
 
 
 #%% Define executrion variables (to save memory & execution time)
@@ -67,27 +70,32 @@ node_range = test_list + two_layer + three_layer
 """
 Change below to add a model
 """
-models_to_run = {"RF": 1, "DN": 1, "GBDT": 1,'xgb':1, 'HistGradBC':0, 'TabNet':1}  # Define which models to run
+models_to_run = {
+    "RF": 1,
+    "DN": 1,
+    "GBDT": 1,
+    "xgb": 1,
+    "HistGradBC": 0,
+    "TabNet": 1,
+}  # Define which models to run
 
 classifiers = {
     "DN": MLPClassifier(max_iter=200),
     "RF": RandomForestClassifier(n_estimators=500),
     "GBDT": GradientBoostingClassifier(n_estimators=500),
-    'xgb': xgb.XGBClassifier( booster='gbtree', base_score=0.5),
-    'HistGradBC':HistGradientBoostingClassifier(max_iter=200 ),
-    'TabNet': TabNetClassifier() 
-    }
-
+    "xgb": xgb.XGBClassifier(booster="gbtree", base_score=0.5),
+    "HistGradBC": HistGradientBoostingClassifier(max_iter=200),
+    "TabNet": TabNetClassifier(),
+}
 
 
 varCV = {
     "DN": {"n_jobs": -1, "verbose": 1, "cv": None},
     "RF": {"n_jobs": -1, "verbose": 1, "cv": None},
     "GBDT": {"n_jobs": None, "verbose": 1, "cv": None},
-    'xgb': {"n_jobs": -1, "verbose": 1, "cv": None},
-    'HistGradBC': {"n_jobs": None, "verbose": 1, "cv": None},
-    'TabNet': {"n_jobs": None, "verbose": None, "cv": None}
-    
+    "xgb": {"n_jobs": -1, "verbose": 1, "cv": None},
+    "HistGradBC": {"n_jobs": None, "verbose": 1, "cv": None},
+    "TabNet": {"n_jobs": None, "verbose": None, "cv": None},
 }
 
 varargin = {

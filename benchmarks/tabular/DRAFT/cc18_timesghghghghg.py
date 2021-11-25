@@ -19,26 +19,25 @@ import time
 import json
 
 
-from  toolbox import *
+from toolbox import *
 
 #%% Paramters for execution
 
-#path_params = "metrics/dict_parameters"
-#with open(path_params + ".json", "r") as json_file:
+# path_params = "metrics/dict_parameters"
+# with open(path_params + ".json", "r") as json_file:
 #    dictionary_params = json.load(json_file)
 train_times = {
     model_name: None for model_name in dictionary_params["classifiers_names"]
 }
 test_times = {model_name: None for model_name in dictionary_params["classifiers_names"]}
-#repos_cv = dictionary_params["shape_2_evolution"]
-#len_samp_size = dictionary_params["shape_2_all_sample_sizes"]
-#save_times_rewrite = {"text_dict": 1, "csv": 1, "json": 0}
-#save_methods = {"text_dict": 1, "csv": 1, "json": 0}
-
+# repos_cv = dictionary_params["shape_2_evolution"]
+# len_samp_size = dictionary_params["shape_2_all_sample_sizes"]
+# save_times_rewrite = {"text_dict": 1, "csv": 1, "json": 0}
+# save_methods = {"text_dict": 1, "csv": 1, "json": 0}
 
 
 #%% Load data from CC18 data set suite
-#if dictionary_params["reload_data"] or "dataset_name" not in locals():
+# if dictionary_params["reload_data"] or "dataset_name" not in locals():
 #    X_data_list, y_data_list, dataset_name = load_cc18()
 path_best_parameters = "metrics/cc18_all_parameters_new"
 

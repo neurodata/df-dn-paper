@@ -1,46 +1,29 @@
 """
-Author: Michael Ainsworth
+Coauthors: Michael Ainsworth
+           Jayanta Dey
+           Noga Mudrik
 """
-"""
-Updates:
-    Noga Mudrik
-"""
-#%% Imports
-import numpy as np
-import matplotlib.pyplot as plt
-from random import sample
-from tqdm.notebook import tqdm
-from sklearn import datasets
+# Imports
+
 from sklearn.preprocessing import StandardScaler
-from sklearn.neural_network import MLPClassifier
-from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier
-import openml
 import itertools
-import pandas as pd
-import json
-from tqdm import tqdm
-from os.path import exists
-import ast
-import os
-import xgboost as xgb
-from pytorch_tabnet.tab_model import TabNetClassifier
-
-
 from toolbox import *
 
 
-
-#%% Define executrion variables (to save memory & execution time)
+# Define executrion variables (to save memory & execution time)
 reload_data = False  # indicator of whether to upload the data again
-nodes_combination = [5]  # default is [20, 100, 180, 260, 340, 400]
-dataset_indices_max = 20  # 72
-max_shape_to_run = 10000
-alpha_range_nn = [0.1]  # , 0.001, 0.01, 0.1]
-subsample = [1.0]  # [0.5,0.8,1.0]
-
 return_default = False
+
+nodes_combination = [20, 100, 180, 260, 340, 400]
+dataset_indices_max = 72
+max_shape_to_run = 10000
+alpha_range_nn = [0.1, 0.001, 0.01, 0.1]
+subsample = [1.0, 0.5, 0.8, 1.0]
+path_save = "metrics/cc18_all_parameters"
+path_save_dict_data_indices = "metrics/dict_data_indices"
+save_methods = {"text_dict": 0, "csv": 0, "json": 1}
+save_methods_rewrite = {"text_dict": 0, "csv": 0, "json": 1}
+
 if return_default:
     (
         nodes_combination,
@@ -50,12 +33,9 @@ if return_default:
         subsample,
         alpha_range_nn,
     ) = return_to_default()
-path_save = "metrics/cc18_all_parameters_new"
 
-save_methods = {"text_dict": 0, "csv": 0, "json": 1}
-save_methods_rewrite = {"text_dict": 0, "csv": 0, "json": 1}
-#%% Models
 """
+Models:
 Deep Neural Network
 """
 # Generate all combinations of nodes to tune over
@@ -67,28 +47,18 @@ node_range = test_list + two_layer + three_layer
 """
 Change below to add a model
 """
-models_to_run = {"RF": 1, "DN": 1, "GBDT": 1,'xgb':1, 'HistGradBC':0, 'TabNet':1}  # Define which models to run
+models_to_run = {
+    "RF": 1,
+    "DN": 1,
+    "GBDT": 1,
+}  # Define which models to run
 
 classifiers = {
-    "DN": MLPClassifier(max_iter=200),
+    "DN": TabNetClassifier(),
     "RF": RandomForestClassifier(n_estimators=500),
-    "GBDT": GradientBoostingClassifier(n_estimators=500),
-    'xgb': xgb.XGBClassifier( booster='gbtree', base_score=0.5),
-    'HistGradBC':HistGradientBoostingClassifier(max_iter=200 ),
-    'TabNet': TabNetClassifier() 
-    }
-
-
-
-varCV = {
-    "DN": {"n_jobs": -1, "verbose": 1, "cv": None},
-    "RF": {"n_jobs": -1, "verbose": 1, "cv": None},
-    "GBDT": {"n_jobs": None, "verbose": 1, "cv": None},
-    'xgb': {"n_jobs": -1, "verbose": 1, "cv": None},
-    'HistGradBC': {"n_jobs": None, "verbose": 1, "cv": None},
-    'TabNet': {"n_jobs": None, "verbose": None, "cv": None}
-    
+    "GBDT": xgb.XGBClassifier(booster="gbtree", base_score=0.5),
 }
+
 
 varargin = {
     "node_range": node_range,
@@ -96,6 +66,11 @@ varargin = {
     "subsample": subsample,
 }
 
+varCV = {
+    "DN": {"n_jobs": -1, "verbose": 1},
+    "RF": {"n_jobs": -1, "verbose": 1},
+    "GBDT": {"n_jobs": -1, "verbose": 1},
+}
 
 save_vars_to_dict(
     classifiers,
@@ -110,9 +85,11 @@ save_vars_to_dict(
 )
 
 
-#%% function so save cc18_all_parameters file
+"""
+function to save cc18_all_parameters file
+Empty dict to record optimal parameters
+"""
 
-# Empty dict to record optimal parameters
 all_parameters = {
     model_name: {} for model_name, val in models_to_run.items() if val == 1
 }
@@ -124,16 +101,24 @@ all_params = {model_name: {} for model_name, val in models_to_run.items() if val
 """
 Organize the data
 """
-#%% Load data from CC18 data set suite
+# Load data from CC18 data set suite
 if (
     reload_data or "dataset_name" not in locals()
 ):  # Load the data only if required (by reload_data or if it is not defined)
     X_data_list, y_data_list, dataset_name = load_cc18()
 
-# Choose dataset indices
-dataset_indices = [i for i in range(dataset_indices_max)]
+"""
+Choose dataset indices
+"""
 
-# For each dataset, use randomized hyperparameter search to optimize parameters
+dataset_indices = list(range(dataset_indices_max))
+dict_data_indices = {dataset_ind: {} for dataset_ind in dataset_indices}
+
+
+"""
+For each dataset, use randomized hyperparameter search to optimize parameters
+"""
+
 for dataset_index, dataset in enumerate(dataset_indices):
 
     print("\n\nCurrent Dataset: ", dataset)
@@ -141,11 +126,25 @@ for dataset_index, dataset in enumerate(dataset_indices):
     X = X_data_list[dataset]
     y = y_data_list[dataset]
 
-    # If data set has over 10000 samples, resample to contain 10000
+    """
+    If data set has over 10000 samples, resample to contain 10000
+    """
+
     if X.shape[0] > max_shape_to_run:
         X, y = sample_large_datasets(X, y)
 
-    # Standart Scaler
+    """
+    Split to train, val and test by ratio of 2:1:1
+    """
+    np.random.seed(dataset_index)
+    dict_data_indices = find_indices_train_val_test(
+        X.shape[0], dict_data_indices=dict_data_indices, dataset_ind=dataset_index
+    )
+    train_indices = dict_data_indices[dataset_index]["train"]
+    val_indices = dict_data_indices[dataset_index]["val"]
+    """
+    Standart Scaling
+    """
     scaler = StandardScaler()
     scaler.fit(X)
     X = scaler.transform(X)
@@ -165,13 +164,17 @@ for dataset_index, dataset in enumerate(dataset_indices):
                     all_params,
                     model_name,
                     varargin,
-                    varCV,
                     classifiers,
                     X,
                     y,
                     dataset_index,
+                    train_indices,
+                    val_indices,
                     p,
+                    varCV,
                 )
 
-
 save_best_parameters(save_methods, save_methods_rewrite, path_save, best_parameters)
+save_best_parameters(
+    save_methods, save_methods_rewrite, path_save_dict_data_indices, dict_data_indices
+)
