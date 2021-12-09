@@ -1,6 +1,7 @@
 """
 Coauthors: Michael Ainsworth
            Jayanta Dey
+           Haoyin Xu
            Noga Mudrik
 """
 
@@ -27,10 +28,10 @@ with open(path_train_val_test_indices + ".json", "r") as json_file:
     dict_data_indices = json.load(json_file)
 
 path = path_save  # "metrics/cc18_all_parameters"
-type_file = ".txt"
+type_file = ".json"
 dataset_indices_max = dictionary_params["dataset_indices_max"]
 max_shape_to_run = dictionary_params["max_shape_to_run"]
-file_type_to_load = ".txt"
+file_type_to_load = ".json"
 
 """
 Number of repetitions for each CV fold at each sample size
@@ -176,7 +177,7 @@ for dataset_index, dataset in enumerate(train_indices):
                     train_test_times_cur[model_name]
                 )
 
-                # Changing the results to tuple enabling easier saving to txt / json and ectacting the fata after that.
+                # Changing the results to tuple enabling easier saving to json and ectacting the fata after that.
 
                 train_test_times[model_name][dataset][real_sample_size] = tuple(
                     train_test_times[model_name][dataset][real_sample_size]
@@ -202,12 +203,15 @@ new_dict_times = mod_dict(train_test_times, tuple)
 
 
 """
-Save sample sizes and model results in txt files
+Save sample sizes and model results in json files
 """
 
-np.savetxt("metrics/cc18_sample_sizes.txt", all_sample_sizes)
-save_methods = {"text_dict": 0, "csv": 0, "json": 1}
-save_methods_rewrite = {"text_dict": 1, "csv": 0, "json": 1}
+
+save_methods = {"json": 1}
+save_methods_rewrite = {"json": 1}
+save_best_parameters(
+    save_methods, save_methods_rewrite, "metrics/cc18_sample_sizes.json", all_sample_sizes
+)
 
 save_best_parameters(
     save_methods, save_methods_rewrite, "results/cc18_kappa_and_ece", new_dict

@@ -20,20 +20,6 @@ from os.path import exists
 from sklearn.model_selection import RandomizedSearchCV
 
 
-def read_params_txt(filename):
-    """
-    Read and parse optimized parameters from text file
-    """
-    params = []
-    f = open(filename, "r").read()
-    f = f.split("\n")
-    f = f[:-1]
-    for ind, i in enumerate(f):
-        temp = ast.literal_eval(f[ind])
-        params.append(temp)
-    return params
-
-
 def random_sample_new(
     X_train,
     y_train,
@@ -112,50 +98,22 @@ def save_best_parameters(
     """
     Save Hyperparameters
     """
-    if save_methods["text_dict"]:
-        if exists(path_save + ".txt") and save_methods_rewrite["text_dict"] == 0:
-            file = open(path_save + ".txt", "r")
-            contents = file.read()
+    if exists(path_save + ".json") and save_methods_rewrite["json"] == 0:
+        with open(path_save + ".json", "r") as json_file:
+            dictionary = json.load(json_file)
+        best_parameters_to_save = {**dictionary, **best_parameters}
+    else:
+        best_parameters_to_save = best_parameters
+    with open(path_save + ".json", "w") as fp:
+        json.dump(best_parameters_to_save, fp)
 
-            dictionary = ast.literal_eval(contents)
-            best_parameters_to_save = {
-                **dictionary,
-                **best_parameters,
-            }  # This will overwrite existing models but not models that were removed
-        else:
-            best_parameters_to_save = best_parameters
-        with open(path_save + ".txt", "w") as f:
-            f.write("%s\n" % best_parameters_to_save)
-
-    if save_methods["json"]:
-        if exists(path_save + ".json") and save_methods_rewrite["json"] == 0:
-            with open(path_save + ".json", "r") as json_file:
-                dictionary = json.load(json_file)
-            best_parameters_to_save = {**dictionary, **best_parameters}
-        else:
-            best_parameters_to_save = best_parameters
-        with open(path_save + ".json", "w") as fp:
-            json.dump(best_parameters_to_save, fp)
-    if save_methods["csv"]:
-        df_new_data = pd.DataFrame(best_parameters_to_save)
-        if exists(path_save + ".csv") and save_methods_rewrite["csv"] == 0:
-            df_old = pd.read_csv(path_save + ".csv", index=False)
-            df_to_save = pd.concat([df_new_data, df_old], 1, ignore_index=True)
-        else:
-            df_to_save = df_new_data
-        df_to_save.to_csv(path_save + ".csv", index=False)
 
 
 def open_data(path, format_file):
     """
     Open existing data
     """
-    if format_file == "text_dict":
-        file = open(path + ".txt", "r")
-        contents = file.read()
-        dictionary = ast.literal_eval(contents)
-    else:
-        raise NameError("Unrecognized format file")
+    dictionary = json.load(path + ".json")
     return dictionary
 
 
@@ -261,14 +219,6 @@ def load_cc18():
     return X_data_list, y_data_list, dataset_name
 
 
-def open_dictionary_best_params(path="metrics/cc18_all_parameters_try.txt"):
-    """
-    Open saved files
-    """
-    file = open(path, "r")
-    contents = file.read()
-    dictionary = ast.literal_eval(contents)
-    return dictionary
 
 
 def return_to_default():
@@ -361,28 +311,15 @@ def mod_dict(res_dict, type_to_compare):
     return tot_dict
 
 
-def read_params_dict_txt(path="metrics/cc18_all_parameters", type_file=".txt"):
+def read_params_dict_json(path="metrics/cc18_all_parameters", type_file=".json"):
     """
     Read optimized parameters as saved in a dict
-    Path should not include the file type (like .txt)
+    Path should not include the file type (like .json)
     """
 
-    if type_file == ".txt":
-        file = open(path + ".txt", "r")
-        contents = file.read()
-        best_params_dict = ast.literal_eval(contents)
+    with open(path + ".json", "r") as json_file:
+        best_params_dict = json.load(json_file)
 
-    elif type_file == ".csv":
-        df_old = pd.read_csv(path + ".csv", index=False)
-        best_params_dict = df_old.to_dict()
-
-    elif type_file == ".json":
-
-        with open(path + ".json", "r") as json_file:
-            best_params_dict = json.load(json_file)
-
-    else:
-        raise NameError('Invalid type file in "type_files" argument: %s' % type_file)
     return best_params_dict
 
 
