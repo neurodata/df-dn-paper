@@ -8,7 +8,8 @@ import argparse
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import scale
-
+from sklearn.model_selection import train_test_split
+import pandas as pd
 import torchvision.models as models
 import warnings
 import random
@@ -262,16 +263,40 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", help="class number")
     parser.add_argument("-f", help="feature type")
+    parser.add_argument("-data", help="audio files location")
+    parser.add_argument("-labels", help="labels file location")
     args = parser.parse_args()
     n_classes = int(args.m)
-    feature_type = str(args.f)
-    path_recordings = "recordings/"
+    feature_type = str(args.f)    
+    
+    train_folder = str(args.data)
+    train_label = pd.read_csv(str(args.labels))
+    
+    # select subset of data that only contains 300 samples per class
+    labels_chosen = train_label[train_label['label'].map(train_label['label'].value_counts() == 300)]
 
+    training_files = []
+    for file in os.listdir(train_folder):
+        for x in labels_chosen.fname.to_list():
+            if file.endswith(x):
+                training_files.append(file)
+
+    path_recordings = []
+    for audiofile in training_files:
+        path_recordings.append(os.path.join(train_folder,audiofile))
+
+    # convert selected label names to integers
+    labels_to_index = {'Acoustic_guitar': 0, 'Applause': 1, 'Bass_drum': 2, 'Trumpet': 3,'Clarinet': 4,'Double_bass': 5,'Laughter': 6,'Shatter': 7, 'Snare_drum': 8,'Saxophone': 9,'Tearing': 10,'Flute': 11,'Hi-hat': 12,'Violin_or_fiddle': 13,'Squeak': 14,'Fart': 15,'Fireworks': 16,'Cello': 17}
+
+    # encode labels to integers
+    get_labels = labels_chosen['label'].replace(labels_to_index).to_list()
+    labels_chosen = labels_chosen.reset_index()
+    
     # data is normalized upon loading
     # load dataset
-    x_spec, y_number = load_spoken_digit(path_recordings, feature_type)
-    nums = list(range(10))
-    samples_space = np.geomspace(10, 480, num=6, dtype=int)
+    x_spec, y_number = load_spoken_digit(path_recordings,labels_chosen,get_labels,feature_type)
+    nums = list(range(18))
+    samples_space = np.geomspace(10, 450, num=6, dtype=int)
     # define path, samples space and number of class combinations
     if feature_type == "melspectrogram":
         prefix = args.m + "_class_mel/"
@@ -285,32 +310,11 @@ if __name__ == "__main__":
     classes_space = list(combinations_45(nums, n_classes))
 
     # scale the data
-    x_spec = scale(x_spec.reshape(3000, -1), axis=1).reshape(3000, 32, 32)
+    x_spec = scale(x_spec.reshape(5400, -1), axis=1).reshape(5400, 32, 32)
     y_number = np.array(y_number)
 
     # need to take train/valid/test equally from each class
-    trainx = np.zeros((1, 32, 32))
-    trainy = np.zeros((1))
-    testx = np.zeros((1, 32, 32))
-    testy = np.zeros((1))
-    for i in range(10):
-        shuffler = np.random.permutation(300)
-        trainx = np.concatenate(
-            (trainx, x_spec[i * 300 : (i + 1) * 3000][shuffler][:240])
-        )
-        trainy = np.concatenate(
-            (trainy, y_number[i * 300 : (i + 1) * 3000][shuffler][:240])
-        )
-        testx = np.concatenate(
-            (testx, x_spec[i * 300 : (i + 1) * 3000][shuffler][240:])
-        )
-        testy = np.concatenate(
-            (testy, y_number[i * 300 : (i + 1) * 3000][shuffler][240:])
-        )
-    trainx = trainx[1:]
-    trainy = trainy[1:]
-    testx = testx[1:]
-    testy = testy[1:]
+    trainx, testx, trainy, testy = train_test_split(x_spec,y_number,shuffle=True,test_size=0.25, train_size=0.50, stratify=y_number)
 
     # 3000 samples, 80% train is 2400 samples, 20% test
     fsdd_train_images = trainx.reshape(-1, 32 * 32)
