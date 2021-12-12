@@ -267,13 +267,15 @@ if __name__ == "__main__":
     parser.add_argument("-labels", help="labels file location")
     args = parser.parse_args()
     n_classes = int(args.m)
-    feature_type = str(args.f)    
-    
+    feature_type = str(args.f)
+
     train_folder = str(args.data)
     train_label = pd.read_csv(str(args.labels))
-    
+
     # select subset of data that only contains 300 samples per class
-    labels_chosen = train_label[train_label['label'].map(train_label['label'].value_counts() == 300)]
+    labels_chosen = train_label[
+        train_label["label"].map(train_label["label"].value_counts() == 300)
+    ]
 
     training_files = []
     for file in os.listdir(train_folder):
@@ -283,18 +285,39 @@ if __name__ == "__main__":
 
     path_recordings = []
     for audiofile in training_files:
-        path_recordings.append(os.path.join(train_folder,audiofile))
+        path_recordings.append(os.path.join(train_folder, audiofile))
 
     # convert selected label names to integers
-    labels_to_index = {'Acoustic_guitar': 0, 'Applause': 1, 'Bass_drum': 2, 'Trumpet': 3,'Clarinet': 4,'Double_bass': 5,'Laughter': 6,'Shatter': 7, 'Snare_drum': 8,'Saxophone': 9,'Tearing': 10,'Flute': 11,'Hi-hat': 12,'Violin_or_fiddle': 13,'Squeak': 14,'Fart': 15,'Fireworks': 16,'Cello': 17}
+    labels_to_index = {
+        "Acoustic_guitar": 0,
+        "Applause": 1,
+        "Bass_drum": 2,
+        "Trumpet": 3,
+        "Clarinet": 4,
+        "Double_bass": 5,
+        "Laughter": 6,
+        "Shatter": 7,
+        "Snare_drum": 8,
+        "Saxophone": 9,
+        "Tearing": 10,
+        "Flute": 11,
+        "Hi-hat": 12,
+        "Violin_or_fiddle": 13,
+        "Squeak": 14,
+        "Fart": 15,
+        "Fireworks": 16,
+        "Cello": 17,
+    }
 
     # encode labels to integers
-    get_labels = labels_chosen['label'].replace(labels_to_index).to_list()
+    get_labels = labels_chosen["label"].replace(labels_to_index).to_list()
     labels_chosen = labels_chosen.reset_index()
-    
+
     # data is normalized upon loading
     # load dataset
-    x_spec, y_number = load_spoken_digit(path_recordings,labels_chosen,get_labels,feature_type)
+    x_spec, y_number = load_spoken_digit(
+        path_recordings, labels_chosen, get_labels, feature_type
+    )
     nums = list(range(18))
     samples_space = np.geomspace(10, 450, num=6, dtype=int)
     # define path, samples space and number of class combinations
@@ -314,7 +337,14 @@ if __name__ == "__main__":
     y_number = np.array(y_number)
 
     # need to take train/valid/test equally from each class
-    trainx, testx, trainy, testy = train_test_split(x_spec,y_number,shuffle=True,test_size=0.25, train_size=0.50, stratify=y_number)
+    trainx, testx, trainy, testy = train_test_split(
+        x_spec,
+        y_number,
+        shuffle=True,
+        test_size=0.25,
+        train_size=0.50,
+        stratify=y_number,
+    )
 
     # 3000 samples, 80% train is 2400 samples, 20% test
     fsdd_train_images = trainx.reshape(-1, 32 * 32)
