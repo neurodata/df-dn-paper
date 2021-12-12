@@ -487,8 +487,8 @@ def prepare_data(
     for cls in classes:
         test_idx = np.argwhere(test_labels == cls).flatten()
         # out of all, 0.3 validation, 0.7 test
-        test_idxs.append(test_idx[int(len(test_idx) * 0.3) :])
-        validation_idxs.append(test_idx[: int(len(test_idx) * 0.3)])
+        test_idxs.append(test_idx[int(len(test_idx) * 0.5) :])
+        validation_idxs.append(test_idx[: int(len(test_idx) * 0.5)])
 
     test_idxs = np.concatenate(test_idxs)
     validation_idxs = np.concatenate(validation_idxs)

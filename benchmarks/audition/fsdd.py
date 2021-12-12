@@ -341,7 +341,7 @@ if __name__ == "__main__":
         x_spec,
         y_number,
         shuffle=True,
-        test_size=0.25,
+        test_size=0.50,
         train_size=0.50,
         stratify=y_number,
     )
