@@ -1,1 +1,0 @@
-{"reload_data": false, "nodes_combination": [5], "dataset_indices_max": 20, "max_shape_to_run": 10000, "alpha_range_nn": [0.1], "subsample": [1.0], "classifiers_names": ["DN", "RF", "GBDT"], "varargin": {"node_range": [5], "alpha_range_nn": [0.1], "subsample": [1.0]}, "shape_2_evolution": 5, "shape_2_all_sample_sizes": 8}
