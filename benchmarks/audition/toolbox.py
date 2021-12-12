@@ -486,7 +486,7 @@ def prepare_data(
     validation_idxs = []
     for cls in classes:
         test_idx = np.argwhere(test_labels == cls).flatten()
-        # out of all, 0.3 validation, 0.7 test
+        # out of all, 0.5 validation, 0.5 test
         test_idxs.append(test_idx[int(len(test_idx) * 0.5) :])
         validation_idxs.append(test_idx[: int(len(test_idx) * 0.5)])
 
