@@ -14,6 +14,82 @@ import torchvision.transforms as transforms
 from sklearn.model_selection import ParameterSampler
 from scipy.stats.distributions import expon
 import json
+import os
+
+
+def tune(rounded_list, samples_sapce, classes_space, classifier):
+    outputlist = []
+    total_train_time = 0
+    for samples in samples_space:
+        totalaccuracy = []
+        for i in range(len(rounded_list)):
+            average_accuracy = 0
+            for classes in classes_space:
+                # train data
+                cifar_trainset = datasets.CIFAR10(
+                    root="./", train=True, download=True, transform=data_transforms
+                )
+                cifar_train_labels = np.array(cifar_trainset.targets)
+                # test data
+                cifar_testset = datasets.CIFAR10(
+                    root="./", train=False, download=True, transform=data_transforms
+                )
+                cifar_test_labels = np.array(cifar_testset.targets)
+                if classifier == "CNN32":
+                    cnn32 = SimpleCNN32Filter(len(classes))
+                total_train_time = 0
+                maxaccuracy = 0
+                param = rounded_list[i]
+                (
+                    train_loader,
+                    tuning_valid_loader,
+                    tuning_test_loader,
+                    test_loader,
+                ) = create_loaders_es(
+                    cifar_train_labels,
+                    cifar_test_labels,
+                    classes,
+                    cifar_trainset,
+                    cifar_testset,
+                    samples,
+                    param["bs"],
+                )
+                (
+                    cohen_kappa,
+                    ece,
+                    train_time,
+                    test_time,
+                    accuracy,
+                ) = test_dn_image_es_multiple(
+                    cnn32,
+                    train_loader,
+                    tuning_valid_loader,
+                    tuning_test_loader,
+                    param["lr"],
+                    param["mo"],
+                    param["wd"],
+                )
+                total_train_time += train_time
+                average_accuracy += accuracy
+            average_accuracy = average_accuracy / len(classes_space)
+            totalaccuracy.append(average_accuracy)
+        yy = np.asarray(totalaccuracy)
+        z = np.argmax(yy)
+        classifier = "CNN32"
+        num_classes = int(n_classes)
+        sample_size = int(samples)
+        outputdic = rounded_list[z].copy()
+        outputdic["classifier"] = classifier
+        outputdic["number of classes"] = num_classes
+        outputdic["sample size"] = sample_size
+        outputlist.append(outputdic)
+        outputdic = {}
+    outputfile = classifier + "parameters.json"
+    completeoutputfile = os.path.join(prefix, outputfile)
+    with open(completeoutputfile, "w") as outfile:
+        for j in range(len(outputlist)):
+            json.dump(outputlist[j], outfile)
+            outfile.write("\n")
 
 
 def run_naive_rf():
@@ -55,12 +131,7 @@ def run_cnn32():
     rng = np.random.RandomState(0)
     param_grid = {
         "lr": [0.0001, 0.001, 0.0125, 0.025],
-        "mo": [
-            0.01,
-            0.05,
-            0.1,
-            0.2,
-        ],
+        "mo": [0.01, 0.05, 0.1, 0.2],
         "bs": [32, 64, 128, 256],
         "wd": [0.00005, 0.0001, 0.0005, 0.001, 0.005],
     }
@@ -68,71 +139,7 @@ def run_cnn32():
     rounded_list = [dict((k, round(v, 6)) for (k, v) in d.items()) for d in param_list]
     outputlist = []
     total_train_time = 0
-    for samples in samples_space:
-        totalaccuracy = []
-        # cohen_kappa vs num training samples (cnn32)
-        for i in range(len(rounded_list)):
-            average_accuracy = 0
-            for classes in classes_space:
-                # train data
-                cifar_trainset = datasets.CIFAR10(
-                    root="./", train=True, download=True, transform=data_transforms
-                )
-                cifar_train_labels = np.array(cifar_trainset.targets)
-
-                # test data
-                cifar_testset = datasets.CIFAR10(
-                    root="./", train=False, download=True, transform=data_transforms
-                )
-                cifar_test_labels = np.array(cifar_testset.targets)
-                cnn32 = SimpleCNN32Filter(len(classes))
-                total_train_time = 0
-                maxaccuracy = 0
-                param = rounded_list[i]
-                train_loader, valid_loader, test_loader = create_loaders_es(
-                    cifar_train_labels,
-                    cifar_test_labels,
-                    classes,
-                    cifar_trainset,
-                    cifar_testset,
-                    samples,
-                    param["bs"],
-                )
-                (
-                    cohen_kappa,
-                    ece,
-                    train_time,
-                    test_time,
-                    accuracy,
-                ) = test_dn_image_es_multiple(
-                    cnn32,
-                    train_loader,
-                    valid_loader,
-                    valid_loader,
-                    param["lr"],
-                    param["mo"],
-                    param["wd"],
-                )
-                total_train_time += train_time
-                average_accuracy += accuracy
-            average_accuracy = average_accuracy / len(classes_space)
-            totalaccuracy.append(average_accuracy)
-        yy = np.asarray(totalaccuracy)
-        z = np.argmax(yy)
-        classifier = "CNN32"
-        num_classes = int(n_classes)
-        sample_size = int(samples)
-        outputdic = rounded_list[z].copy()
-        outputdic["classifier"] = classifier
-        outputdic["number of classes"] = num_classes
-        outputdic["sample size"] = sample_size
-        outputlist.append(outputdic)
-        outputdic = {}
-    with open("parameters.json", "w") as outfile:
-        for j in range(len(outputlist)):
-            json.dump(outputlist[j], outfile)
-            outfile.write("\n")
-
+    tune(rounded_list, samples_space, classes_space, "CNN32")
     print("cnn32 finished")
     write_result(prefix + "cnn32_kappa.txt", cnn32_kappa)
     write_result(prefix + "cnn32_ece.txt", cnn32_ece)

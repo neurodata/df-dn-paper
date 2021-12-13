@@ -495,21 +495,27 @@ def create_loaders_es(
 
     # get indicies of classes we want
     test_idxs = []
-    validation_idxs = []
+    tuning_validation_idxs = []
+    tuning_test_idxs = []
     for cls in classes:
         test_idx = np.argwhere(test_labels == cls).flatten()
         # out of all, 0.5 validation, 0.5 test
         test_idxs.append(test_idx[int(len(test_idx) * 0.5) :])
-        validation_idxs.append(test_idx[: int(len(test_idx) * 0.5)])
-
+        tuning_validation_idxs.append(test_idx[: int(len(test_idx) * 0.25)])
+        tuning_test_idxs.append(
+            test_idx[int(len(test_idx) * 0.25) : int(len(test_idx) * 0.5)]
+        )
     test_idxs = np.concatenate(test_idxs)
-    validation_idxs = np.concatenate(validation_idxs)
-
+    tuning_validation_idxs = np.concatenate(tuning_validation_idxs)
+    tuning_test_idxs = np.concatenate(tuning_test_idxs)
     # change the labels to be from 0-len(classes)
     for i in test_idxs:
         testset.targets[i] = np.where(classes == testset.targets[i])[0][0]
 
-    for i in validation_idxs:
+    for i in tuning_validation_idxs:
+        testset.targets[i] = np.where(classes == testset.targets[i])[0][0]
+
+    for i in tuning_test_idxs:
         testset.targets[i] = np.where(classes == testset.targets[i])[0][0]
 
     test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
@@ -522,17 +528,28 @@ def create_loaders_es(
         drop_last=True,
     )
 
-    valid_sampler = torch.utils.data.sampler.SubsetRandomSampler(validation_idxs)
-    valid_loader = torch.utils.data.DataLoader(
+    tuning_valid_sampler = torch.utils.data.sampler.SubsetRandomSampler(
+        tuning_validation_idxs
+    )
+    tuning_valid_loader = torch.utils.data.DataLoader(
         testset,
         batch_size=batch,
         shuffle=False,
         num_workers=4,
-        sampler=valid_sampler,
+        sampler=tuning_valid_sampler,
+        drop_last=True,
+    )
+    tuning_test_sampler = torch.utils.data.sampler.SubsetRandomSampler(tuning_test_idxs)
+    tuning_test_loader = torch.utils.data.DataLoader(
+        testset,
+        batch_size=batch,
+        shuffle=False,
+        num_workers=4,
+        sampler=tuning_test_sampler,
         drop_last=True,
     )
 
-    return train_loader, valid_loader, test_loader
+    return train_loader, tuning_valid_loader, tuning_test_loader, test_loader
 
 
 def test_dn_image_es_multiple(
