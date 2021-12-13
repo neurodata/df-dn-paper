@@ -498,9 +498,9 @@ def create_loaders_es(
     validation_idxs = []
     for cls in classes:
         test_idx = np.argwhere(test_labels == cls).flatten()
-        # out of all, 0.3 validation, 0.7 test
-        test_idxs.append(test_idx[int(len(test_idx) * 0.3) :])
-        validation_idxs.append(test_idx[: int(len(test_idx) * 0.3)])
+        # out of all, 0.5 validation, 0.5 test
+        test_idxs.append(test_idx[int(len(test_idx) * 0.5) :])
+        validation_idxs.append(test_idx[: int(len(test_idx) * 0.5)])
 
     test_idxs = np.concatenate(test_idxs)
     validation_idxs = np.concatenate(validation_idxs)
@@ -535,9 +535,6 @@ def create_loaders_es(
     return train_loader, valid_loader, test_loader
 
 
-
-
-
 def test_dn_image_es_multiple(
     model,
     train_loader,
@@ -558,7 +555,7 @@ def test_dn_image_es_multiple(
     model.to(dev)
     # loss and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum,weight_decay=wd)
+    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=wd)
     # early stopping setup
     prev_loss = float("inf")
     flag = 0
@@ -594,7 +591,7 @@ def test_dn_image_es_multiple(
                 loss = criterion(outputs, labels)
                 cur_loss += loss
         # early stop if 3 epochs in a row no loss decrease
-        #print(cur_loss)
+        # print(cur_loss)
         if cur_loss < prev_loss:
             prev_loss = cur_loss
             flag = 0
@@ -633,11 +630,11 @@ def test_dn_image_es_multiple(
 
     end_time = time.perf_counter()
     test_time = end_time - start_time
-    count=0
+    count = 0
     for i in range(len(test_preds)):
-        if (test_preds[i]==test_labels[i]):
-            count+=1
-    accuracy=count/len(test_preds)
+        if test_preds[i] == test_labels[i]:
+            count += 1
+    accuracy = count / len(test_preds)
     return (
         cohen_kappa_score(test_preds, test_labels),
         get_ece(test_probs, test_preds, test_labels),
