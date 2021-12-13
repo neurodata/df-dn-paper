@@ -131,9 +131,7 @@ class FSDKaggle18Dataset(Dataset):
         plt.show(block=False)
 
 
-def load_fsdk18(
-    path_recordings, labels_file, label_arr, feature_type="spectrogram"
-):
+def load_fsdk18(path_recordings, labels_file, label_arr, feature_type="spectrogram"):
 
     audio_data = []  # audio data
     x_audio = []  # STFT spectrogram
