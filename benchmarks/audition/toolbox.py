@@ -165,6 +165,41 @@ def load_fsdk18(path_recordings, labels_file, label_arr, feature_type="spectrogr
     return x_audio_mini, y_number
 
 
+def load_spoken_digit(path_recordings, feature_type="spectrogram"):
+    file = os.listdir(path_recordings)
+
+    audio_data = []  # audio data
+    x_spec = []  # STFT spectrogram
+    x_spec_mini = []  # resized image, 32*32
+    y_number = []  # label of number
+    y_speaker = []  # label of speaker
+    if feature_type == "spectrogram":
+        a = trans.Spectrogram(n_fft=128, normalized=True)
+    elif feature_type == "melspectrogram":
+        a = trans.MelSpectrogram(n_fft=128, normalized=True)
+    elif feature_type == "mfcc":
+        a = trans.MFCC(n_mfcc=128)
+    for i in file:
+        x, sr = librosa.load(path_recordings + i, sr=8000)
+        x_stft_db = a(torch.tensor(x)).numpy()
+        # Convert an amplitude spectrogram to dB-scaled spectrogram
+        x_stft_db_mini = cv2.resize(x_stft_db, (32, 32))  # Resize into 32 by 32
+        y_n = i[0]  # number
+        y_s = i[2]  # first letter of speaker's name
+
+        audio_data.append(x)
+        x_spec.append(x_stft_db)
+        x_spec_mini.append(x_stft_db_mini)
+        y_number.append(y_n)
+        y_speaker.append(y_s)
+
+    x_spec_mini = np.array(x_spec_mini)
+    y_number = np.array(y_number).astype(int)
+    y_speaker = np.array(y_speaker)
+
+    return x_spec_mini, y_number
+
+
 class SimpleCNN32Filter(nn.Module):
     """
     Defines a simple CNN arhcitecture
