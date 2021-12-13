@@ -30,10 +30,10 @@ def run_naive_rf():
             RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
             cohen_kappa, ece, train_time, test_time = run_rf_image_set(
                 RF,
-                fsdd_train_images,
-                fsdd_train_labels,
-                fsdd_test_images,
-                fsdd_test_labels,
+                fsdk18_train_images,
+                fsdk18_train_labels,
+                fsdk18_test_images,
+                fsdk18_test_labels,
                 samples,
                 classes,
             )
@@ -315,7 +315,7 @@ if __name__ == "__main__":
 
     # data is normalized upon loading
     # load dataset
-    x_spec, y_number = load_spoken_digit(
+    x_spec, y_number = load_fsdk18(
         path_recordings, labels_chosen, get_labels, feature_type
     )
     nums = list(range(18))
@@ -347,11 +347,11 @@ if __name__ == "__main__":
     )
 
     # 3000 samples, 80% train is 2400 samples, 20% test
-    fsdd_train_images = trainx.reshape(-1, 32 * 32)
-    fsdd_train_labels = trainy.copy()
+    fsdk18_train_images = trainx.reshape(-1, 32 * 32)
+    fsdk18_train_labels = trainy.copy()
     # reshape in 2d array
-    fsdd_test_images = testx.reshape(-1, 32 * 32)
-    fsdd_test_labels = testy.copy()
+    fsdk18_test_images = testx.reshape(-1, 32 * 32)
+    fsdk18_test_labels = testy.copy()
 
     run_naive_rf()
     run_cnn32()

@@ -131,15 +131,14 @@ class FSDKaggle18Dataset(Dataset):
         plt.show(block=False)
 
 
-def load_spoken_digit(
+def load_fsdk18(
     path_recordings, labels_file, label_arr, feature_type="spectrogram"
 ):
 
     audio_data = []  # audio data
-    x_spec = []  # STFT spectrogram
-    x_spec_mini = []  # resized image, 32*32
-    y_number = []  # label of number
-    y_speaker = []  # label of speaker
+    x_audio = []  # STFT spectrogram
+    x_audio_mini = []  # resized image, 32*32
+    y_number = []  # label of number  # label of speaker
     if feature_type == "spectrogram":
         a = trans.Spectrogram(n_fft=128, normalized=True)
     elif feature_type == "melspectrogram":
@@ -156,16 +155,16 @@ def load_spoken_digit(
             labels_file.fname.index[labels_file["fname"] == i].to_numpy()
         )
 
-        y_s = label_arr[get_label_location]  # label number
+        y_n = label_arr[get_label_location]  # label number
         audio_data.append(x)
-        x_spec.append(x_stft_db)
-        x_spec_mini.append(x_stft_db_mini)
-        y_number.append(y_s)
+        x_audio.append(x_stft_db)
+        x_audio_mini.append(x_stft_db_mini)
+        y_number.append(y_n)
 
-    x_spec_mini = np.array(x_spec_mini)
+    x_audio_mini = np.array(x_audio_mini)
     y_number = np.array(y_number).astype(int)
 
-    return x_spec_mini, y_number
+    return x_audio_mini, y_number
 
 
 class SimpleCNN32Filter(nn.Module):
