@@ -404,7 +404,7 @@ def run_dn_image_es(
     test_labels,
     epochs=30,
     lr=0.001,
-    batch=64,
+    batch=60,
 ):
     """
     Peforms multiclass predictions for a deep network classifier with set number
