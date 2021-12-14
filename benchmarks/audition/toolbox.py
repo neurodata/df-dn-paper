@@ -3,19 +3,167 @@ Coauthors: Haoyin Xu
            Yu-Chung Peng
            Madi Kusmanov
            Jayanta Dey
+           Adway Kanhere
 """
 import time
 import os
 import cv2
 import librosa
 import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
 from sklearn.metrics import cohen_kappa_score
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torch.utils.data import Dataset
+import torchaudio
 import torchaudio.transforms as trans
+
+
+class FSDKaggle18Dataset(Dataset):
+    """
+    This class is based on torch.utils.data.Dataset for loading the entire
+    FSDKaggle18 Dataset using native torch and torchaudio primitives.
+
+    ----------------------------------------------------
+    Input parameters:
+      annotations_file: str
+      Path to the file containing the ground truths
+
+      audio_dir: str
+      Path to the folder containing the audio files
+
+    Returns:
+    instance of torch.utils.data.Dataset() returning the audio file together with it's corresponding label.
+
+    """
+
+    def __init__(self, annotations_file, audio_dir):
+        # loop through the csv entries and only add entries from folders in the folder list
+        self.annotations = pd.read_csv(annotations_file)
+        self.audio_dir = audio_dir
+        data_final = []
+        for filepaths in os.listdir(self.audio_dir):
+            data_final.append(os.path.join(self.audio_dir, filepaths))
+        self.data_final = data_final
+
+    def __getitem__(self, index):
+        audio_sample_path = self._get_sample_path(index)
+        label = self._get_label_(index)
+        signal, sr = torchaudio.load(audio_sample_path)
+        return signal, sr, label
+
+    def _get_sample_path(self, index):
+        return os.path.join(self.audio_dir, self.annotations.iloc[index, 0])
+
+    def _get_label_(self, index1):
+        labels_to_index = {
+            "Acoustic_guitar": 0,
+            "Applause": 1,
+            "Bark": 2,
+            "Bass_drum": 3,
+            "Burping_or_eructation": 4,
+            "Bus": 5,
+            "Cello": 6,
+            "Chime": 7,
+            "Clarinet": 8,
+            "Computer_keyboard": 9,
+            "Cough": 10,
+            "Cowbell": 11,
+            "Double_bass": 12,
+            "Drawer_open_or_close": 13,
+            "Electric_piano": 14,
+            "Fart": 15,
+            "Finger_snapping": 16,
+            "Fireworks": 17,
+            "Flute": 18,
+            "Glockenspiel": 19,
+            "Gong": 20,
+            "Gunshot_or_gunfire": 21,
+            "Harmonica": 22,
+            "Hi-hat": 23,
+            "Keys_jangling": 24,
+            "Knock": 25,
+            "Laughter": 26,
+            "Meow": 27,
+            "Microwave_oven": 28,
+            "Oboe": 29,
+            "Saxophone": 30,
+            "Scissors": 31,
+            "Shatter": 32,
+            "Snare_drum": 33,
+            "Squeak": 34,
+            "Tambourine": 35,
+            "Tearing": 36,
+            "Telephone": 37,
+            "Trumpet": 38,
+            "Violin_or_fiddle": 39,
+            "Writing": 40,
+        }
+        get_labels = self.annotations["label"].replace(labels_to_index).to_list()
+        y_value = get_labels[index1]
+        return y_value
+
+    def __len__(self):
+        return len(os.listdir(self.audio_dir))
+
+    def plot_waveform(waveform, sample_rate, title="Waveform", xlim=None, ylim=None):
+        waveform = waveform.numpy()
+
+        num_channels, num_frames = waveform.shape
+        time_axis = torch.arange(0, num_frames) / sample_rate
+
+        figure, axes = plt.subplots(num_channels, 1)
+        if num_channels == 1:
+            axes = [axes]
+        for c in range(num_channels):
+            axes[c].plot(time_axis, waveform[c], linewidth=1)
+            axes[c].grid(True)
+            if num_channels > 1:
+                axes[c].set_ylabel(f"Channel {c+1}")
+            if xlim:
+                axes[c].set_xlim(xlim)
+            if ylim:
+                axes[c].set_ylim(ylim)
+        figure.suptitle(title)
+        plt.show(block=False)
+
+
+def load_fsdk18(path_recordings, labels_file, label_arr, feature_type="spectrogram"):
+
+    audio_data = []  # audio data
+    x_audio = []  # STFT spectrogram
+    x_audio_mini = []  # resized image, 32*32
+    y_number = []  # label of number  # label of speaker
+    if feature_type == "spectrogram":
+        a = trans.Spectrogram(n_fft=128, normalized=True)
+    elif feature_type == "melspectrogram":
+        a = trans.MelSpectrogram(n_fft=128, normalized=True)
+    elif feature_type == "mfcc":
+        a = trans.MFCC(n_mfcc=128)
+    for i in path_recordings:
+        x, sr = librosa.load(i, sr=44100)
+        i = i[-12:]
+        x_stft_db = a(torch.tensor(x)).numpy()
+        # Convert an amplitude spectrogram to dB-scaled spectrogram
+        x_stft_db_mini = cv2.resize(x_stft_db, (32, 32))  # Resize into 32 by 32
+        get_label_location = int(
+            labels_file.fname.index[labels_file["fname"] == i].to_numpy()
+        )
+
+        y_n = label_arr[get_label_location]  # label number
+        audio_data.append(x)
+        x_audio.append(x_stft_db)
+        x_audio_mini.append(x_stft_db_mini)
+        y_number.append(y_n)
+
+    x_audio_mini = np.array(x_audio_mini)
+    y_number = np.array(y_number).astype(int)
+
+    return x_audio_mini, y_number
 
 
 def load_spoken_digit(path_recordings, feature_type="spectrogram"):
@@ -256,7 +404,7 @@ def run_dn_image_es(
     test_labels,
     epochs=30,
     lr=0.001,
-    batch=64,
+    batch=60,
 ):
     """
     Peforms multiclass predictions for a deep network classifier with set number
@@ -371,9 +519,9 @@ def prepare_data(
     validation_idxs = []
     for cls in classes:
         test_idx = np.argwhere(test_labels == cls).flatten()
-        # out of all, 0.3 validation, 0.7 test
-        test_idxs.append(test_idx[int(len(test_idx) * 0.3) :])
-        validation_idxs.append(test_idx[: int(len(test_idx) * 0.3)])
+        # out of all, 0.5 validation, 0.5 test
+        test_idxs.append(test_idx[int(len(test_idx) * 0.5) :])
+        validation_idxs.append(test_idx[: int(len(test_idx) * 0.5)])
 
     test_idxs = np.concatenate(test_idxs)
     validation_idxs = np.concatenate(validation_idxs)
