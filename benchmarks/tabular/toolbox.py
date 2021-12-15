@@ -8,14 +8,11 @@ Coauthors: Michael Ainsworth
 
 import numpy as np
 from random import sample
-from tqdm.notebook import tqdm
 from sklearn.ensemble import RandomForestClassifier
 from pytorch_tabnet.tab_model import TabNetClassifier
 import xgboost as xgb
-import ast
 import openml
 import json
-import pandas as pd
 from os.path import exists
 from sklearn.model_selection import RandomizedSearchCV
 
@@ -212,7 +209,6 @@ def load_cc18():
             y_data_list.append(y)
 
     return X_data_list, y_data_list, dataset_name
-
 
 
 def return_to_default():
