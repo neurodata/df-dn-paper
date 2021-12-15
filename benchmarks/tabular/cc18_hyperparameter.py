@@ -1,7 +1,6 @@
 """
 Coauthors: Michael Ainsworth
            Haoyin Xu
-           Jayanta Dey
            Noga Mudrik
 """
 # Imports
