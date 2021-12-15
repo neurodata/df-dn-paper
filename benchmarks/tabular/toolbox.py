@@ -195,14 +195,10 @@ def load_cc18():
     y_data_list = []
     dataset_name = []
 
-    for task_num, task_id in enumerate(
-        tqdm(openml.study.get_suite("OpenML-CC18").tasks)
-    ):
+    for data_id in openml.study.get_suite("OpenML-CC18").data:
         try:
             successfully_loaded = True
-            dataset = openml.datasets.get_dataset(
-                openml.tasks.get_task(task_id).dataset_id
-            )
+            dataset = openml.datasets.get_dataset(data_id)
             dataset_name.append(dataset.name)
             X, y, is_categorical, _ = dataset.get_data(
                 dataset_format="array", target=dataset.default_target_attribute
@@ -216,6 +212,7 @@ def load_cc18():
             y_data_list.append(y)
 
     return X_data_list, y_data_list, dataset_name
+
 
 
 def return_to_default():
