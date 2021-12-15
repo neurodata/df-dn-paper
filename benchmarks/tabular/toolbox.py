@@ -108,7 +108,6 @@ def save_best_parameters(
         json.dump(best_parameters_to_save, fp)
 
 
-
 def open_data(path, format_file):
     """
     Open existing data
@@ -217,8 +216,6 @@ def load_cc18():
             y_data_list.append(y)
 
     return X_data_list, y_data_list, dataset_name
-
-
 
 
 def return_to_default():

@@ -210,7 +210,10 @@ Save sample sizes and model results in json files
 save_methods = {"json": 1}
 save_methods_rewrite = {"json": 1}
 save_best_parameters(
-    save_methods, save_methods_rewrite, "metrics/cc18_sample_sizes.json", all_sample_sizes
+    save_methods,
+    save_methods_rewrite,
+    "metrics/cc18_sample_sizes.json",
+    all_sample_sizes,
 )
 
 save_best_parameters(
