@@ -12,7 +12,6 @@ import torchvision.models as models
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 from sklearn.model_selection import ParameterSampler
-from scipy.stats.distributions import expon
 import json
 import os
 
@@ -85,7 +84,6 @@ def tune(samples_sapce, classes_space, classifier):
             totalaccuracy.append(average_accuracy)
         yy = np.asarray(totalaccuracy)
         z = np.argmax(yy)
-        classifier = "CNN32"
         num_classes = int(n_classes)
         sample_size = int(samples)
         outputdic = rounded_list[z].copy()
@@ -95,9 +93,8 @@ def tune(samples_sapce, classes_space, classifier):
         outputlist.append(outputdic)
         run_cnn32(outputdic)
         outputdic = {}
-    outputfile = classifier + "parameters.json"
-    completeoutputfile = os.path.join(prefix, outputfile)
-    with open(completeoutputfile, "w") as outfile:
+    outputfile = prefix + classifier + "parameters.json"
+    with open(outputfile, "w") as outfile:
         for j in range(len(outputlist)):
             json.dump(outputlist[j], outfile)
             outfile.write("\n")
