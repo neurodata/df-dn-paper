@@ -102,7 +102,7 @@ def combinations_45(iterable, r):
     indices = list(range(r))
     yield tuple(pool[i] for i in indices)
     count = 0
-    while count < 1:
+    while count < 44:
         count += 1
         for i in reversed(range(r)):
             if indices[i] != i + n - r:

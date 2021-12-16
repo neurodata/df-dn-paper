@@ -12,7 +12,6 @@ import torchvision.models as models
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 from sklearn.model_selection import ParameterSampler
-from scipy.stats.distributions import expon
 import json
 import os
 
@@ -25,7 +24,7 @@ def tune(samples_sapce, classes_space, classifier):
         "bs": [32, 64, 128, 256],
         "wd": [0.00005, 0.0001, 0.0005, 0.001, 0.005],
     }
-    param_list = list(ParameterSampler(param_grid, n_iter=2, random_state=rng))
+    param_list = list(ParameterSampler(param_grid, n_iter=20, random_state=rng))
     rounded_list = [dict((k, round(v, 6)) for (k, v) in d.items()) for d in param_list]
     outputlist = []
     total_train_time = 0
@@ -44,8 +43,16 @@ def tune(samples_sapce, classes_space, classifier):
                     root="./", train=False, download=True, transform=data_transforms
                 )
                 cifar_test_labels = np.array(cifar_testset.targets)
-                if classifier == "CNN32":
-                    cnn32 = SimpleCNN32Filter(len(classes))
+                if classifier == "cnn32":
+                    cnn = SimpleCNN32Filter(len(classes))
+                elif classifier == "cnn32_2l":
+                    cnn = SimpleCNN32Filter2Layers(len(classes))
+                elif classifier == "cnn32_5l":
+                    cnn = SimpleCNN32Filter5Layers(len(classes))
+                elif classifier == "resnet18":
+                    cnn = models.resnet18(pretrained=True)
+                    num_ftrs = cnn.fc.in_features
+                    cnn.fc = nn.Linear(num_ftrs, len(classes))
                 total_train_time = 0
                 maxaccuracy = 0
                 param = rounded_list[i]
@@ -71,7 +78,7 @@ def tune(samples_sapce, classes_space, classifier):
                     test_time,
                     accuracy,
                 ) = test_dn_image_es_multiple(
-                    cnn32,
+                    cnn,
                     train_loader,
                     tuning_valid_loader,
                     tuning_test_loader,
@@ -83,21 +90,19 @@ def tune(samples_sapce, classes_space, classifier):
                 average_accuracy += accuracy
             average_accuracy = average_accuracy / len(classes_space)
             totalaccuracy.append(average_accuracy)
-        yy = np.asarray(totalaccuracy)
-        z = np.argmax(yy)
-        classifier = "CNN32"
+        totalaccuracynp = np.asarray(totalaccuracy)
+        best_index = np.argmax(totalaccuracynp)
         num_classes = int(n_classes)
         sample_size = int(samples)
-        outputdic = rounded_list[z].copy()
+        outputdic = rounded_list[best_index].copy()
         outputdic["classifier"] = classifier
-        outputdic["number of classes"] = num_classes
+        # outputdic["number of classes"] = num_classes
         outputdic["sample size"] = sample_size
         outputlist.append(outputdic)
-        run_cnn32(outputdic)
+        run_cnn(outputdic)
         outputdic = {}
-    outputfile = classifier + "parameters.json"
-    completeoutputfile = os.path.join(prefix, outputfile)
-    with open(completeoutputfile, "w") as outfile:
+    outputfile = prefix + classifier + "_parameters.json"
+    with open(outputfile, "w") as outfile:
         for j in range(len(outputlist)):
             json.dump(outputlist[j], outfile)
             outfile.write("\n")
@@ -134,11 +139,11 @@ def run_naive_rf():
     write_result(prefix + "naive_rf_test_time.txt", naive_rf_test_time)
 
 
-def run_cnn32(param):
-    cnn32_kappa = []
-    cnn32_ece = []
-    cnn32_train_time = []
-    cnn32_test_time = []
+def run_cnn(param):
+    cnn_kappa = []
+    cnn_ece = []
+    cnn_train_time = []
+    cnn_test_time = []
     for classes in classes_space:
         # train data
 
@@ -152,8 +157,17 @@ def run_cnn32(param):
         )
         cifar_test_labels = np.array(cifar_testset.targets)
         print(param["classifier"])
-        if param["classifier"] == "CNN32":
-            cnn32 = SimpleCNN32Filter(len(classes))
+        classifier = param["classifier"]
+        if classifier == "cnn32":
+            cnn = SimpleCNN32Filter(len(classes))
+        elif classifier == "cnn32_2l":
+            cnn = SimpleCNN32Filter2Layers(len(classes))
+        elif classifier == "cnn32_5l":
+            cnn = SimpleCNN32Filter5Layers(len(classes))
+        elif classifier == "resnet18":
+            cnn = models.resnet18(pretrained=True)
+            num_ftrs = cnn.fc.in_features
+            cnn.fc = nn.Linear(num_ftrs, len(classes))
         total_train_time = 0
         maxaccuracy = 0
         (
@@ -172,7 +186,7 @@ def run_cnn32(param):
             param["bs"],
         )
         cohen_kappa, ece, train_time, test_time, accuracy = test_dn_image_es_multiple(
-            cnn32,
+            cnn,
             train_loader,
             test_valid_loader,
             test_test_loader,
@@ -181,15 +195,15 @@ def run_cnn32(param):
             param["wd"],
         )
         total_train_time += train_time
-        cnn32_kappa.append(cohen_kappa)
-        cnn32_ece.append(ece)
-        cnn32_train_time.append(train_time)
-        cnn32_test_time.append(test_time)
-    print("cnn32 finished")
-    write_result(prefix + "cnn32_kappa.txt", cnn32_kappa)
-    write_result(prefix + "cnn32_ece.txt", cnn32_ece)
-    write_result(prefix + "cnn32_train_time.txt", cnn32_train_time)
-    write_result(prefix + "cnn32_test_time.txt", cnn32_test_time)
+        cnn_kappa.append(cohen_kappa)
+        cnn_ece.append(ece)
+        cnn_train_time.append(train_time)
+        cnn_test_time.append(test_time)
+    print(classifier + " finished")
+    write_result(prefix + classifier + "_kappa.txt", cnn_kappa)
+    write_result(prefix + classifier + "_ece.txt", cnn_ece)
+    write_result(prefix + classifier + "_train_time.txt", cnn_train_time)
+    write_result(prefix + classifier + "_test_time.txt", cnn_test_time)
 
 
 def run_cnn32_2l():
@@ -347,7 +361,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     n_classes = int(args.m)
     prefix = args.m + "_class/"
-    samples_space = np.geomspace(10, 1000, num=2, dtype=int)
+    samples_space = np.geomspace(10, 10000, num=8, dtype=int)
 
     nums = list(range(10))
     random.shuffle(nums)
@@ -379,10 +393,12 @@ if __name__ == "__main__":
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
-    tune(samples_space, classes_space, "CNN32")
-    run_cnn32()
-    run_cnn32_2l()
-    run_cnn32_5l()
+    tune(samples_space, classes_space, "cnn32")
+    tune(samples_space, classes_space, "cnn32_2l")
+    tune(smaples_space, classes_space, "cnn32_5l")
+    # run_cnn32()
+    # run_cnn32_2l()
+    # run_cnn32_5l()
 
     data_transforms = transforms.Compose(
         [
@@ -390,5 +406,5 @@ if __name__ == "__main__":
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         ]
     )
-
-    run_resnet18()
+    tune(samples_space, classes_space, "resnet18")
+    # run_resnet18()
