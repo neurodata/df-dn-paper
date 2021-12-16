@@ -16,7 +16,7 @@ import json
 import os
 
 
-def tune(samples_sapce, classes_space, classifier):
+def tune_cnn(samples_sapce, classes_space, classifier):
     rng = np.random.RandomState(0)
     param_grid = {
         "lr": [0.0001, 0.001, 0.0125, 0.025],
@@ -25,12 +25,12 @@ def tune(samples_sapce, classes_space, classifier):
         "wd": [0.00005, 0.0001, 0.0005, 0.001, 0.005],
     }
     param_list = list(ParameterSampler(param_grid, n_iter=20, random_state=rng))
-    rounded_list = [dict((k, round(v, 6)) for (k, v) in d.items()) for d in param_list]
+    param_dict = [dict((k, v) for (k, v) in d.items()) for d in param_list]
     outputlist = []
-    total_train_time = 0
     for samples in samples_space:
         totalaccuracy = []
-        for i in range(len(rounded_list)):
+        total_train_time = 0
+        for i in range(len(param_dict)):
             average_accuracy = 0
             for classes in classes_space:
                 # train data
@@ -53,9 +53,8 @@ def tune(samples_sapce, classes_space, classifier):
                     cnn = models.resnet18(pretrained=True)
                     num_ftrs = cnn.fc.in_features
                     cnn.fc = nn.Linear(num_ftrs, len(classes))
-                total_train_time = 0
                 maxaccuracy = 0
-                param = rounded_list[i]
+                param = param_dict[i]
                 (
                     train_loader,
                     tuning_valid_loader,
@@ -94,10 +93,11 @@ def tune(samples_sapce, classes_space, classifier):
         best_index = np.argmax(totalaccuracynp)
         num_classes = int(n_classes)
         sample_size = int(samples)
-        outputdic = rounded_list[best_index].copy()
+        outputdic = param_dict[best_index].copy()
         outputdic["classifier"] = classifier
         # outputdic["number of classes"] = num_classes
         outputdic["sample size"] = sample_size
+        outputdic["time for tuning"] = total_train_time
         outputlist.append(outputdic)
         run_cnn(outputdic)
         outputdic = {}
@@ -156,7 +156,7 @@ def run_cnn(param):
             root="./", train=False, download=True, transform=data_transforms
         )
         cifar_test_labels = np.array(cifar_testset.targets)
-        print(param["classifier"])
+        # print(param["classifier"])
         classifier = param["classifier"]
         if classifier == "cnn32":
             cnn = SimpleCNN32Filter(len(classes))
@@ -168,8 +168,6 @@ def run_cnn(param):
             cnn = models.resnet18(pretrained=True)
             num_ftrs = cnn.fc.in_features
             cnn.fc = nn.Linear(num_ftrs, len(classes))
-        total_train_time = 0
-        maxaccuracy = 0
         (
             train_loader,
             tuning_valid_loader,
@@ -194,7 +192,6 @@ def run_cnn(param):
             param["mo"],
             param["wd"],
         )
-        total_train_time += train_time
         cnn_kappa.append(cohen_kappa)
         cnn_ece.append(ece)
         cnn_train_time.append(train_time)
@@ -393,9 +390,9 @@ if __name__ == "__main__":
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
-    tune(samples_space, classes_space, "cnn32")
-    tune(samples_space, classes_space, "cnn32_2l")
-    tune(smaples_space, classes_space, "cnn32_5l")
+    tune_cnn(samples_space, classes_space, "cnn32")
+    tune_cnn(samples_space, classes_space, "cnn32_2l")
+    tune_cnn(samples_space, classes_space, "cnn32_5l")
     # run_cnn32()
     # run_cnn32_2l()
     # run_cnn32_5l()
@@ -406,5 +403,5 @@ if __name__ == "__main__":
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         ]
     )
-    tune(samples_space, classes_space, "resnet18")
+    tune_cnn(samples_space, classes_space, "resnet18")
     # run_resnet18()
