@@ -17,7 +17,16 @@ import json
 import os
 
 
-def tune(rounded_list, samples_sapce, classes_space, classifier):
+def tune(samples_sapce, classes_space, classifier):
+    rng = np.random.RandomState(0)
+    param_grid = {
+        "lr": [0.0001, 0.001, 0.0125, 0.025],
+        "mo": [0.01, 0.05, 0.1, 0.2],
+        "bs": [32, 64, 128, 256],
+        "wd": [0.00005, 0.0001, 0.0005, 0.001, 0.005],
+    }
+    param_list = list(ParameterSampler(param_grid, n_iter=2, random_state=rng))
+    rounded_list = [dict((k, round(v, 6)) for (k, v) in d.items()) for d in param_list]
     outputlist = []
     total_train_time = 0
     for samples in samples_space:
@@ -44,7 +53,8 @@ def tune(rounded_list, samples_sapce, classes_space, classifier):
                     train_loader,
                     tuning_valid_loader,
                     tuning_test_loader,
-                    test_loader,
+                    test_valid_loader,
+                    test_test_loader,
                 ) = create_loaders_es(
                     cifar_train_labels,
                     cifar_test_labels,
@@ -83,6 +93,7 @@ def tune(rounded_list, samples_sapce, classes_space, classifier):
         outputdic["number of classes"] = num_classes
         outputdic["sample size"] = sample_size
         outputlist.append(outputdic)
+        run_cnn32(outputdic)
         outputdic = {}
     outputfile = classifier + "parameters.json"
     completeoutputfile = os.path.join(prefix, outputfile)
@@ -123,23 +134,57 @@ def run_naive_rf():
     write_result(prefix + "naive_rf_test_time.txt", naive_rf_test_time)
 
 
-def run_cnn32():
+def run_cnn32(param):
     cnn32_kappa = []
     cnn32_ece = []
     cnn32_train_time = []
     cnn32_test_time = []
-    rng = np.random.RandomState(0)
-    param_grid = {
-        "lr": [0.0001, 0.001, 0.0125, 0.025],
-        "mo": [0.01, 0.05, 0.1, 0.2],
-        "bs": [32, 64, 128, 256],
-        "wd": [0.00005, 0.0001, 0.0005, 0.001, 0.005],
-    }
-    param_list = list(ParameterSampler(param_grid, n_iter=20, random_state=rng))
-    rounded_list = [dict((k, round(v, 6)) for (k, v) in d.items()) for d in param_list]
-    outputlist = []
-    total_train_time = 0
-    tune(rounded_list, samples_space, classes_space, "CNN32")
+    for classes in classes_space:
+        # train data
+
+        cifar_trainset = datasets.CIFAR10(
+            root="./", train=True, download=True, transform=data_transforms
+        )
+        cifar_train_labels = np.array(cifar_trainset.targets)
+        # test data
+        cifar_testset = datasets.CIFAR10(
+            root="./", train=False, download=True, transform=data_transforms
+        )
+        cifar_test_labels = np.array(cifar_testset.targets)
+        print(param["classifier"])
+        if param["classifier"] == "CNN32":
+            cnn32 = SimpleCNN32Filter(len(classes))
+        total_train_time = 0
+        maxaccuracy = 0
+        (
+            train_loader,
+            tuning_valid_loader,
+            tuning_test_loader,
+            test_valid_loader,
+            test_test_loader,
+        ) = create_loaders_es(
+            cifar_train_labels,
+            cifar_test_labels,
+            classes,
+            cifar_trainset,
+            cifar_testset,
+            param["sample size"],
+            param["bs"],
+        )
+        cohen_kappa, ece, train_time, test_time, accuracy = test_dn_image_es_multiple(
+            cnn32,
+            train_loader,
+            test_valid_loader,
+            test_test_loader,
+            param["lr"],
+            param["mo"],
+            param["wd"],
+        )
+        total_train_time += train_time
+        cnn32_kappa.append(cohen_kappa)
+        cnn32_ece.append(ece)
+        cnn32_train_time.append(train_time)
+        cnn32_test_time.append(test_time)
     print("cnn32 finished")
     write_result(prefix + "cnn32_kappa.txt", cnn32_kappa)
     write_result(prefix + "cnn32_ece.txt", cnn32_ece)
@@ -302,7 +347,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     n_classes = int(args.m)
     prefix = args.m + "_class/"
-    samples_space = np.geomspace(10, 10000, num=8, dtype=int)
+    samples_space = np.geomspace(10, 1000, num=2, dtype=int)
 
     nums = list(range(10))
     random.shuffle(nums)
@@ -334,7 +379,7 @@ if __name__ == "__main__":
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
-
+    tune(samples_space, classes_space, "CNN32")
     run_cnn32()
     run_cnn32_2l()
     run_cnn32_5l()

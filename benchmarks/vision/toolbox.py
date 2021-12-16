@@ -102,7 +102,7 @@ def combinations_45(iterable, r):
     indices = list(range(r))
     yield tuple(pool[i] for i in indices)
     count = 0
-    while count < 44:
+    while count < 1:
         count += 1
         for i in reversed(range(r)):
             if indices[i] != i + n - r:
@@ -494,22 +494,30 @@ def create_loaders_es(
     )
 
     # get indicies of classes we want
-    test_idxs = []
+    test_validation_idxs = []
+    test_test_idxs = []
     tuning_validation_idxs = []
     tuning_test_idxs = []
     for cls in classes:
         test_idx = np.argwhere(test_labels == cls).flatten()
         # out of all, 0.5 validation, 0.5 test
-        test_idxs.append(test_idx[int(len(test_idx) * 0.5) :])
+        test_validation_idxs.append(
+            test_idx[int(len(test_idx) * 0.5) : int(len(test_idx) * 0.75)]
+        )
+        test_test_idxs.append(test_idx[int(len(test_idx) * 0.75) :])
         tuning_validation_idxs.append(test_idx[: int(len(test_idx) * 0.25)])
         tuning_test_idxs.append(
             test_idx[int(len(test_idx) * 0.25) : int(len(test_idx) * 0.5)]
         )
-    test_idxs = np.concatenate(test_idxs)
+    test_validation_idxs = np.concatenate(test_validation_idxs)
+    test_test_idxs = np.concatenate(test_test_idxs)
     tuning_validation_idxs = np.concatenate(tuning_validation_idxs)
     tuning_test_idxs = np.concatenate(tuning_test_idxs)
     # change the labels to be from 0-len(classes)
-    for i in test_idxs:
+    for i in test_validation_idxs:
+        testset.targets[i] = np.where(classes == testset.targets[i])[0][0]
+
+    for i in test_test_idxs:
         testset.targets[i] = np.where(classes == testset.targets[i])[0][0]
 
     for i in tuning_validation_idxs:
@@ -518,13 +526,25 @@ def create_loaders_es(
     for i in tuning_test_idxs:
         testset.targets[i] = np.where(classes == testset.targets[i])[0][0]
 
-    test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
-    test_loader = torch.utils.data.DataLoader(
+    test_valid_sampler = torch.utils.data.sampler.SubsetRandomSampler(
+        test_validation_idxs
+    )
+    test_valid_loader = torch.utils.data.DataLoader(
         testset,
         batch_size=batch,
         shuffle=False,
         num_workers=4,
-        sampler=test_sampler,
+        sampler=test_valid_sampler,
+        drop_last=True,
+    )
+
+    test_test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_test_idxs)
+    test_test_loader = torch.utils.data.DataLoader(
+        testset,
+        batch_size=batch,
+        shuffle=False,
+        num_workers=4,
+        sampler=test_test_sampler,
         drop_last=True,
     )
 
@@ -549,7 +569,13 @@ def create_loaders_es(
         drop_last=True,
     )
 
-    return train_loader, tuning_valid_loader, tuning_test_loader, test_loader
+    return (
+        train_loader,
+        tuning_valid_loader,
+        tuning_test_loader,
+        test_valid_loader,
+        test_test_loader,
+    )
 
 
 def test_dn_image_es_multiple(
