@@ -27,6 +27,10 @@ def tune_cnn(samples_sapce, classes_space, classifier):
     param_list = list(ParameterSampler(param_grid, n_iter=20, random_state=rng))
     param_dict = [dict((k, v) for (k, v) in d.items()) for d in param_list]
     outputlist = []
+    cnn_kappa = []
+    cnn_ece = []
+    cnn_train_time = []
+    cnn_test_time = []
     for samples in samples_space:
         totalaccuracy = []
         total_train_time = 0
@@ -95,12 +99,18 @@ def tune_cnn(samples_sapce, classes_space, classifier):
         sample_size = int(samples)
         outputdic = param_dict[best_index].copy()
         outputdic["classifier"] = classifier
-        # outputdic["number of classes"] = num_classes
         outputdic["sample size"] = sample_size
         outputdic["time for tuning"] = total_train_time
         outputlist.append(outputdic)
-        run_cnn(outputdic)
+        cnn_kappa, cnn_ece, cnn_train_time, cnn_test_time = run_cnn(
+            outputdic, cnn_kappa, cnn_ece, cnn_train_time, cnn_test_time
+        )
         outputdic = {}
+    print(classifier + " finished")
+    write_result(prefix + classifier + "_kappa.txt", cnn_kappa)
+    write_result(prefix + classifier + "_ece.txt", cnn_ece)
+    write_result(prefix + classifier + "_train_time.txt", cnn_train_time)
+    write_result(prefix + classifier + "_test_time.txt", cnn_test_time)
     outputfile = prefix + classifier + "_parameters.json"
     with open(outputfile, "w") as outfile:
         for j in range(len(outputlist)):
@@ -139,11 +149,7 @@ def run_naive_rf():
     write_result(prefix + "naive_rf_test_time.txt", naive_rf_test_time)
 
 
-def run_cnn(param):
-    cnn_kappa = []
-    cnn_ece = []
-    cnn_train_time = []
-    cnn_test_time = []
+def run_cnn(param, cnn_kappa, cnn_ece, cnn_train_time, cnn_test_time):
     for classes in classes_space:
         # train data
 
@@ -196,11 +202,7 @@ def run_cnn(param):
         cnn_ece.append(ece)
         cnn_train_time.append(train_time)
         cnn_test_time.append(test_time)
-    print(classifier + " finished")
-    write_result(prefix + classifier + "_kappa.txt", cnn_kappa)
-    write_result(prefix + classifier + "_ece.txt", cnn_ece)
-    write_result(prefix + classifier + "_train_time.txt", cnn_train_time)
-    write_result(prefix + classifier + "_test_time.txt", cnn_test_time)
+    return cnn_kappa, cnn_ece, cnn_train_time, cnn_test_time
 
 
 def run_cnn32_2l():
@@ -385,7 +387,7 @@ if __name__ == "__main__":
     cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
     cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
 
-    # run_naive_rf()
+    run_naive_rf()
 
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
