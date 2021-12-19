@@ -18,7 +18,16 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Subset
 
 
-def tune_cnn(samples, classes_space, classifier, outputlist, cnn_kappa, cnn_ece, cnn_train_time, cnn_test_time):
+def tune_cnn(
+    samples,
+    classes_space,
+    classifier,
+    outputlist,
+    cnn_kappa,
+    cnn_ece,
+    cnn_train_time,
+    cnn_test_time,
+):
     rng = np.random.RandomState(0)
     param_grid = {
         "lr": [0.0001, 0.001, 0.0125, 0.025],
@@ -32,17 +41,17 @@ def tune_cnn(samples, classes_space, classifier, outputlist, cnn_kappa, cnn_ece,
     for i in range(len(param_dict)):
         average_accuracy = 0
         for classes in classes_space:
-                # train data
+            # train data
             cifar_trainset = datasets.CIFAR10(
                 root="./", train=True, download=True, transform=data_transforms
             )
-            #print(cifar_trainset.data.shape)
+            # print(cifar_trainset.data.shape)
             cifar_train_labels = np.array(cifar_trainset.targets)
-                # test data
+            # test data
             cifar_testset = datasets.CIFAR10(
                 root="./", train=False, download=True, transform=data_transforms
             )
-            '''print(cifar_testset.data.shape)
+            """print(cifar_testset.data.shape)
             print(len(cifar_testset))
             print(cifar_testset[0])
             cifar_tuneset,cifar_testingset = torch.utils.data.random_split(cifar_testset,[5000,5000])
@@ -72,7 +81,7 @@ def tune_cnn(samples, classes_space, classifier, outputlist, cnn_kappa, cnn_ece,
             #print(len(train_split[:]))
             test_split = Subset(cifar_testset.data, test_indices)
             print(test_split.dataset.data.shape)
-            print(test_split)'''
+            print(test_split)"""
             cifar_test_labels = np.array(cifar_testset.targets)
             if classifier == "cnn32":
                 cnn = SimpleCNN32Filter(len(classes))
@@ -86,26 +95,16 @@ def tune_cnn(samples, classes_space, classifier, outputlist, cnn_kappa, cnn_ece,
                 cnn.fc = nn.Linear(num_ftrs, len(classes))
             maxaccuracy = 0
             param = param_dict[i]
-            (
-                train_loader,
-                valid_loader,
-                test_loader,
-            ) = create_loaders_es(
-                    cifar_train_labels,
-                    cifar_test_labels,
-                    classes,
-                    cifar_trainset,
-                    cifar_testset,
-                    samples,
-                    param["bs"],
-                )
-            (
-                cohen_kappa,
-                ece,
-                train_time,
-                test_time,
-                accuracy,
-            ) = test_dn_image_es(
+            (train_loader, valid_loader, test_loader,) = create_loaders_es(
+                cifar_train_labels,
+                cifar_test_labels,
+                classes,
+                cifar_trainset,
+                cifar_testset,
+                samples,
+                param["bs"],
+            )
+            (cohen_kappa, ece, train_time, test_time, accuracy,) = test_dn_image_es(
                 cnn,
                 train_loader,
                 valid_loader,
@@ -113,7 +112,7 @@ def tune_cnn(samples, classes_space, classifier, outputlist, cnn_kappa, cnn_ece,
                 param["lr"],
                 param["mo"],
                 param["wd"],
-                )
+            )
             print(accuracy)
             average_accuracy += accuracy
         average_accuracy = average_accuracy / len(classes_space)
@@ -129,6 +128,7 @@ def tune_cnn(samples, classes_space, classifier, outputlist, cnn_kappa, cnn_ece,
     print("tuning is done")
     print(outputdic)
     return outputlist, cnn_kappa, cnn_ece, cnn_train_time, cnn_test_time, outputdic
+
 
 def run_naive_rf():
     naive_rf_kappa = []
@@ -161,7 +161,7 @@ def run_naive_rf():
     write_result(prefix + "naive_rf_test_time.txt", naive_rf_test_time)
 
 
-def run_cnn(samples_space,classes_space,classifier):
+def run_cnn(samples_space, classes_space, classifier):
     tune_cnn_kappa = []
     tune_cnn_ece = []
     tune_cnn_train_time = []
@@ -170,11 +170,11 @@ def run_cnn(samples_space,classes_space,classifier):
     cnn_ece = []
     cnn_train_time = []
     cnn_test_time = []
-    outputlist=[]
-    finaldic={}
+    outputlist = []
+    finaldic = {}
     for samples in samples_space:
         # train data
-        '''cifar_trainset = datasets.CIFAR10(
+        """cifar_trainset = datasets.CIFAR10(
             root="./", train=True, download=True, transform=data_transforms
         )
         cifar_train_labels = np.array(cifar_trainset.targets)
@@ -183,20 +183,36 @@ def run_cnn(samples_space,classes_space,classifier):
             root="./", train=False, download=True, transform=data_transforms
         )
         cifar_test_labels = np.array(cifar_testset.targets)
-        # print(param["classifier"])'''
-        outputlist, tune_cnn_kappa, tune_cnn_ece, tune_cnn_train_time, tune_cnn_test_time, param = tune_cnn(samples, classes_space, classifier, outputlist, tune_cnn_kappa, tune_cnn_ece, tune_cnn_train_time, tune_cnn_test_time)
-        #classifier = param["classifier"]
-        finaldic[str(samples)]=list(param.values())
-        finaldic["key"]=list(param.keys())
+        # print(param["classifier"])"""
+        (
+            outputlist,
+            tune_cnn_kappa,
+            tune_cnn_ece,
+            tune_cnn_train_time,
+            tune_cnn_test_time,
+            param,
+        ) = tune_cnn(
+            samples,
+            classes_space,
+            classifier,
+            outputlist,
+            tune_cnn_kappa,
+            tune_cnn_ece,
+            tune_cnn_train_time,
+            tune_cnn_test_time,
+        )
+        # classifier = param["classifier"]
+        finaldic[str(samples)] = list(param.values())
+        finaldic["key"] = list(param.keys())
         for classes in classes_space:
             cifar_trainset = datasets.CIFAR10(
                 root="./", train=True, download=True, transform=data_transforms
-                )
+            )
             cifar_train_labels = np.array(cifar_trainset.targets)
-                                    # test data
+            # test data
             cifar_testset = datasets.CIFAR10(
                 root="./", train=False, download=True, transform=data_transforms
-                )
+            )
             cifar_test_labels = np.array(cifar_testset.targets)
             if classifier == "cnn32":
                 cnn = SimpleCNN32Filter(len(classes))
@@ -208,22 +224,22 @@ def run_cnn(samples_space,classes_space,classifier):
                 cnn = models.resnet18(pretrained=True)
                 num_ftrs = cnn.fc.in_features
                 cnn.fc = nn.Linear(num_ftrs, len(classes))
-    
+
             (
-            train_loader,
-            tuning_valid_loader,
-            tuning_test_loader,
-            test_valid_loader,
-            test_test_loader,
-        ) = create_loaders_es(
-            cifar_train_labels,
-            cifar_test_labels,
-            classes,
-            cifar_trainset,
-            cifar_testset,
-            samples,
-            param["bs"],
-        )
+                train_loader,
+                tuning_valid_loader,
+                tuning_test_loader,
+                test_valid_loader,
+                test_test_loader,
+            ) = create_loaders_es(
+                cifar_train_labels,
+                cifar_test_labels,
+                classes,
+                cifar_trainset,
+                cifar_testset,
+                samples,
+                param["bs"],
+            )
             cohen_kappa, ece, train_time, test_time, accuracy = test_dn_image_es(
                 cnn,
                 train_loader,
@@ -429,7 +445,7 @@ if __name__ == "__main__":
     cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
     cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
 
-    #run_naive_rf()
+    # run_naive_rf()
 
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]

@@ -416,7 +416,6 @@ def test_dn_image_es(
     )
 
 
-
 def create_loaders_set(
     train_labels, test_labels, classes, trainset, testset, samples, batch=64
 ):
@@ -508,9 +507,7 @@ def create_loaders_es(
     for cls in classes:
         test_idx = np.argwhere(test_labels == cls).flatten()
         # out of all, 0.5 validation, 0.5 test
-        validation_idxs.append(
-            test_idx[: int(len(test_idx) * 0.5)]
-        )
+        validation_idxs.append(test_idx[: int(len(test_idx) * 0.5)])
         test_idxs.append(test_idx[int(len(test_idx) * 0.5) :])
     validation_idxs = np.concatenate(validation_idxs)
     test_idxs = np.concatenate(test_idxs)
@@ -521,10 +518,7 @@ def create_loaders_es(
     for i in test_idxs:
         testset.targets[i] = np.where(classes == testset.targets[i])[0][0]
 
-
-    valid_sampler = torch.utils.data.sampler.SubsetRandomSampler(
-        validation_idxs
-    )
+    valid_sampler = torch.utils.data.sampler.SubsetRandomSampler(validation_idxs)
     valid_loader = torch.utils.data.DataLoader(
         testset,
         batch_size=batch,
@@ -549,5 +543,3 @@ def create_loaders_es(
         valid_loader,
         test_loader,
     )
-
-
