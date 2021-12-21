@@ -3,18 +3,142 @@ Coauthors: Haoyin Xu
            Yu-Chung Peng
            Madi Kusmanov
            Jayanta Dey
+           Adway Kanhere
 """
-import numpy as np
-from sklearn.metrics import cohen_kappa_score
 import time
-import torch
 import os
 import cv2
 import librosa
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.metrics import cohen_kappa_score
+
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torch.utils.data import Dataset
+import torchaudio
 import torchaudio.transforms as trans
+
+
+class FSDKaggle18Dataset(Dataset):
+    """
+    This class is based on torch.utils.data.Dataset for loading the entire
+    FSDKaggle18 Dataset using native torch and torchaudio primitives.
+    ----------------------------------------------------
+    Input parameters:
+      annotations_file: str
+      Path to the file containing the ground truths
+      audio_dir: str
+      Path to the folder containing the audio files
+    Returns:
+    instance of torch.utils.data.Dataset() returning the audio file together with it's corresponding label.
+    """
+
+    def __init__(self, annotations_file, audio_dir):
+        # loop through the csv entries and only add entries from folders in the folder list
+        self.annotations = pd.read_csv(annotations_file)
+        self.audio_dir = audio_dir
+        data_final = []
+        for filepaths in os.listdir(self.audio_dir):
+            data_final.append(os.path.join(self.audio_dir, filepaths))
+        self.data_final = data_final
+
+    def __getitem__(self, index):
+        audio_sample_path = self._get_sample_path(index)
+        label = self._get_label_(index)
+        signal, sr = torchaudio.load(audio_sample_path)
+        return signal, sr, label
+
+    def _get_sample_path(self, index):
+        return os.path.join(self.audio_dir, self.annotations.iloc[index, 0])
+
+    def _get_label_(self, index1):
+        labels_to_index = {
+            "Acoustic_guitar": 0,
+            "Applause": 1,
+            "Bark": 2,
+            "Bass_drum": 3,
+            "Burping_or_eructation": 4,
+            "Bus": 5,
+            "Cello": 6,
+            "Chime": 7,
+            "Clarinet": 8,
+            "Computer_keyboard": 9,
+            "Cough": 10,
+            "Cowbell": 11,
+            "Double_bass": 12,
+            "Drawer_open_or_close": 13,
+            "Electric_piano": 14,
+            "Fart": 15,
+            "Finger_snapping": 16,
+            "Fireworks": 17,
+            "Flute": 18,
+            "Glockenspiel": 19,
+            "Gong": 20,
+            "Gunshot_or_gunfire": 21,
+            "Harmonica": 22,
+            "Hi-hat": 23,
+            "Keys_jangling": 24,
+            "Knock": 25,
+            "Laughter": 26,
+            "Meow": 27,
+            "Microwave_oven": 28,
+            "Oboe": 29,
+            "Saxophone": 30,
+            "Scissors": 31,
+            "Shatter": 32,
+            "Snare_drum": 33,
+            "Squeak": 34,
+            "Tambourine": 35,
+            "Tearing": 36,
+            "Telephone": 37,
+            "Trumpet": 38,
+            "Violin_or_fiddle": 39,
+            "Writing": 40,
+        }
+        get_labels = self.annotations["label"].replace(labels_to_index).to_list()
+        y_value = get_labels[index1]
+        return y_value
+
+    def __len__(self):
+        return len(os.listdir(self.audio_dir))
+
+
+def load_fsdk18(path_recordings, labels_file, label_arr, feature_type="spectrogram"):
+
+    audio_data = []  # audio data
+    x_audio = []  # STFT spectrogram
+    x_audio_mini = []  # resized image, 32*32
+    y_number = []  # label of number  # label of speaker
+    if feature_type == "spectrogram":
+        a = trans.Spectrogram(n_fft=128, normalized=True)
+    elif feature_type == "melspectrogram":
+        a = trans.MelSpectrogram(n_fft=128, normalized=True)
+    elif feature_type == "mfcc":
+        a = trans.MFCC(n_mfcc=128)
+    for i in path_recordings:
+        x, sr = librosa.load(i, sr=44100)
+        i = i[-12:]
+        x_stft_db = a(torch.tensor(x)).numpy()
+        # Convert an amplitude spectrogram to dB-scaled spectrogram
+        x_stft_db_mini = cv2.resize(x_stft_db, (32, 32))  # Resize into 32 by 32
+        get_label_location = int(
+            labels_file.fname.index[labels_file["fname"] == i].to_numpy()
+        )
+
+        y_n = label_arr[get_label_location]  # label number
+        audio_data.append(x)
+        x_audio.append(x_stft_db)
+        x_audio_mini.append(x_stft_db_mini)
+        y_number.append(y_n)
+
+    x_audio_mini = np.array(x_audio_mini)
+    y_number = np.array(y_number).astype(int)
+
+    return x_audio_mini, y_number
 
 
 def load_spoken_digit(path_recordings, feature_type="spectrogram"):
@@ -58,7 +182,7 @@ class SimpleCNN32Filter(nn.Module):
     """
 
     def __init__(self, num_classes):
-        super(SimpleCNN32Filter, self).__init__()
+        super().__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=10, stride=2)
         self.fc1 = nn.Linear(144 * 32, num_classes)
 
@@ -75,7 +199,7 @@ class SimpleCNN32Filter2Layers(nn.Module):
     """
 
     def __init__(self, num_classes):
-        super(SimpleCNN32Filter2Layers, self).__init__()
+        super().__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=5, stride=1)
         self.conv2 = nn.Conv2d(32, 32, kernel_size=5, stride=2)
         self.fc1 = nn.Linear(12 * 12 * 32, 100)
@@ -91,20 +215,20 @@ class SimpleCNN32Filter2Layers(nn.Module):
         return x
 
 
-class SimpleCNN32Filter5Layers(torch.nn.Module):
+class SimpleCNN32Filter5Layers(nn.Module):
     """
     Define a simple CNN arhcitecture with 5 layers
     """
 
     def __init__(self, num_classes):
-        super(SimpleCNN32Filter5Layers, self).__init__()
-        self.conv1 = torch.nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1)
-        self.conv2 = torch.nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
-        self.conv3 = torch.nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
-        self.conv4 = torch.nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
-        self.conv5 = torch.nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
-        self.fc1 = torch.nn.Linear(8192, 200)
-        self.fc2 = torch.nn.Linear(200, num_classes)
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.conv4 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        self.conv5 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
+        self.fc1 = nn.Linear(8192, 200)
+        self.fc2 = nn.Linear(200, num_classes)
         self.maxpool = nn.MaxPool2d((2, 2))
         self.bn = nn.BatchNorm2d(32)
         self.bn2 = nn.BatchNorm2d(64)
@@ -245,6 +369,86 @@ def run_rf_image_set(
     )
 
 
+def tune_rf_image_set(
+    model,
+    train_images,
+    train_labels,
+    val_images,
+    val_labels,
+    samples,
+    classes,
+):
+    """
+    Peforms multiclass predictions for a random forest classifier
+    with fixed total samples
+    """
+    num_classes = len(classes)
+    partitions = np.array_split(np.array(range(samples)), num_classes)
+
+    # Obtain only train images and labels for selected classes
+    image_ls = []
+    label_ls = []
+    i = 0
+    for cls in classes:
+        class_idx = np.argwhere(train_labels == cls).flatten()
+        np.random.shuffle(class_idx)
+        class_img = train_images[class_idx[: len(partitions[i])]]
+        image_ls.append(class_img)
+        label_ls.append(np.repeat(cls, len(partitions[i])))
+        i += 1
+
+    train_images = np.concatenate(image_ls)
+    train_labels = np.concatenate(label_ls)
+
+    # Obtain only validation images and labels for selected classes
+    image_ls = []
+    label_ls = []
+    for cls in classes:
+        image_ls.append(val_images[val_labels == cls])
+        label_ls.append(np.repeat(cls, np.sum(val_labels == cls)))
+
+    val_images = np.concatenate(image_ls)
+    val_labels = np.concatenate(label_ls)
+
+    # Train the model + correspondent hyperparameters
+    start_time = time.perf_counter()
+    model.fit(train_images, train_labels)
+    end_time = time.perf_counter()
+    train_time = end_time - start_time
+
+    # Validate the performance of the model + correspondent hyperparameters
+    start_time = time.perf_counter()
+    val_preds = model.predict(val_images)
+    end_time = time.perf_counter()
+    val_time = end_time - start_time
+
+    return (
+        accuracy(val_labels, val_preds)
+        train_time,
+        val_time,
+    )
+
+
+def parameter_list_generator(num_iter):
+    rng = np.random.RandomState(0) #random state generator
+    
+    n_estimators = [int(x) for x in np.linspace(start = 50, stop = 150, num = 11)] # number of trees in the random forest
+    max_features = ['auto', 'sqrt'] # number of features in consideration at every split
+    max_depth = [int(x) for x in np.linspace(10, 120, num = 12)] # maximum number of levels allowed in each decision tree
+    min_samples_split = [2, 6, 10] # minimum sample number to split a node
+    max_leaf_nodes = [int(x) for x in np.linspace(25, 125, num = 5)] # maximum number of nodes that a tree can possess
+    
+    param_grid = {'n_estimators': n_estimators,
+                'max_features': max_features,
+                'max_depth': max_depth,
+                'min_samples_split': min_samples_split,
+                'max_leaf_nodes': max_leaf_nodes}
+    
+    param_list = list(ParameterSampler(param_grid, n_iter=num_iter, random_state=rng))
+    
+    return param_list
+
+
 def run_dn_image_es(
     model,
     train_data,
@@ -255,7 +459,7 @@ def run_dn_image_es(
     test_labels,
     epochs=30,
     lr=0.001,
-    batch=64,
+    batch=60,
 ):
     """
     Peforms multiclass predictions for a deep network classifier with set number
@@ -370,9 +574,9 @@ def prepare_data(
     validation_idxs = []
     for cls in classes:
         test_idx = np.argwhere(test_labels == cls).flatten()
-        # out of all, 0.3 validation, 0.7 test
-        test_idxs.append(test_idx[int(len(test_idx) * 0.3) :])
-        validation_idxs.append(test_idx[: int(len(test_idx) * 0.3)])
+        # out of all, 0.5 validation, 0.5 test
+        test_idxs.append(test_idx[int(len(test_idx) * 0.5) :])
+        validation_idxs.append(test_idx[: int(len(test_idx) * 0.5)])
 
     test_idxs = np.concatenate(test_idxs)
     validation_idxs = np.concatenate(validation_idxs)
