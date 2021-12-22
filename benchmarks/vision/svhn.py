@@ -4,6 +4,7 @@ Coauthors: Haoyin Xu
            Audrey Zheng
 """
 from svhn_toolbox import *
+from toolbox import *
 
 import argparse
 import random
