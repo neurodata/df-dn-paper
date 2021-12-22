@@ -286,7 +286,7 @@ def tune_rf_image_set(
     val_time = end_time - start_time
 
     return (
-        accuracy(val_labels, val_preds),
+        accuracy_score(val_labels, val_preds),
         train_time,
         val_time,
     )
