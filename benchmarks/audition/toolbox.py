@@ -4,6 +4,7 @@ Coauthors: Haoyin Xu
            Madi Kusmanov
            Jayanta Dey
            Adway Kanhere
+           Audrey Zheng
 """
 import time
 import os
@@ -13,6 +14,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.metrics import cohen_kappa_score
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import ParameterSampler
 
 import torch
 import torch.nn as nn
@@ -392,6 +395,86 @@ def run_rf_image_set(
         train_time,
         test_time,
     )
+
+
+def tune_rf_image_set(
+    model,
+    train_images,
+    train_labels,
+    val_images,
+    val_labels,
+    samples,
+    classes,
+):
+    """
+    Peforms multiclass predictions for a random forest classifier
+    with fixed total samples
+    """
+    num_classes = len(classes)
+    partitions = np.array_split(np.array(range(samples)), num_classes)
+
+    # Obtain only train images and labels for selected classes
+    image_ls = []
+    label_ls = []
+    i = 0
+    for cls in classes:
+        class_idx = np.argwhere(train_labels == cls).flatten()
+        np.random.shuffle(class_idx)
+        class_img = train_images[class_idx[: len(partitions[i])]]
+        image_ls.append(class_img)
+        label_ls.append(np.repeat(cls, len(partitions[i])))
+        i += 1
+
+    train_images = np.concatenate(image_ls)
+    train_labels = np.concatenate(label_ls)
+
+    # Obtain only validation images and labels for selected classes
+    image_ls = []
+    label_ls = []
+    for cls in classes:
+        image_ls.append(val_images[val_labels == cls])
+        label_ls.append(np.repeat(cls, np.sum(val_labels == cls)))
+
+    val_images = np.concatenate(image_ls)
+    val_labels = np.concatenate(label_ls)
+
+    # Train the model + correspondent hyperparameters
+    start_time = time.perf_counter()
+    model.fit(train_images, train_labels)
+    end_time = time.perf_counter()
+    train_time = end_time - start_time
+
+    # Validate the performance of the model + correspondent hyperparameters
+    start_time = time.perf_counter()
+    val_preds = model.predict(val_images)
+    end_time = time.perf_counter()
+    val_time = end_time - start_time
+
+    return (
+        accuracy(val_labels, val_preds)
+        train_time,
+        val_time,
+    )
+
+
+def parameter_list_generator(num_iter):
+    rng = np.random.RandomState(0) #random state generator
+    
+    n_estimators = [int(x) for x in np.linspace(start = 50, stop = 150, num = 11)] # number of trees in the random forest
+    max_features = ['auto', 'sqrt'] # number of features in consideration at every split
+    max_depth = [int(x) for x in np.linspace(10, 120, num = 12)] # maximum number of levels allowed in each decision tree
+    min_samples_split = [2, 6, 10] # minimum sample number to split a node
+    max_leaf_nodes = [int(x) for x in np.linspace(25, 125, num = 5)] # maximum number of nodes that a tree can possess
+    
+    param_grid = {'n_estimators': n_estimators,
+                'max_features': max_features,
+                'max_depth': max_depth,
+                'min_samples_split': min_samples_split,
+                'max_leaf_nodes': max_leaf_nodes}
+    
+    param_list = list(ParameterSampler(param_grid, n_iter=num_iter, random_state=rng))
+    
+    return param_list
 
 
 def run_dn_image_es(

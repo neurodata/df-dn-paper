@@ -1,12 +1,14 @@
 """
 Coauthors: Haoyin Xu
            Yu-Chung Peng
+           Audrey Zheng
 """
 from toolbox import *
 
 import argparse
 import random
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
 
 import torchvision.models as models
 import torchvision.datasets as datasets
@@ -18,13 +20,15 @@ def run_naive_rf():
     naive_rf_ece = []
     naive_rf_train_time = []
     naive_rf_test_time = []
+
     for classes in classes_space:
 
         # cohen_kappa vs num training samples (naive_rf)
         for samples in samples_space:
-            RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
+            clf = sklearn.ensemble.RandomForestClassifier()
+            clf.set_params(**rf_chosen_params_dict[(classes, samples)])
             cohen_kappa, ece, train_time, test_time = run_rf_image_set(
-                RF,
+                clf,
                 cifar_train_images,
                 cifar_train_labels,
                 cifar_test_images,
@@ -42,6 +46,49 @@ def run_naive_rf():
     write_result(prefix + "naive_rf_ece.txt", naive_rf_ece)
     write_result(prefix + "naive_rf_train_time.txt", naive_rf_train_time)
     write_result(prefix + "naive_rf_test_time.txt", naive_rf_test_time)
+
+
+def tune_naive_rf():
+    # only tuning on accuracy, regardless of training time
+    naive_rf_accuracy = []
+    naive_rf_train_time = []
+    naive_rf_val_time = []
+    naive_rf_param_dict = {}
+    
+    for classes in classes_space:
+        
+        for samples in samples_space:
+            # specify how many random combinations we are going to test out
+            num_iter = 6
+            candidate_param_list = parameter_list_generator(num_iter)
+            
+            for params in candidate_param_list:
+                clf = sklearn.ensemble.RandomForestClassifier()
+                clf.set_params(**params)
+                accuracy, train_time, val_time = tune_rf_image_set(
+                    clf,
+                    cifar_train_images,
+                    cifar_train_labels,
+                    cifar_val_images,
+                    cifar_val_labels,
+                    samples,
+                    classes,
+                )
+                naive_rf_accuracy.append(accuracy)
+                naive_rf_train_time.append(train_time)
+                naive_rf_val_time.append(val_time)
+            
+            max_accuracy = max(naive_rf_accuracy)
+            max_index = naive_rf_accuracy.index(max_accuracy)
+            naive_rf_param_dict[(classes,samples)] = candidate_param_list[max_index]
+
+    print("naive_rf tuning finished")
+    write_result(prefix + "naive_rf_parameters_dict.txt", naive_rf_param_dict)
+    write_result(prefix + "naive_rf_parameters_tuning_train_time.txt", naive_rf_train_time)
+    write_result(prefix + "naive_rf_parameters_tuning_val_time.txt", naive_rf_val_time)
+    write_result(prefix + "naive_rf_parameters_tuning_accuracy.txt", naive_rf_accuracy)
+    
+    return naive_rf_param_dict
 
 
 def run_cnn32():
@@ -257,22 +304,42 @@ if __name__ == "__main__":
     scale = np.mean(np.arange(0, 256))
     normalize = lambda x: (x - scale) / scale
 
-    # train data
+    """
+    Originally, the CIFAR100 dataset had a train:test split of 5:1, each containing 500000 and 100000 images.
+    I will split the data below and add some of the training data into validation and test to achieve the 2:1:1 split.
+    Since the dataset website stated that the original distribution of test and training data are randomized among classes,
+    I belive we can do this without interfering with the randomization of the dataset.
+    """
+    # train data (500000)
     cifar_trainset = datasets.CIFAR100(
         root="./", train=True, download=True, transform=None
     )
     cifar_train_images = normalize(cifar_trainset.data)
     cifar_train_labels = np.array(cifar_trainset.targets)
+    
+    # train data and validation data initial split (train: 300000; val: 200000)
+    cifar_train_images, cifar_val_images, cifar_train_labels, cifar_val_labels = train_test_split(cifar_train_images, cifar_train_labels, shuffle=True, test_size=0.4)
+    
+    # validation data further split (train: 300000; val: 150000; test_concat: 50000)
+    cifar_val_images, cifar_test_images_concat, cifar_val_labels, cifar_test_labels_concat = train_test_split(cifar_val_images, cifar_val_labels, shuffle=True, test_size=0.25)
 
-    # test data
+    # test data (100000)
     cifar_testset = datasets.CIFAR100(
         root="./", train=False, download=True, transform=None
     )
     cifar_test_images = normalize(cifar_testset.data)
     cifar_test_labels = np.array(cifar_testset.targets)
+    
+    # test data concatenation (train: 300000; val: 150000; test: 150000)
+    cifar_test_images = np.concatenate((cifar_test_images, cifar_test_images_concat))
+    cifar_test_labels = np.concatenate((cifar_test_labels, cifar_test_labels_concat))
 
     cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
+    cifar_val_images = cifar_val_images.reshape(-1, 32 * 32 * 3)
     cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
+    
+    # tuning + find the best parameters
+    rf_chosen_params_dict = tune_naive_rf()
 
     run_naive_rf()
 

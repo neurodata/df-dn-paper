@@ -27,10 +27,10 @@ def run_naive_rf():
 
         # cohen_kappa vs num training samples (naive_rf)
         for samples in samples_space:
-            # train data
-            RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
+            clf = sklearn.ensemble.RandomForestClassifier()
+            clf.set_params(**rf_chosen_params_dict[(classes, samples)])
             cohen_kappa, ece, train_time, test_time = run_rf_image_set(
-                RF,
+                clf,
                 fsdk18_train_images,
                 fsdk18_train_labels,
                 fsdk18_test_images,
@@ -48,6 +48,49 @@ def run_naive_rf():
     write_result(prefix + "naive_rf_ece.txt", naive_rf_ece)
     write_result(prefix + "naive_rf_train_time.txt", naive_rf_train_time)
     write_result(prefix + "naive_rf_test_time.txt", naive_rf_test_time)
+
+
+def tune_naive_rf():
+    # only tuning on accuracy, regardless of training time
+    naive_rf_accuracy = []
+    naive_rf_train_time = []
+    naive_rf_val_time = []
+    naive_rf_param_dict = {}
+    
+    for classes in classes_space:
+        
+        for samples in samples_space:
+            # specify how many random combinations we are going to test out
+            num_iter = 6
+            candidate_param_list = parameter_list_generator(num_iter)
+            
+            for params in candidate_param_list:
+                clf = sklearn.ensemble.RandomForestClassifier()
+                clf.set_params(**params)
+                accuracy, train_time, val_time = tune_rf_image_set(
+                    clf,
+                    fsdk18_train_images,
+                    fsdk18_train_labels,
+                    fsdk18_valid_images,
+                    fsdk18_valid_labels,
+                    samples,
+                    classes,
+                )
+                naive_rf_accuracy.append(accuracy)
+                naive_rf_train_time.append(train_time)
+                naive_rf_val_time.append(val_time)
+            
+            max_accuracy = max(naive_rf_accuracy)
+            max_index = naive_rf_accuracy.index(max_accuracy)
+            naive_rf_param_dict[(classes,samples)] = candidate_param_list[max_index]
+
+    print("naive_rf tuning finished")
+    write_result(prefix + "naive_rf_parameters_dict.txt", naive_rf_param_dict)
+    write_result(prefix + "naive_rf_parameters_tuning_train_time.txt", naive_rf_train_time)
+    write_result(prefix + "naive_rf_parameters_tuning_val_time.txt", naive_rf_val_time)
+    write_result(prefix + "naive_rf_parameters_tuning_accuracy.txt", naive_rf_accuracy)
+    
+    return naive_rf_param_dict
 
 
 def run_cnn32():
@@ -346,15 +389,35 @@ if __name__ == "__main__":
         train_size=0.50,
         stratify=y_number,
     )
+    
+    #further split into train:valid:test = 2:1:1
+    testx, validx, testy, validy = train_test_split(
+        testx,
+        testy,
+        shuffle=True,
+        test_size=0.50,
+        train_size=0.50,
+        stratify=y_number,
+    )
 
-    # 3000 samples, 80% train is 2400 samples, 20% test
+    # 3000 samples, 50% train is 1500 samples, 25% test, 25% validation
     fsdk18_train_images = trainx.reshape(-1, 32 * 32)
     fsdk18_train_labels = trainy.copy()
     # reshape in 2d array
     fsdk18_test_images = testx.reshape(-1, 32 * 32)
     fsdk18_test_labels = testy.copy()
+    fsdk18_valid_images = validx.reshape(-1, 32 * 32)
+    fsdk18_valid_labels = validy.copy()
 
+    # tuning + find the best parameters for rf
+    rf_chosen_params_dict = tune_naive_rf()
     run_naive_rf()
+    
+    #concat valid and test dataset for dn dataset loader's parsing purposes
+    testx = np.concatenate((testx, validx))
+    fsdk18_test_images = testx.reshape(-1, 32 * 32)
+    fsdk18_test_labels = np.concatenate((fsdk18_test_labels, fsdk18_valid_labels))
+    
     run_cnn32()
     run_cnn32_2l()
     run_cnn32_5l()
