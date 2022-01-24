@@ -305,32 +305,32 @@ if __name__ == "__main__":
     normalize = lambda x: (x - scale) / scale
 
     """
-    Originally, the CIFAR100 dataset had a train:test split of 5:1, each containing 500000 and 100000 images.
+    Originally, the CIFAR100 dataset had a train:test split of 5:1, each containing 50000 and 10000 images.
     I will split the data below and add some of the training data into validation and test to achieve the 2:1:1 split.
     Since the dataset website stated that the original distribution of test and training data are randomized among classes,
     I belive we can do this without interfering with the randomization of the dataset.
     """
-    # train data (500000)
+    # train data (50000)
     cifar_trainset = datasets.CIFAR100(
         root="./", train=True, download=True, transform=None
     )
     cifar_train_images = normalize(cifar_trainset.data)
     cifar_train_labels = np.array(cifar_trainset.targets)
     
-    # train data and validation data initial split (train: 300000; val: 200000)
+    # train data and validation data initial split (train: 30000; val: 20000)
     cifar_train_images, cifar_val_images, cifar_train_labels, cifar_val_labels = train_test_split(cifar_train_images, cifar_train_labels, shuffle=True, test_size=0.4)
     
-    # validation data further split (train: 300000; val: 150000; test_concat: 50000)
+    # validation data further split (train: 30000; val: 15000; test_concat: 5000)
     cifar_val_images, cifar_test_images_concat, cifar_val_labels, cifar_test_labels_concat = train_test_split(cifar_val_images, cifar_val_labels, shuffle=True, test_size=0.25)
 
-    # test data (100000)
+    # test data (10000)
     cifar_testset = datasets.CIFAR100(
         root="./", train=False, download=True, transform=None
     )
     cifar_test_images = normalize(cifar_testset.data)
     cifar_test_labels = np.array(cifar_testset.targets)
     
-    # test data concatenation (train: 300000; val: 150000; test: 150000)
+    # test data concatenation (train: 30000; val: 15000; test: 15000)
     cifar_test_images = np.concatenate((cifar_test_images, cifar_test_images_concat))
     cifar_test_labels = np.concatenate((cifar_test_labels, cifar_test_labels_concat))
 
