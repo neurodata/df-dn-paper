@@ -437,22 +437,33 @@ def tune_rf_image_set(
 
 
 def parameter_list_generator(num_iter):
-    rng = np.random.RandomState(0) #random state generator
-    
-    n_estimators = [int(x) for x in np.linspace(start = 50, stop = 150, num = 11)] # number of trees in the random forest
-    max_features = ['auto', 'sqrt'] # number of features in consideration at every split
-    max_depth = [int(x) for x in np.linspace(10, 120, num = 12)] # maximum number of levels allowed in each decision tree
-    min_samples_split = [2, 6, 10] # minimum sample number to split a node
-    max_leaf_nodes = [int(x) for x in np.linspace(25, 125, num = 5)] # maximum number of nodes that a tree can possess
-    
-    param_grid = {'n_estimators': n_estimators,
-                'max_features': max_features,
-                'max_depth': max_depth,
-                'min_samples_split': min_samples_split,
-                'max_leaf_nodes': max_leaf_nodes}
-    
+    rng = np.random.RandomState(0)  # random state generator
+
+    n_estimators = [
+        int(x) for x in np.linspace(start=50, stop=150, num=11)
+    ]  # number of trees in the random forest
+    max_features = [
+        "auto",
+        "sqrt",
+    ]  # number of features in consideration at every split
+    max_depth = [
+        int(x) for x in np.linspace(10, 120, num=12)
+    ]  # maximum number of levels allowed in each decision tree
+    min_samples_split = [2, 6, 10]  # minimum sample number to split a node
+    max_leaf_nodes = [
+        int(x) for x in np.linspace(25, 125, num=5)
+    ]  # maximum number of nodes that a tree can possess
+
+    param_grid = {
+        "n_estimators": n_estimators,
+        "max_features": max_features,
+        "max_depth": max_depth,
+        "min_samples_split": min_samples_split,
+        "max_leaf_nodes": max_leaf_nodes,
+    }
+
     param_list = list(ParameterSampler(param_grid, n_iter=num_iter, random_state=rng))
-    
+
     return param_list
 
 

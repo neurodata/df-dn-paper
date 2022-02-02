@@ -56,14 +56,14 @@ def tune_naive_rf():
     naive_rf_train_time = []
     naive_rf_val_time = []
     naive_rf_param_dict = {}
-    
+
     for classes in classes_space:
-        
+
         for samples in samples_space:
             # specify how many random combinations we are going to test out
             num_iter = 6
             candidate_param_list = parameter_list_generator(num_iter)
-            
+
             for params in candidate_param_list:
                 clf = sklearn.ensemble.RandomForestClassifier()
                 clf.set_params(**params)
@@ -79,17 +79,19 @@ def tune_naive_rf():
                 naive_rf_accuracy.append(accuracy)
                 naive_rf_train_time.append(train_time)
                 naive_rf_val_time.append(val_time)
-            
+
             max_accuracy = max(naive_rf_accuracy)
             max_index = naive_rf_accuracy.index(max_accuracy)
-            naive_rf_param_dict[(classes,samples)] = candidate_param_list[max_index]
+            naive_rf_param_dict[(classes, samples)] = candidate_param_list[max_index]
 
     print("naive_rf tuning finished")
     write_result(prefix + "naive_rf_parameters_dict.txt", naive_rf_param_dict)
-    write_result(prefix + "naive_rf_parameters_tuning_train_time.txt", naive_rf_train_time)
+    write_result(
+        prefix + "naive_rf_parameters_tuning_train_time.txt", naive_rf_train_time
+    )
     write_result(prefix + "naive_rf_parameters_tuning_val_time.txt", naive_rf_val_time)
     write_result(prefix + "naive_rf_parameters_tuning_accuracy.txt", naive_rf_accuracy)
-    
+
     return naive_rf_param_dict
 
 
@@ -389,8 +391,8 @@ if __name__ == "__main__":
         train_size=0.50,
         stratify=y_number,
     )
-    
-    #further split into train:valid:test = 2:1:1
+
+    # further split into train:valid:test = 2:1:1
     testx, validx, testy, validy = train_test_split(
         testx,
         testy,
@@ -412,12 +414,12 @@ if __name__ == "__main__":
     # tuning + find the best parameters for rf
     rf_chosen_params_dict = tune_naive_rf()
     run_naive_rf()
-    
-    #concat valid and test dataset for dn dataset loader's parsing purposes
+
+    # concat valid and test dataset for dn dataset loader's parsing purposes
     testx = np.concatenate((testx, validx))
     fsdk18_test_images = testx.reshape(-1, 32 * 32)
     fsdk18_test_labels = np.concatenate((fsdk18_test_labels, fsdk18_valid_labels))
-    
+
     run_cnn32()
     run_cnn32_2l()
     run_cnn32_5l()
