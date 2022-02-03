@@ -118,13 +118,10 @@ def create_parameters(model_name, varargin, p=None):
     Functions to calculate model performance and parameters.
     """
     if model_name == "DN":
-        parameters = {
-            "hidden_layer_sizes": varargin["node_range"],
-            "alpha": varargin["alpha_range_nn"],
-        }
+        parameters = varargin['DN']
     elif model_name == "RF":
 
-        parameters = {
+        parameters_dict1 = {
             "max_features": list(
                 set(
                     [
@@ -135,13 +132,14 @@ def create_parameters(model_name, varargin, p=None):
                         round(p),
                     ]
                 )
-            )
+            ),
+                               
         }
+    parameters_dict2 = varargin['RF']
+    parameters = {**parameters_dict1, **parameters_dict2}
     elif model_name == "GBDT":
-        parameters = {
-            "learning_rate": varargin["alpha_range_nn"],
-            "subsample": varargin["subsample"],
-        }
+        parameters = varargin['GBDT']
+        
     else:
         raise ValueError(
             "Model name is invalid. Please check the keys of models_to_run"
