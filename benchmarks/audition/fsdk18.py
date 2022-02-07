@@ -5,6 +5,7 @@ Coauthors: Haoyin Xu
            Adway Kanhere
 """
 from toolbox import *
+from fsdk18preprocess import *
 import argparse
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
@@ -270,49 +271,7 @@ if __name__ == "__main__":
     n_classes = int(args.m)
     feature_type = str(args.f)
 
-    train_folder = str(args.data)
-    train_label = pd.read_csv(str(args.labels))
-
-    # select subset of data that only contains 300 samples per class
-    labels_chosen = train_label[
-        train_label["label"].map(train_label["label"].value_counts() == 300)
-    ]
-
-    training_files = []
-    for file in os.listdir(train_folder):
-        for x in labels_chosen.fname.to_list():
-            if file.endswith(x):
-                training_files.append(file)
-
-    path_recordings = []
-    for audiofile in training_files:
-        path_recordings.append(os.path.join(train_folder, audiofile))
-
-    # convert selected label names to integers
-    labels_to_index = {
-        "Acoustic_guitar": 0,
-        "Applause": 1,
-        "Bass_drum": 2,
-        "Trumpet": 3,
-        "Clarinet": 4,
-        "Double_bass": 5,
-        "Laughter": 6,
-        "Shatter": 7,
-        "Snare_drum": 8,
-        "Saxophone": 9,
-        "Tearing": 10,
-        "Flute": 11,
-        "Hi-hat": 12,
-        "Violin_or_fiddle": 13,
-        "Squeak": 14,
-        "Fart": 15,
-        "Fireworks": 16,
-        "Cello": 17,
-    }
-
-    # encode labels to integers
-    get_labels = labels_chosen["label"].replace(labels_to_index).to_list()
-    labels_chosen = labels_chosen.reset_index()
+    path_recordings, labels_chosen, get_labels = preprocessdataset(str(args.data),str(args.labels) )
 
     # data is normalized upon loading
     # load dataset
@@ -320,7 +279,8 @@ if __name__ == "__main__":
         path_recordings, labels_chosen, get_labels, feature_type
     )
     nums = list(range(18))
-    samples_space = np.geomspace(10, 450, num=6, dtype=int)
+    # Choose samples space in ratio of 2:1:1 based on class size
+    samples_space = np.geomspace(10, 150*(n_classes), num=6, dtype=int)
     # define path, samples space and number of class combinations
     if feature_type == "melspectrogram":
         prefix = args.m + "_class_mel/"

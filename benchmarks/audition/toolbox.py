@@ -45,8 +45,19 @@ class FSDKaggle18Dataset(Dataset):
         # loop through the csv entries and only add entries from folders in the folder list
         self.annotations = pd.read_csv(annotations_file)
         self.audio_dir = audio_dir
+
+        
+        # select subset of data that only contains 300 samples per class
+        labels_chosen = annotations_file[annotations_file["label"].map(annotations_file["label"].value_counts() == 300)]
+        
+        training_files = []
+        for file in os.listdir(self.audio_dir):
+            for x in labels_chosen.fname.to_list():
+                if file.endswith(x):
+                    training_files.append(file)
+
         data_final = []
-        for filepaths in os.listdir(self.audio_dir):
+        for filepaths in training_files:
             data_final.append(os.path.join(self.audio_dir, filepaths))
         self.data_final = data_final
 
