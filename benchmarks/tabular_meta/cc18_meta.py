@@ -32,8 +32,8 @@ metaKF = KFold(shuffle=True)
 
 # For each meta-fold
 for train_index, test_index in metaKF.split(datasets):
-    train_datasets = datasets[train_index]
-    test_datasets = datasets[test_index]
+    train_datasets = np.array(datasets)[train_index]
+    test_datasets = np.array(datasets)[test_index]
 
     # random forests
     if args.all or args.rf:
