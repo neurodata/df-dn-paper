@@ -65,12 +65,19 @@ Models:
 
 """
 Change below to add a model
+ 
+define which models to run
 """
 models_to_run = {
     "RF": 1,
     "DN": 1,
     "GBDT": 1,
-}  # Define which models to run
+} 
+models_to_scale = {
+    "RF": 0,
+    "DN": 1,
+    "GBDT": 0,
+} 
 
 classifiers = {
     "DN": TabNetClassifier(),
@@ -164,12 +171,7 @@ for dataset_index, dataset in enumerate(dataset_indices):
     )
     train_indices = dict_data_indices[dataset_index]["train"]
     val_indices = dict_data_indices[dataset_index]["val"]
-    """
-    Standart Scaling
-    """
-    scaler = StandardScaler()
-    scaler.fit(X)
-    X = scaler.transform(X)
+
 
     p = X.shape[1]
 
@@ -180,6 +182,14 @@ for dataset_index, dataset in enumerate(dataset_indices):
                     "Model name is not defined in the classifiers dictionary"
                 )
             else:
+                if models_to_scale[model_name ]:
+                    """
+                    Standart Scaling
+                    """
+                    scaler = StandardScaler()
+                    scaler.fit(X)
+                    X = scaler.transform(X)
+                    
                 all_parameters, best_parameters, all_params = do_calcs_per_model(
                     all_parameters,
                     best_parameters,
