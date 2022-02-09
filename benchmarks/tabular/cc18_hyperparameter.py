@@ -167,7 +167,7 @@ for dataset_index, dataset in enumerate(dataset_indices):
     """
     np.random.seed(dataset_index)
     dict_data_indices = find_indices_train_val_test(
-        X.shape[0], dict_data_indices=dict_data_indices, dataset_ind=dataset_index
+        y, dict_data_indices=dict_data_indices, dataset_ind=dataset_index
     )
     train_indices = dict_data_indices[dataset_index]["train"]
     val_indices = dict_data_indices[dataset_index]["val"]
