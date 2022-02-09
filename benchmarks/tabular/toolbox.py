@@ -331,8 +331,9 @@ def get_ece(predicted_posterior, predicted_label, true_label, num_bins=40):
     return score
 
 
+
 def find_indices_train_val_test(
-    X_shape,
+    y_data,
     ratio=[2, 1, 1],
     keys_types=["train", "val", "test"],
     dict_data_indices={},
@@ -341,16 +342,16 @@ def find_indices_train_val_test(
     """
     This function comes to find the indices of train, validation and test sets
     """
-    ratio_base = [int(el) for el in np.linspace(0, X_shape, np.sum(ratio) + 1)]
-    ratio_base_limits = np.hstack([[0], ratio_base[np.cumsum(ratio)]])
+    fractions = ratio/np.sum(ratio)
+    fractions_train_val = ratio[:-1]/np.sum(ratio[:-1])
     list_indices = np.arange(X_shape)
-    np.random.shuffle(list_indices)
-    for ind_counter, ind_min in enumerate(ratio_base_limits[:-1]):
-        ind_max = ratio_base_limits[ind_counter + 1]
-        cur_indices = list_indices[ind_min:ind_max]
-        dict_data_indices[dataset_ind][keys_types[ind_counter]] = cur_indices
+    index_train_val, index_test, labels_train_val,labels_test = train_test_split(list_indices, y_data, test_size=fractions[-1], stratify=y_data)
+    index_train, index_val, labels_train,labels_test = train_test_split(index_train_val,labels_train_val , test_size=fractions_train_val[-1], stratify=labels_train_val )
+   
+    cur_indices_list = [index_train, index_val, index_test]
+    for ind_counter, key_type in enumerate(keys_types):
+        dict_data_indices[dataset_ind][key_type] = cur_indices_list[ind_counter]
     return dict_data_indices
-
 
 def sample_large_datasets(X_data, y_data, max_size=10000):
     """
