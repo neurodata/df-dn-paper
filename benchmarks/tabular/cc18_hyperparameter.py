@@ -41,7 +41,9 @@ n_a = [8,10]
 gamma_tabnet = [1.3,3,8]
 n_shared = [1,2,5]
 n_estimators_range = [20,100,200,500]
-
+n_steps = [3, 5, 8, 10]
+lambda_sparse = [0.1, 1e-2, 1e-3, 1e-4]
+momentum = [0.01, 0.02, 0.05, 0.1, 0.4]
 # Saving parameters
 path_save = "metrics/cc18_all_parameters"
 path_save_dict_data_indices = "metrics/dict_data_indices"
