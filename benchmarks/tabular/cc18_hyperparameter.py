@@ -81,7 +81,8 @@ classifiers = {
 
 varargin = {
     "DN":
-        {"n_d": n_d, "n_a": n_a, "gamma": gamma_tabnet,"n_shared": n_shared },
+        {"n_d": n_d, "n_a": n_a, "gamma": gamma_tabnet,"n_shared": n_shared,'momentum': momentum,
+         'lambda_sparse':lambda_sparse , 'n_steps':n_steps, 'n_estimators_range':n_estimators_range},
    "GBDT":
         { "subsample": subsample, 'alpha':alpha_vals,  'lambda': lambda_vals,
          'colsample_bynode':colsample_bynode, 'sampling_method':sampling_method,'gamma':gamma,'eta':eta}, 
