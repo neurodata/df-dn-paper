@@ -7,7 +7,6 @@ Coauthors: Michael Ainsworth
 
 
 import numpy as np
-from random import sample
 from sklearn.ensemble import RandomForestClassifier
 from pytorch_tabnet.tab_model import TabNetClassifier
 import xgboost as xgb
@@ -15,6 +14,7 @@ import openml
 import json
 from os.path import exists
 from sklearn.model_selection import RandomizedSearchCV
+from sklearn.model_selection import train_test_split
 
 
 def random_sample_new(
@@ -79,14 +79,6 @@ def random_sample_new(
     return final_inds
 
 
-def sample_large_datasets(X_data, y_data, max_size=10000):
-    """
-    For large datasets with over 10000 samples, resample the data to only include
-    10000 random samples.
-    """
-    inds = [i for i in range(X_data.shape[0])]
-    fin = sorted(sample(inds, max_size))
-    return X_data[fin], y_data[fin]
 
 
 def save_best_parameters(
@@ -346,6 +338,9 @@ def find_indices_train_val_test(
     dict_data_indices={},
     dataset_ind=0,
 ):
+    """
+    This function comes to find the indices of train, validation and test sets
+    """
     ratio_base = [int(el) for el in np.linspace(0, X_shape, np.sum(ratio) + 1)]
     ratio_base_limits = np.hstack([[0], ratio_base[np.cumsum(ratio)]])
     list_indices = np.arange(X_shape)
@@ -355,3 +350,12 @@ def find_indices_train_val_test(
         cur_indices = list_indices[ind_min:ind_max]
         dict_data_indices[dataset_ind][keys_types[ind_counter]] = cur_indices
     return dict_data_indices
+
+
+def sample_large_datasets(X_data, y_data, max_size=10000):
+    """
+    For large datasets with over 10000 samples, resample the data to only include
+    10000 random samples.
+    """
+    X_data, _, y_data, _ = train_test_split(X_data, y_data, train_size=max_size, stratify=y_data)
+    return X_data, y_data

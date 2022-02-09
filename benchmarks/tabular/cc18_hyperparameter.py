@@ -16,13 +16,10 @@ return_default = False
 
 #hyperparameters options
 
-# TabNet
-nodes_combination = [20, 100, 180, 260, 340, 400]
+# general
 dataset_indices_max = 72
 max_shape_to_run = 10000
-alpha_range_nn = [0.1, 0.001, 0.01, 0.1]
-subsample = [1.0, 0.5, 0.8, 1.0]
-n_estimators_range = [20,100,200,500]
+
 # RF
 criterions = ['gini', 'entropy']
 #max_features = ['sqrt','log2',0.5,0.8,1]
@@ -43,7 +40,7 @@ n_d = [8,20, 64]
 n_a = [8,10]
 gamma_tabnet = [1.3,3,8]
 n_shared = [1,2,5]
-
+n_estimators_range = [20,100,200,500]
 
 # Saving parameters
 path_save = "metrics/cc18_all_parameters"
@@ -53,13 +50,12 @@ save_methods_rewrite = {"text_dict": 0, "csv": 0, "json": 1}
 
 if return_default:
     (
-        nodes_combination,
+       
         dataset_indices_max,
         max_shape_to_run,
         models_to_run,
         subsample,
-        alpha_range_nn,
-    ) = return_to_default()
+        ) = return_to_default()
 
 """
 Models:
@@ -101,10 +97,8 @@ save_vars_to_dict(
     classifiers,
     varargin,
     reload_data,
-    nodes_combination,
     dataset_indices_max,
     max_shape_to_run,
-    alpha_range_nn,
     subsample,
     "metrics/dict_parameters.json",
 )
