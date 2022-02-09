@@ -19,9 +19,24 @@ from sklearn.model_selection import (
 )
 
 
+def load_dataset(dataset, max_size=10000):
+    """Load a dataset from OpenML-CC18 and limit sample size"""
+    X, y, _, _ = openml.datasets.get_dataset(dataset).get_data(
+        dataset_format="array", target=dataset.default_target_attribute
+    )
+    _, y = np.unique(y, return_inverse=True)
+    X = np.nan_to_num(X)
+
+    # Limit the max number of samples
+    if X.shape[0] > max_size:
+        X, y = sample_large_datasets(X, y, max_size)
+
+    return X, y
+
+
 def sample_large_datasets(X_data, y_data, max_size=10000):
     """
-    For large datasets with over 10000 samples, resample the data to only include
+    For large datasets with over 10000 samples, resample the data to only
     10000 random samples.
     """
     X_data, _, y_data, _ = train_test_split(
