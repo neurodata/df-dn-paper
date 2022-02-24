@@ -31,6 +31,8 @@ def random_sample_new(
     np.random.seed(seed_rand)
     training_sample_sizes = sorted(training_sample_sizes)
     num_classes = len(np.unique(y_train))
+    #print('num classes')
+    #print(num_classes)
     classes_spec = np.unique(y_train)
     previous_partitions_len = np.zeros(num_classes)
     previous_inds = {class_val: [] for class_val in classes_spec}
@@ -42,9 +44,10 @@ def random_sample_new(
         )
     for samp_size_count, samp_size in enumerate(training_sample_sizes):
         partitions = np.array_split(np.array(range(samp_size)), num_classes)
+        #print(partitions)
         partitions_real = [
             len(part_new) - previous_partitions_len[class_c]
-            for class_c, part_new in partitions
+            for class_c, part_new in enumerate(partitions)
         ]  # partitions_real is the number of additional samples we have to take
         indices_classes_addition_all = (
             []
@@ -57,9 +60,13 @@ def random_sample_new(
                 if ind_class not in previous_inds[class_val]
             ]
             np.random.shuffle(indices_class_original)
+            print('!!!!!!!!!!!!!!!!!!!!!')
+            print(partitions_real[class_count])
+            print(class_count)
+            print(len(indices_class_original))
             if partitions_real[class_count] <= len(indices_class_original):
                 indices_class_addition = indices_class_original[
-                    : partitions_real[class_count]
+                    : int(partitions_real[class_count])
                 ]
                 previous_inds[class_val].extend(indices_class_addition)
                 indices_classes_addition_all.extend(indices_class_addition)
@@ -82,7 +89,7 @@ def random_sample_new(
 
 
 def save_best_parameters(
-    save_methods, save_methods_rewrite, path_save, best_parameters
+    save_methods, save_methods_rewrite, path_save, best_parameters, non_json = False
 ):
     """
     Save Hyperparameters
@@ -93,15 +100,19 @@ def save_best_parameters(
         best_parameters_to_save = {**dictionary, **best_parameters}
     else:
         best_parameters_to_save = best_parameters
-    with open(path_save + ".json", "w") as fp:
-        json.dump(best_parameters_to_save, fp)
+    if not non_json:           
+        with open(path_save + ".json", "w") as fp:
+            json.dump(best_parameters_to_save, fp)
+    else:
+        np.save(path_save + '.npy', best_parameters_to_save)
 
 
 def open_data(path, format_file):
     """
     Open existing data
     """
-    dictionary = json.load(path + ".json")
+    f = open(path + ".json")
+    dictionary = json.load(f)
     return dictionary
 
 
@@ -127,8 +138,8 @@ def create_parameters(model_name, varargin, p=None):
             ),
                                
         }
-    parameters_dict2 = varargin['RF']
-    parameters = {**parameters_dict1, **parameters_dict2}
+        parameters_dict2 = varargin['RF']
+        parameters = {**parameters_dict1, **parameters_dict2}
     elif model_name == "GBDT":
         parameters = varargin['GBDT']
         
@@ -165,12 +176,12 @@ def do_calcs_per_model(
         parameters,
         n_jobs=varCVmodel["n_jobs"],
         cv=[(train_indices, val_indices)],
-        verbose=varCVmodel["verbose"],
+        verbose=varCVmodel["verbose"],scoring="accuracy"
     )
     clf.fit(X, y)
-    all_parameters[model_name][dataset_index] = parameters
-    best_parameters[model_name][dataset_index] = clf.best_params_
-    all_params[model_name][dataset_index] = clf.cv_results_["params"]
+    all_parameters[model_name][dataset_index] = list(parameters)
+    best_parameters[model_name][dataset_index] = list(clf.best_params_)
+    all_params[model_name][dataset_index] = list(clf.cv_results_["params"])
     return all_parameters, best_parameters, all_params
 
 
@@ -250,7 +261,7 @@ def save_vars_to_dict(
         "shape_2_evolution": shape_2_evolution,
         "shape_2_all_sample_sizes": shape_2_all_sample_sizes,
     }
-
+    #print(dataset_indices_max)
     with open(path_to_save, "w") as fp:
         json.dump(dict_to_save, fp)
 
@@ -344,13 +355,13 @@ def find_indices_train_val_test(
     """
     fractions = ratio/np.sum(ratio)
     fractions_train_val = ratio[:-1]/np.sum(ratio[:-1])
-    list_indices = np.arange(X_shape)
+    list_indices = np.arange(len(y_data))
     index_train_val, index_test, labels_train_val,labels_test = train_test_split(list_indices, y_data, test_size=fractions[-1], stratify=y_data)
     index_train, index_val, labels_train,labels_test = train_test_split(index_train_val,labels_train_val , test_size=fractions_train_val[-1], stratify=labels_train_val )
    
     cur_indices_list = [index_train, index_val, index_test]
     for ind_counter, key_type in enumerate(keys_types):
-        dict_data_indices[dataset_ind][key_type] = cur_indices_list[ind_counter]
+        dict_data_indices[dataset_ind][key_type] = np.unique(cur_indices_list[ind_counter]).tolist(); #astype(int))
     return dict_data_indices
 
 def sample_large_datasets(X_data, y_data, max_size=10000):

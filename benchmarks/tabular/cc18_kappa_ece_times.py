@@ -21,9 +21,10 @@ reload_data = False  # indicator of whether to upload the data again
 path_save = "metrics/cc18_all_parameters"
 path_params = "metrics/dict_parameters"
 path_train_val_test_indices = "metrics/dict_data_indices"
-with open(path_params + ".json", "r") as json_file:
-    dictionary_params = json.load(json_file)
-
+#with open(path_params + ".json", "r") as json_file:
+#    dictionary_params = json.load(json_file)
+f = open('metrics/dict_parameters.json');
+dictionary_params = json.load(f)
 with open(path_train_val_test_indices + ".json", "r") as json_file:
     dict_data_indices = json.load(json_file)
 
@@ -57,7 +58,7 @@ Upload best parameters
 """
 
 if "best_params_dict" not in locals():
-    best_params_dict = open_data(path, "text_dict")
+    best_params_dict = open_data(path, "json")
 
 train_indices = [i for i in range(dataset_indices_max)]
 
@@ -94,12 +95,12 @@ for dataset_index, dataset in enumerate(train_indices):
 
     X = X_data_list[dataset]
     y = y_data_list[dataset]
-    train_indices = dict_data_indices[dataset_index]["train"]
-    test_indices = dict_data_indices[dataset_index]["test"]
+    train_indices = dict_data_indices[str(dataset_index)]["train"]
+    test_indices = dict_data_indices[str(dataset_index)]["test"]
 
     # If data set has over 10000 samples, resample to contain 10000
     if X.shape[0] > max_shape_to_run:
-        X, y = sample_large_datasets(X, y)
+        X, y = sample_large_datasets(X, y, max_shape_to_run)
 
     scaler = StandardScaler()
     scaler.fit(X)
@@ -112,7 +113,7 @@ for dataset_index, dataset in enumerate(train_indices):
         len(np.unique(y_train)) * 5, X_train.shape[0], num=8, dtype=int
     )
     ss_inds = random_sample_new(
-        X_train, y_train, training_sample_sizes, classes=num_classes
+        X_train, y_train, training_sample_sizes
     )
 
     # Iterate through each sample size per dataset

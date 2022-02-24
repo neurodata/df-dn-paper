@@ -1,0 +1,1 @@
+{"RF": {"0": ["n_estimators", "max_features", "max_depth", "criterion", "bootstrap"]}, "DN": {"0": ["n_steps", "n_shared", "n_d", "n_a", "momentum", "lambda_sparse", "gamma"]}, "GBDT": {"0": ["subsample", "sampling_method", "lambda", "gamma", "eta", "colsample_bynode", "alpha"]}}
