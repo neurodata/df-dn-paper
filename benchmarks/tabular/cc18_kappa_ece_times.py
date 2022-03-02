@@ -25,8 +25,11 @@ path_train_val_test_indices = "metrics/dict_data_indices"
 #    dictionary_params = json.load(json_file)
 f = open('metrics/dict_parameters.json');
 dictionary_params = json.load(f)
-with open(path_train_val_test_indices + ".json", "r") as json_file:
-    dict_data_indices = json.load(json_file)
+
+f2 = open(path_train_val_test_indices + ".json")
+dict_data_indices = json.load(f2)
+#with open(path_train_val_test_indices + ".json", "r") as json_file:
+#    dict_data_indices = json.load(json_file)
 
 path = path_save  # "metrics/cc18_all_parameters"
 type_file = ".json"
@@ -57,8 +60,9 @@ if reload_data or "dataset_name" not in locals():
 Upload best parameters
 """
 
-if "best_params_dict" not in locals():
-    best_params_dict = open_data(path, "json")
+#if "best_params_dict" not in locals():
+f_best        = open(path+".json")
+best_params_dict = json.load(f_best)
 
 train_indices = [i for i in range(dataset_indices_max)]
 
@@ -77,7 +81,11 @@ train_times = {
 }
 test_times = {model_name: None for model_name in dictionary_params["classifiers_names"]}
 
-train_test_times = {model_name: {} for model_name in best_params_dict.keys()}
+#train_test_times = {model_name: {} for model_name in best_params_dict.keys()}
+train_test_times = {
+    metric: {model_name: {} for model_name in best_params_dict.keys()}
+    for metric in ["cohen_kappa", "ece"]
+}
 
 
 evolution_dict = {
@@ -112,6 +120,8 @@ for dataset_index, dataset in enumerate(train_indices):
     training_sample_sizes = np.geomspace(
         len(np.unique(y_train)) * 5, X_train.shape[0], num=8, dtype=int
     )
+    print( len(np.unique(y_train)) * 5)
+    print(len(y_train))
     ss_inds = random_sample_new(
         X_train, y_train, training_sample_sizes
     )

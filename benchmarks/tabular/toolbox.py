@@ -17,6 +17,7 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import train_test_split
 
 
+
 def random_sample_new(
     X_train,
     y_train,
@@ -28,64 +29,110 @@ def random_sample_new(
     Peforms multiclass predictions for a random forest classifier with fixed total samples.
     min_rep_per_class = minimal number of train samples for a specific label
     """
+    ratios  = []
+    [uniques, counts] = np.unique(y_train, return_counts = True)
+    print(counts)
+    print(uniques)
+    #print(y_train)
+    for unique_num, unique_class in enumerate(uniques):
+        unique_count = counts[unique_num]
+        ratios.append(unique_count / len(y_train))
+          
     np.random.seed(seed_rand)
-    training_sample_sizes = sorted(training_sample_sizes)
-    num_classes = len(np.unique(y_train))
-    #print('num classes')
-    #print(num_classes)
-    classes_spec = np.unique(y_train)
-    previous_partitions_len = np.zeros(num_classes)
-    previous_inds = {class_val: [] for class_val in classes_spec}
     final_inds = []
-    # Check that the training sample size is big enough to include all class representations
-    if np.floor(np.min(training_sample_sizes) / num_classes) < min_rep_per_class:
-        raise ValueError(
-            "Not enough samples for each class, decreasing number of classes"
-        )
-    for samp_size_count, samp_size in enumerate(training_sample_sizes):
-        partitions = np.array_split(np.array(range(samp_size)), num_classes)
-        #print(partitions)
-        partitions_real = [
-            len(part_new) - previous_partitions_len[class_c]
-            for class_c, part_new in enumerate(partitions)
-        ]  # partitions_real is the number of additional samples we have to take
-        indices_classes_addition_all = (
-            []
-        )  # For each samples size = what indices are taken for all classes together
-        for class_count, class_val in enumerate(classes_spec):
-            indices_class = np.argwhere(np.array(y_train) == class_val).T[0]
-            indices_class_original = [
-                ind_class
-                for ind_class in indices_class
-                if ind_class not in previous_inds[class_val]
-            ]
-            np.random.shuffle(indices_class_original)
-            print('!!!!!!!!!!!!!!!!!!!!!')
-            print(partitions_real[class_count])
-            print(class_count)
-            print(len(indices_class_original))
-            if partitions_real[class_count] <= len(indices_class_original):
-                indices_class_addition = indices_class_original[
-                    : int(partitions_real[class_count])
-                ]
-                previous_inds[class_val].extend(indices_class_addition)
-                indices_classes_addition_all.extend(indices_class_addition)
-
-            else:
-                raise ValueError(
-                    "Class %s does not have enough samples" % str(class_val)
-                )
-        if final_inds:
-            indices_prev = final_inds[-1].copy()
-        else:
-            indices_prev = []
-        indices_class_addtion_and_prev = indices_prev + indices_class_addition
-        final_inds.append(indices_class_addtion_and_prev)
-        previous_partitions_len = [len(parti) for parti in partitions]
+    for samp_num, samp_size in enumerate(training_sample_sizes):
+        
+        cur_indices = []
+        for class_num, class_spec in enumerate(uniques):
+            num_from_class = np.round(ratios[class_num]*samp_size)
+            indices_class = np.argwhere(np.array(y_train) == class_spec).T[0]
+            indices_to_add = np.random.choice(indices_class, int(num_from_class))
+            cur_indices.extend(indices_to_add)
+        final_inds.append(cur_indices)
+            
 
     return final_inds
-
-
+    
+    
+#def random_sample_new(
+#    X_train,
+#    y_train,
+#    training_sample_sizes,
+#    seed_rand=0,
+#    min_rep_per_class=1,
+#):
+#    """
+#    Peforms multiclass predictions for a random forest classifier with fixed total samples.
+#    min_rep_per_class = minimal number of train samples for a specific label
+#    """
+#    np.random.seed(seed_rand)
+#    training_sample_sizes = sorted(training_sample_sizes)
+#    num_classes = len(np.unique(y_train))
+#    classes_spec = np.unique(y_train)
+#    
+#    # number of samples from each class
+#    previous_partitions_len = np.zeros(num_classes)    
+#    
+#    previous_inds = {class_val: [] for class_val in classes_spec}
+#    final_inds = []
+#    # Check that the training sample size is big enough to include all class representations
+#    
+#    [_,u ] = np.unique(y_train,return_counts=True)
+#    if min(u) <= np.ceil(np.max(training_sample_sizes) / num_classes):
+#        print(u)
+#        print(training_sample_sizes)
+#        raise ValueError('minimum sample from class is lower than required sampling size')
+#    if np.floor(np.min(training_sample_sizes) / num_classes) < min_rep_per_class:
+#        raise ValueError("Not enough samples for each class, decreasing number of classes" )
+#        
+#    for samp_size_count, samp_size in enumerate(training_sample_sizes):
+#        # samp_size count = # of the counter of the sample size
+#        # samp_size       =  the sample size itself 
+#        # partitions       = the group of samples for each class
+#        partitions = np.array_split(np.array(range(samp_size)), num_classes)
+#        # partitions_real - how much to add for each class
+#        partitions_real = [
+#            len(part_new) - previous_partitions_len[class_c]
+#            for class_c, part_new in enumerate(partitions)
+#        ]  # partitions_real is the number of additional samples we have to take
+#        
+#        indices_classes_addition_all = []  # For each samples size = what indices are taken for all classes together
+#        for class_count, class_val in enumerate(classes_spec):
+#            print('class_val')
+#            print(class_val)
+#            print(partitions_real[class_count] )
+#            
+#            indices_class = np.argwhere(np.array(y_train) == class_val).T[0]
+#            indices_class_original = [ind_class for ind_class in indices_class if ind_class not in previous_inds[class_val]    ]
+#            print(len(indices_class_original))
+#            np.random.shuffle(indices_class_original)
+#            
+#            # is the # to add to a class <= len of total possible indices to add to the class
+#            if partitions_real[class_count] <= len(indices_class_original):
+#                indices_class_addition = indices_class_original[
+#                    : int(partitions_real[class_count])
+#                ]
+#                previous_inds[class_val].extend(indices_class_addition)
+#                indices_classes_addition_all.extend(indices_class_addition)
+#
+#            else:
+#                print('samp size')
+#                print(samp_size)
+#                
+#                raise ValueError(
+#                    "Class %s does not have enough samples" % str(class_val)
+#                )
+#        if final_inds:
+#            indices_prev = final_inds[-1].copy()
+#        else:
+#            indices_prev = []
+#        indices_class_addtion_and_prev = indices_prev + indices_class_addition
+#        final_inds.append(indices_class_addtion_and_prev)
+#        previous_partitions_len = [len(parti) for parti in partitions]
+#
+#    return final_inds
+##
+##
 
 
 def save_best_parameters(
@@ -100,11 +147,11 @@ def save_best_parameters(
         best_parameters_to_save = {**dictionary, **best_parameters}
     else:
         best_parameters_to_save = best_parameters
-    if not non_json:           
-        with open(path_save + ".json", "w") as fp:
-            json.dump(best_parameters_to_save, fp)
-    else:
-        np.save(path_save + '.npy', best_parameters_to_save)
+    #if not non_json:           
+    with open(path_save + ".json", "w") as fp:
+        json.dump(best_parameters_to_save, fp)
+    #else:
+    #    np.save(path_save + '.npy', best_parameters_to_save)
 
 
 def open_data(path, format_file):
@@ -180,8 +227,10 @@ def do_calcs_per_model(
     )
     clf.fit(X, y)
     all_parameters[model_name][dataset_index] = list(parameters)
-    best_parameters[model_name][dataset_index] = list(clf.best_params_)
-    all_params[model_name][dataset_index] = list(clf.cv_results_["params"])
+    #print(clf.best_params_)
+    #raise ValueError('fgf')
+    best_parameters[model_name][dataset_index] = clf.best_params_
+    all_params[model_name][dataset_index] = clf.cv_results_["params"]
     return all_parameters, best_parameters, all_params
 
 
@@ -269,16 +318,19 @@ def save_vars_to_dict(
 def model_define(model_name, best_params_dict, dataset):
     """ """
     if model_name == "RF":
+        #display(best_params_dict[model_name])
+        
+        display(best_params_dict[model_name][str(dataset)])
         model = RandomForestClassifier(
-            **best_params_dict[model_name][dataset], n_estimators=500, n_jobs=-1
+            **best_params_dict[model_name][str(dataset)],  n_jobs=-1
         )
     elif model_name == "DN":
-        model = TabNetClassifier(**best_params_dict[model_name][dataset])
+        model = TabNetClassifier(**best_params_dict[model_name][str(dataset)])
     elif model_name == "GBDT":
         model = xgb.XGBClassifier(
             booster="gbtree",
             base_score=0.5,
-            **best_params_dict[model_name][dataset],
+            **best_params_dict[model_name][str(dataset)],
             n_estimators=500
         )
     else:
