@@ -81,11 +81,11 @@ train_times = {
 }
 test_times = {model_name: None for model_name in dictionary_params["classifiers_names"]}
 
-#train_test_times = {model_name: {} for model_name in best_params_dict.keys()}
-train_test_times = {
-    metric: {model_name: {} for model_name in best_params_dict.keys()}
-    for metric in ["cohen_kappa", "ece"]
-}
+train_test_times = {model_name: {} for model_name in best_params_dict.keys()}
+#train_test_times = {
+    #metric: {model_name: {} for model_name in best_params_dict.keys()}
+    #for metric in ["cohen_kappa", "ece"]
+#}
 
 
 evolution_dict = {
@@ -120,14 +120,14 @@ for dataset_index, dataset in enumerate(train_indices):
     training_sample_sizes = np.geomspace(
         len(np.unique(y_train)) * 5, X_train.shape[0], num=8, dtype=int
     )
-    print( len(np.unique(y_train)) * 5)
-    print(len(y_train))
+
     ss_inds = random_sample_new(
         X_train, y_train, training_sample_sizes
     )
 
     # Iterate through each sample size per dataset
     for sample_size_index, real_sample_size in enumerate(training_sample_sizes):
+        real_sample_size  = int(real_sample_size)
         cohen_ece_results_dict = {metric: {} for metric in ["cohen_kappa", "ece"]}
         train_test_times_cur = {
             model_name: np.zeros((reps)) for model_name in best_params_dict.keys()
@@ -139,9 +139,9 @@ for dataset_index, dataset in enumerate(train_indices):
         # Repeat for number of repetitions, averaging results
         for model_name, model_best_params in best_params_dict.items():
             if models_to_run[model_name]:
-                if dataset not in train_test_times["cohen_kappa"][model_name].keys():
-                    train_test_times["cohen_kappa"][model_name][dataset] = {}
-                    train_test_times["ece"][model_name][dataset] = {}
+                if dataset not in train_test_times[model_name].keys():
+                    train_test_times[model_name][dataset] = {}
+                    train_test_times[model_name][dataset] = {}
 
                 try:
                     model = model_define(model_name, best_params_dict, dataset_index)
@@ -181,10 +181,11 @@ for dataset_index, dataset in enumerate(train_indices):
                 evolution_dict["cohen_kappa"][model_name][dataset][
                     real_sample_size
                 ].append(cohen_ece_results_dict["cohen_kappa"][model_name])
+                
                 evolution_dict["ece"][model_name][dataset][real_sample_size].append(
                     cohen_ece_results_dict["ece"][model_name]
                 )
-                evolution_dict[model_name][dataset][real_sample_size].append(
+                train_test_times[model_name][dataset][real_sample_size].append(
                     train_test_times_cur[model_name]
                 )
 
@@ -210,7 +211,7 @@ for dataset_index, dataset in enumerate(train_indices):
 new_dict = {}
 for key_met in evolution_dict.keys():
     new_dict[key_met] = mod_dict(evolution_dict[key_met], tuple)
-new_dict_times = mod_dict(train_test_times, tuple)
+#new_dict_times = mod_dict(train_test_times, tuple)
 
 
 """
@@ -224,12 +225,12 @@ save_best_parameters(
     save_methods,
     save_methods_rewrite,
     "metrics/cc18_sample_sizes.json",
-    all_sample_sizes,
+    all_sample_sizes.tolist(),
 )
 
 save_best_parameters(
     save_methods, save_methods_rewrite, "results/cc18_kappa_and_ece", new_dict
 )
 save_best_parameters(
-    save_methods, save_methods_rewrite, "results/cc18_training_times", new_dict_times
+    save_methods, save_methods_rewrite, "results/cc18_training_times", train_test_times
 )
