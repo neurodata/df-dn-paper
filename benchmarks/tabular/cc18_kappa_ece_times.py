@@ -28,6 +28,19 @@ dictionary_params = json.load(f)
 
 f2 = open(path_train_val_test_indices + ".json")
 dict_data_indices = json.load(f2)
+
+f3 = open("metrics/varied_size_dict.json") #varied size are final indices for each model. it is dict -> dataset -> index sampline -> list
+ss_inds_full = json.load(f3)
+
+models_to_scale = {
+    "RF": 0,
+    "DN": 1,
+    "GBDT": 0,
+} 
+
+
+#f3 = open(ss_inds_path + ".json")
+#dict_data_indices = json.load(f2)
 #with open(path_train_val_test_indices + ".json", "r") as json_file:
 #    dict_data_indices = json.load(json_file)
 
@@ -103,16 +116,14 @@ for dataset_index, dataset in enumerate(train_indices):
 
     X = X_data_list[dataset]
     y = y_data_list[dataset]
-    train_indices = dict_data_indices[str(dataset_index)]["train"]
-    test_indices = dict_data_indices[str(dataset_index)]["test"]
-
-    # If data set has over 10000 samples, resample to contain 10000
+    
+        # If data set has over 10000 samples, resample to contain 10000
     if X.shape[0] > max_shape_to_run:
         X, y = sample_large_datasets(X, y, max_shape_to_run)
+        
+    train_indices = dict_data_indices[str(dataset_index)][training_samp_ind]["train"]
+    test_indices = dict_data_indices[str(dataset_index)]["test"]
 
-    scaler = StandardScaler()
-    scaler.fit(X)
-    X = scaler.transform(X)
 
     X_train, X_test = X[train_indices], X[test_indices]
     y_train, y_test = y[train_indices], y[test_indices]
@@ -121,24 +132,31 @@ for dataset_index, dataset in enumerate(train_indices):
         len(np.unique(y_train)) * 5, X_train.shape[0], num=8, dtype=int
     )
 
-    ss_inds = random_sample_new(
-        X_train, y_train, training_sample_sizes
-    )
+    #ss_inds = random_sample_all[dataset]
+    #random_sample_new(
+    #    X_train, y_train, training_sample_sizes
+    #)
 
     # Iterate through each sample size per dataset
+    ss_inds = ss_inds_full[dataset_index]
     for sample_size_index, real_sample_size in enumerate(training_sample_sizes):
         real_sample_size  = int(real_sample_size)
         cohen_ece_results_dict = {metric: {} for metric in ["cohen_kappa", "ece"]}
         train_test_times_cur = {
             model_name: np.zeros((reps)) for model_name in best_params_dict.keys()
         }
-
+        
         X_train_new = X_train[ss_inds[sample_size_index]]
         y_train_new = y_train[ss_inds[sample_size_index]]
 
         # Repeat for number of repetitions, averaging results
         for model_name, model_best_params in best_params_dict.items():
             if models_to_run[model_name]:
+                if models_to_scale[model_name ]:
+                    scaler = StandardScaler()
+                    scaler.fit(X_train_new)
+                    X_train_new = scaler.transform(X_train_new)
+    
                 if dataset not in train_test_times[model_name].keys():
                     train_test_times[model_name][dataset] = {}
                     train_test_times[model_name][dataset] = {}

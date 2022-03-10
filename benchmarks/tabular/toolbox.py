@@ -219,6 +219,7 @@ def do_calcs_per_model(
     model = classifiers[model_name]
     varCVmodel = varCV[model_name]
     parameters = create_parameters(model_name, varargin, p)
+    start_time = time.perf_counter()
     clf = RandomizedSearchCV(
         model,
         parameters,
@@ -227,12 +228,14 @@ def do_calcs_per_model(
         verbose=varCVmodel["verbose"],scoring="accuracy"
     )
     clf.fit(X, y)
+    end_time = time.perf_counter()
     all_parameters[model_name][dataset_index][sample_size_index] = list(parameters)
     #print(clf.best_params_)
     #raise ValueError('fgf')
     best_parameters[model_name][dataset_index][sample_size_index] = clf.best_params_
     all_params[model_name][dataset_index][sample_size_index] = clf.cv_results_["params"]
-    return all_parameters, best_parameters, all_params
+    calc_time = end_time - start_time
+    return all_parameters, best_parameters, all_params, calc_time
 
 
 def load_cc18():

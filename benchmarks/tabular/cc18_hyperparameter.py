@@ -129,6 +129,10 @@ best_parameters = {
 }
 all_params = {model_name: {} for model_name, val in models_to_run.items() if val == 1}
 
+calc_times = {model_name: {dataset_index: {} for dataset_index in np.arange(dataset_indices)}
+    for metric in models_to_run.keys()
+}
+
 """
 Organize the data
 """
@@ -211,7 +215,7 @@ for dataset_index, dataset in enumerate(dataset_indices):
                         scaler.fit(X)
                         X = scaler.transform(X)
                         
-                    all_parameters, best_parameters, all_params = do_calcs_per_model(
+                    all_parameters, best_parameters, all_params,calc_time = do_calcs_per_model(
                         all_parameters,
                         best_parameters,
                         all_params,
@@ -227,6 +231,7 @@ for dataset_index, dataset in enumerate(dataset_indices):
                         varCV,
                         sample_size_index
                     )
+                    calc_times[model_name][dataset_index][sample_size_index] = calc_time
 
 save_best_parameters(save_methods, save_methods_rewrite, path_save, best_parameters)
 #save_best_parameters(save_methods, save_methods_rewrite, path_save, best_parameters)
@@ -234,5 +239,8 @@ save_best_parameters(
     save_methods, save_methods_rewrite, path_save_dict_data_indices, dict_data_indices
 )
 save_best_parameters(
-    save_methods, save_methods_rewrite, "varied_size_dict.json", ss_inds_full
+    save_methods, save_methods_rewrite, "metrics/varied_size_dict.json", ss_inds_full
+)
+save_best_parameters(
+    save_methods, save_methods_rewrite, "metrics/tuning_times.json", calc_times
 )
