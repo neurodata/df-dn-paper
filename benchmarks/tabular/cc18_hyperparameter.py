@@ -26,6 +26,7 @@ criterions = ['gini'] #['gini', 'entropy']
 max_depth = [1]#[1,3,10,None]
 bootstrap = [True]# [True, False]
 n_estimators_range  = [10,50,100,300]
+
 # GBDT
 eta =[0.1]# [0.1,0.3,0.7,0.9]
 gamma = [0]#[0,0.2]
@@ -44,6 +45,7 @@ n_shared = [1] # [1,2,5]
 n_steps = [3] #[3, 5, 8, 10]
 lambda_sparse = [0.1] #[0.1, 1e-2, 1e-3, 1e-4]
 momentum = [0.01] #[0.01, 0.02, 0.05, 0.1, 0.4]
+
 # Saving parameters
 path_save = "metrics/cc18_all_parameters"
 path_save_dict_data_indices = "metrics/dict_data_indices"
@@ -142,6 +144,7 @@ Choose dataset indices
 
 dataset_indices = list(range(dataset_indices_max))
 dict_data_indices = {dataset_ind: {} for dataset_ind in dataset_indices}
+ss_inds_full = {dataset_ind: None for dataset_ind in dataset_indices}
 
 
 """
@@ -174,40 +177,62 @@ for dataset_index, dataset in enumerate(dataset_indices):
 
 
     p = X.shape[1]
-
-    for model_name, val_run in models_to_run.items():
-        if val_run == 1:
-            if model_name not in classifiers:
-                raise ValueError(
-                    "Model name is not defined in the classifiers dictionary"
-                )
-            else:
-                if models_to_scale[model_name ]:
-                    """
-                    Standart Scaling
-                    """
-                    scaler = StandardScaler()
-                    scaler.fit(X)
-                    X = scaler.transform(X)
-                    
-                all_parameters, best_parameters, all_params = do_calcs_per_model(
-                    all_parameters,
-                    best_parameters,
-                    all_params,
-                    model_name,
-                    varargin,
-                    classifiers,
-                    X,
-                    y,
-                    dataset_index,
-                    train_indices,
-                    val_indices,
-                    p,
-                    varCV,
-                )
+    #ss_inds = random_sample_all[dataset]
+    #random_sample_new( X_train, y_train, training_sample_sizes  )
+    X_train = X[train_indices]
+    y_train = y[train_indices]
+    training_sample_sizes = np.geomspace(
+        len(np.unique(y_train)) * 5, X_train.shape[0], num=8, dtype=int
+    )
+    ss_inds = random_sample_new(
+        X_train, y_train, training_sample_sizes
+    )
+    ss_inds_full[dataset_index] = ss_inds
+      #X_train_new = X_train[ss_inds[sample_size_index]]
+        #ss_inds = random_sample_all[dataset]
+    #random_sample_new(
+    #    X_train, y_train, training_sample_sizes
+    #)
+    for sample_size_index, sample_size in enumerate(training_sample_sizes):
+        train_indices_pers = train_indices[ss_inds[sample_size_index]]
+        
+        for model_name, val_run in models_to_run.items():
+            if val_run == 1:
+                if model_name not in classifiers:
+                    raise ValueError(
+                        "Model name is not defined in the classifiers dictionary"
+                    )
+                else:
+                    if models_to_scale[model_name ]:
+                        """
+                        Standart Scaling
+                        """
+                        scaler = StandardScaler()
+                        scaler.fit(X)
+                        X = scaler.transform(X)
+                        
+                    all_parameters, best_parameters, all_params = do_calcs_per_model(
+                        all_parameters,
+                        best_parameters,
+                        all_params,
+                        model_name,
+                        varargin,
+                        classifiers,
+                        X,
+                        y,
+                        dataset_index,
+                        train_indices_pers,
+                        val_indices,
+                        p,
+                        varCV,
+                        sample_size_index
+                    )
 
 save_best_parameters(save_methods, save_methods_rewrite, path_save, best_parameters)
 #save_best_parameters(save_methods, save_methods_rewrite, path_save, best_parameters)
 save_best_parameters(
     save_methods, save_methods_rewrite, path_save_dict_data_indices, dict_data_indices
+)
+save_best_parameters(
+    save_methods, save_methods_rewrite, "varied_size_dict.json", ss_inds_full
 )

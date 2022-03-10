@@ -31,8 +31,8 @@ def random_sample_new(
     """
     ratios  = []
     [uniques, counts] = np.unique(y_train, return_counts = True)
-    print(counts)
-    print(uniques)
+    #print(counts)
+    #print(uniques)
     #print(y_train)
     for unique_num, unique_class in enumerate(uniques):
         unique_count = counts[unique_num]
@@ -211,6 +211,7 @@ def do_calcs_per_model(
     val_indices,
     p=None,
     varCV=None,
+    sample_size_index = -1
 ):
     """
     find best parameters for given sample_size, dataset_index, model_name
@@ -226,11 +227,11 @@ def do_calcs_per_model(
         verbose=varCVmodel["verbose"],scoring="accuracy"
     )
     clf.fit(X, y)
-    all_parameters[model_name][dataset_index] = list(parameters)
+    all_parameters[model_name][dataset_index][sample_size_index] = list(parameters)
     #print(clf.best_params_)
     #raise ValueError('fgf')
-    best_parameters[model_name][dataset_index] = clf.best_params_
-    all_params[model_name][dataset_index] = clf.cv_results_["params"]
+    best_parameters[model_name][dataset_index][sample_size_index] = clf.best_params_
+    all_params[model_name][dataset_index][sample_size_index] = clf.cv_results_["params"]
     return all_parameters, best_parameters, all_params
 
 
@@ -408,18 +409,18 @@ def find_indices_train_val_test(
     fractions = ratio/np.sum(ratio)
     fractions_train_val = ratio[:-1]/np.sum(ratio[:-1])
     list_indices = np.arange(len(y_data))
-    index_train_val, index_test, labels_train_val,labels_test = train_test_split(list_indices, y_data, test_size=fractions[-1], stratify=y_data)
-    index_train, index_val, labels_train,labels_test = train_test_split(index_train_val,labels_train_val , test_size=fractions_train_val[-1], stratify=labels_train_val )
+    index_train_val, index_test, labels_train_val,labels_test = train_test_split(list_indices, y_data, test_size=fractions[-1], stratify=y_data, random_state = 0)
+    index_train, index_val, labels_train,labels_test = train_test_split(index_train_val,labels_train_val , test_size=fractions_train_val[-1], stratify=labels_train_val , random_state = 0)
    
     cur_indices_list = [index_train, index_val, index_test]
     for ind_counter, key_type in enumerate(keys_types):
         dict_data_indices[dataset_ind][key_type] = np.unique(cur_indices_list[ind_counter]).tolist(); #astype(int))
     return dict_data_indices
 
-def sample_large_datasets(X_data, y_data, max_size=10000):
+def sample_large_datasets(X_data, y_data, max_size=10000,random_state= 0):
     """
     For large datasets with over 10000 samples, resample the data to only include
     10000 random samples.
     """
-    X_data, _, y_data, _ = train_test_split(X_data, y_data, train_size=max_size, stratify=y_data)
+    X_data, _, y_data, _ = train_test_split(X_data, y_data, train_size=max_size, stratify=y_data,random_state=random_state)
     return X_data, y_data
