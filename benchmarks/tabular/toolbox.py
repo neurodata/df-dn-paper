@@ -15,7 +15,7 @@ import json
 from os.path import exists
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import train_test_split
-
+import time
 
 
 def random_sample_new(
@@ -229,6 +229,18 @@ def do_calcs_per_model(
     )
     clf.fit(X, y)
     end_time = time.perf_counter()
+    print(all_parameters[model_name].keys())
+    if dataset_index not in all_parameters[model_name].keys():
+        all_parameters[model_name][dataset_index] = {}
+        best_parameters[model_name][dataset_index] = {}
+        all_params[model_name][dataset_index] = {}
+        
+    if sample_size_index not in all_parameters[model_name][dataset_index].keys():
+        all_parameters[model_name][dataset_index][sample_size_index] = {}
+        best_parameters[model_name][dataset_index][sample_size_index] = {}
+        all_params[model_name][dataset_index][sample_size_index] = {}
+        
+        
     all_parameters[model_name][dataset_index][sample_size_index] = list(parameters)
     #print(clf.best_params_)
     #raise ValueError('fgf')

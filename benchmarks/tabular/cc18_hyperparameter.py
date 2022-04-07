@@ -23,7 +23,7 @@ max_shape_to_run = 1000 #0
 # RF
 criterions = ['gini'] #['gini', 'entropy']
 #max_features = ['sqrt','log2',0.5,0.8,1]
-max_depth = [1]#[1,3,10,None]
+max_depth = [1,3,10,None]
 bootstrap = [True]# [True, False]
 n_estimators_range  = [10,50,100,300]
 
@@ -44,7 +44,7 @@ n_shared = [1] # [1,2,5]
 #n_estimators_range = [20] #[20,100,200,500]
 n_steps = [3] #[3, 5, 8, 10]
 lambda_sparse = [0.1] #[0.1, 1e-2, 1e-3, 1e-4]
-momentum = [0.01] #[0.01, 0.02, 0.05, 0.1, 0.4]
+momentum = [0.01, 0.02, 0.05, 0.1, 0.4]
 
 # Saving parameters
 path_save = "metrics/cc18_all_parameters"
@@ -129,8 +129,8 @@ best_parameters = {
 }
 all_params = {model_name: {} for model_name, val in models_to_run.items() if val == 1}
 
-calc_times = {model_name: {dataset_index: {} for dataset_index in np.arange(dataset_indices)}
-    for metric in models_to_run.keys()
+calc_times = {model_name: {dataset_index: {} for dataset_index in np.arange(dataset_indices_max)}
+    for model_name in models_to_run.keys()
 }
 
 """
@@ -198,7 +198,10 @@ for dataset_index, dataset in enumerate(dataset_indices):
     #    X_train, y_train, training_sample_sizes
     #)
     for sample_size_index, sample_size in enumerate(training_sample_sizes):
-        train_indices_pers = train_indices[ss_inds[sample_size_index]]
+        print(np.array(ss_inds[sample_size_index], dtype = int))
+        #print(train_indices)
+        train_indices = np.array(train_indices)
+        train_indices_pers = train_indices[np.array(ss_inds[sample_size_index] , dtype = int).astype(int)]
         
         for model_name, val_run in models_to_run.items():
             if val_run == 1:
