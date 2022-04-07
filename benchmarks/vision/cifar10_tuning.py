@@ -145,10 +145,10 @@ def run_dn_image_es(
     algo = AxSearch(ax_client=ax)
     # Wrap AxSearcher in a concurrently limiter, to ensure that Bayesian optimization receives the
     # data for completed trials before creating more trials
-    algo = tune.suggest.ConcurrencyLimiter(algo, max_concurrent=3)
+    algo = tune.suggest.ConcurrencyLimiter(algo, max_concurrent=1)
     tune.run(
         train_evaluate,
-        num_samples=20,
+        num_samples=10,
         metric="cohen_kappa",
         mode="max",
         search_alg=algo,
