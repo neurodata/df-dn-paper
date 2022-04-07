@@ -140,12 +140,6 @@ def run_dn_image_es(
       report(
         cohen_kappa=evaluate_net(trained_net, valid_data, valid_labels, batch, device)
     )
-
-    # best_parameters, values, experiment, model = optimize(parameters=[
-    #     {"name": "lr", "type": "range", "bounds": [1e-6, 0.4],"log_scale": True},
-    #     {"name": "momentum", "type": "range", "bounds": [0.0, 1.0]},
-    #     {"name": "epoch", "type": "range", "bounds": [15, 40]},
-    #     {"name": "optimizer", "type": "choice", "values": ["SGD", "Adam"]}], evaluation_function=train_evaluate, objective_name='cohen-kappa')
     
     ax.create_experiment(
     name="fsdk18_experiment",
@@ -158,7 +152,6 @@ def run_dn_image_es(
     minimize=False)
     
     asha_scheduler = ASHAScheduler(
-    # time_attr='training_iteration',
     max_t=30,
     grace_period=5,
     reduction_factor=2)
@@ -178,10 +171,6 @@ def run_dn_image_es(
     )
 
     best_parameters, values = ax.get_best_parameters()
-
-    # render(plot_contour(model=model, param_x='lr', param_y='momentum', metric_name='cohen-kappa'))
-    # render(plot_contour(model=model, param_x='lr', param_y='epoch', metric_name='cohen-kappa'))
-    # render(plot_contour(model=model, param_x='momentum', param_y='epoch', metric_name='cohen-kappa'))
 
     data = ax.experiment.fetch_data()
     df = data.df
