@@ -115,7 +115,7 @@ def run_dn_image_es(
     #training_net(model, parameters, train_data, train_labels, valid_data, valid_labels, parameters, device)
 
     # train_evaluate()
-    batch = 60
+    batch = 30
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     ax = AxClient(enforce_sequential_optimization=False)
 
