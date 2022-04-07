@@ -434,7 +434,6 @@ def run_resnet18():
 
 
 if __name__ == "__main__":
-    torch.multiprocessing.freeze_support()
 
     # Example usage: python cifar_10.py -m 3
     parser = argparse.ArgumentParser()
