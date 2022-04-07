@@ -153,7 +153,8 @@ def run_dn_image_es(
         mode="max",
         search_alg=algo,
         verbose=0,  # Set this level to 1 to see status updates and to 2 to also see trial results.
-        scheduler=asha_scheduler# To use GPU, specify: resources_per_trial={"gpu": 1}.
+        scheduler=asha_scheduler, # To use GPU, specify: 
+        resources_per_trial={"gpu": 1, "cpu": 4}
     )
 
     best_parameters, values = ax.get_best_parameters()
