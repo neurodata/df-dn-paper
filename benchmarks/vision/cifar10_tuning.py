@@ -147,7 +147,7 @@ def run_dn_image_es(
     algo = tune.suggest.ConcurrencyLimiter(algo, max_concurrent=1)
     tune.run(
         tune.with_parameters(train_evaluate),
-        num_samples=5,
+        num_samples=3,
         metric="cohen_kappa",
         mode="max",
         search_alg=algo,
@@ -225,7 +225,7 @@ def run_cnn32():
                 cifar_trainset,
                 cifar_testset,
                 samples,
-                batch = 5
+                batch = 3
             )
             arm, best_obj = run_dn_image_es(
                                             cnn32,
@@ -244,12 +244,12 @@ def run_cnn32():
                                     ])
             combined_train_valid_loader = torch.utils.data.DataLoader(
                 combined_train_valid_set, 
-                batch_size=60, 
+                batch_size=4, 
                 shuffle=True,
 )
             model_retrain_aftertune = training_net(cnn32, arm.parameters, combined_train_valid_loader, device=device)
 
-            test_accuracy = evaluate_net(model_retrain_aftertune, test_loader, 60, dev=device)
+            test_accuracy = evaluate_net(model_retrain_aftertune, test_loader, 4, dev=device)
 
     print("cnn32 finished")
     print(test_accuracy)
