@@ -490,7 +490,7 @@ def create_loaders_es(
 
     train_sampler = torch.utils.data.sampler.SubsetRandomSampler(train_idxs)
     train_loader = torch.utils.data.DataLoader(
-        trainset, batch_size=batch, num_workers=4, sampler=train_sampler, drop_last=True
+        trainset, batch_size=batch, num_workers=0, sampler=train_sampler, drop_last=True,pin_memory=True
     )
 
     # get indicies of classes we want
@@ -517,9 +517,10 @@ def create_loaders_es(
         testset,
         batch_size=batch,
         shuffle=False,
-        num_workers=4,
+        num_workers=0,
         sampler=test_sampler,
         drop_last=True,
+        pin_memory=True,
     )
 
     valid_sampler = torch.utils.data.sampler.SubsetRandomSampler(validation_idxs)
@@ -527,9 +528,10 @@ def create_loaders_es(
         testset,
         batch_size=batch,
         shuffle=False,
-        num_workers=4,
+        num_workers=0,
         sampler=valid_sampler,
         drop_last=True,
+        pin_memory=True,
     )
 
     return train_loader, valid_loader, test_loader
