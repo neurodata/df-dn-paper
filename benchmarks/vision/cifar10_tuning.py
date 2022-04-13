@@ -31,7 +31,7 @@ logger.setLevel(
 
 warnings.filterwarnings("ignore")
 
-def init_net(parameterization, model, classes):
+def init_net(model):
   net = model
   return net # return untrained model
 
@@ -42,7 +42,6 @@ def training_net(model, parameters, train_loader, device):
     dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(dev)
     epochs = parameters.get("epoch", 30)
-    batch = 5
     # loss and optimizer
     criterion = nn.CrossEntropyLoss()
 
@@ -51,7 +50,7 @@ def training_net(model, parameters, train_loader, device):
     if parameters.get("optimizer", "Adam"):
         optimizer = optim.Adam(model.parameters(), lr=parameters.get("lr", 0.001))
 
-    while True:  # loop over the dataset multiple times
+    for _ in range(epochs):  # loop over the dataset multiple times
         for i, data in enumerate(train_loader, 0):
             # get the inputs
             inputs, labels = data
