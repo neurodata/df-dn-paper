@@ -42,7 +42,7 @@ def training_net(model, parameters, train_loader, device):
     dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(dev)
     epochs = parameters.get("epoch", 30)
-    batch = 60
+    batch = 5
     # loss and optimizer
     criterion = nn.CrossEntropyLoss()
 
@@ -115,7 +115,7 @@ def run_dn_image_es(
     #training_net(model, parameters, train_data, train_labels, valid_data, valid_labels, parameters, device)
 
     # train_evaluate()
-    batch = 30
+    batch = 5
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     ax = AxClient(enforce_sequential_optimization=False)
 
@@ -148,7 +148,7 @@ def run_dn_image_es(
     algo = tune.suggest.ConcurrencyLimiter(algo, max_concurrent=1)
     tune.run(
         train_evaluate,
-        num_samples=10,
+        num_samples=5,
         metric="cohen_kappa",
         mode="max",
         search_alg=algo,
