@@ -115,7 +115,6 @@ def run_dn_image_es(
     #training_net(model, parameters, train_data, train_labels, valid_data, valid_labels, parameters, device)
 
     # train_evaluate()
-    batch = 5
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     ax = AxClient(enforce_sequential_optimization=False)
 
@@ -124,7 +123,7 @@ def run_dn_image_es(
       untrained_net = init_net(parameterization, model, classes)
       trained_net = training_net(untrained_net, parameterization, train_loader, device)
       report(
-        cohen_kappa=evaluate_net(trained_net, valid_loader, batch, device)
+        cohen_kappa=evaluate_net(trained_net, valid_loader, device)
     )
     
     ax.create_experiment(
@@ -153,8 +152,8 @@ def run_dn_image_es(
         mode="max",
         search_alg=algo,
         verbose=0,  # Set this level to 1 to see status updates and to 2 to also see trial results.
-        scheduler=asha_scheduler, # To use GPU, specify: 
-        resources_per_trial={"gpu": 1, "cpu": 4}
+        scheduler=asha_scheduler # To use GPU, specify: 
+        #resources_per_trial={"gpu": 1, "cpu": 4}
     )
 
     best_parameters, values = ax.get_best_parameters()
@@ -226,6 +225,7 @@ def run_cnn32():
                 cifar_trainset,
                 cifar_testset,
                 samples,
+                batch = 5
             )
             arm, best_obj = run_dn_image_es(
                                             cnn32,
