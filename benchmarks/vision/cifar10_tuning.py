@@ -146,7 +146,7 @@ def run_dn_image_es(
     # data for completed trials before creating more trials
     algo = tune.suggest.ConcurrencyLimiter(algo, max_concurrent=1)
     tune.run(
-        train_evaluate,
+        tune.with_parameters(train_evaluate),
         num_samples=5,
         metric="cohen_kappa",
         mode="max",
