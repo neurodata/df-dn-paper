@@ -25,6 +25,7 @@ from ray import tune
 from ray.tune import report
 from ray.tune.suggest.ax import AxSearch
 from ray.tune.schedulers import ASHAScheduler
+
 logger = logging.getLogger(tune.__name__)
 logger.setLevel(
     level=logging.CRITICAL
@@ -32,14 +33,15 @@ logger.setLevel(
 
 warnings.filterwarnings("ignore")
 
+
 def init_net(model):
-  net = model
-  return net # return untrained model
+    net = model
+    return net  # return untrained model
 
 
 # Add parameters
-def training_net(model, parameters, train_loader, device):
-  # Training loop copied over from run_dn_image_es()
+def training_net(model, parameters, train_loader):
+    # Training loop copied over from run_dn_image_es()
     dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(dev)
     epochs = parameters.get("epoch", 30)
@@ -47,7 +49,11 @@ def training_net(model, parameters, train_loader, device):
     criterion = nn.CrossEntropyLoss()
 
     if parameters.get("optimizer", "SGD"):
-        optimizer = optim.SGD(model.parameters(), lr=parameters.get("lr", 0.001), momentum=parameters.get("momentum", 0.9))
+        optimizer = optim.SGD(
+            model.parameters(),
+            lr=parameters.get("lr", 0.001),
+            momentum=parameters.get("momentum", 0.9),
+        )
     if parameters.get("optimizer", "Adam"):
         optimizer = optim.Adam(model.parameters(), lr=parameters.get("lr", 0.001))
 
@@ -65,7 +71,7 @@ def training_net(model, parameters, train_loader, device):
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
-        return model    
+        return model
 
 
 # Add parameters
@@ -94,78 +100,79 @@ def evaluate_net(model, test_loader, dev):
             else:
                 test_probs = np.concatenate((test_probs, test_prob.tolist()))
 
+    return accuracy_score(test_preds, test_labels)
+
+
+def evaluate_net_final(model, test_loader, dev):
+    # Function that evaluates the model and return the desired metric to optimize. Copied over from run_dn_image_es()
+    model.eval()
+    start_time = time.perf_counter()
+    first = True
+    prob_cal = nn.Softmax(dim=1)
+    test_preds = []
+    test_labels = []
+    with torch.no_grad():
+        for data in test_loader:
+            images, labels = data
+            images = images.clone().detach().to(dev)
+            labels = labels.clone().detach().to(dev)
+            test_labels = np.concatenate((test_labels, labels.tolist()))
+
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            test_preds = np.concatenate((test_preds, predicted.tolist()))
+
+            test_prob = prob_cal(outputs)
+            if first:
+                test_probs = test_prob.tolist()
+                first = False
+            else:
+                test_probs = np.concatenate((test_probs, test_prob.tolist()))
+    end_time = time.perf_counter()
+    test_time = end_time - start_time
     return (
-        accuracy_score(test_preds, test_labels)
+        cohen_kappa_score(test_preds, test_labels),
+        get_ece(test_probs, test_preds, test_labels),
+        test_time,
     )
 
-def run_dn_image_es(
-    model,
-    train_loader,
-    valid_loader,
-    test_loader,
-    classes
-):
+
+def run_dn_image_es(model, train_loader, valid_loader):
     """
     Peforms multiclass predictions for a deep network classifier with set number
     of samples and early stopping
     """
-    
-    #init_net(parameters, classes)
-
-    #training_net(model, parameters, train_data, train_labels, valid_data, valid_labels, parameters, device)
-
-    # train_evaluate()
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    ax = AxClient(enforce_sequential_optimization=False)
+    # ax = AxClient(enforce_sequential_optimization=False)
 
     def train_evaluate(parameterization):
-    # Ax primitive that initializes the training sequence --> Trains the model --> Calculates the evaluation metric
-      untrained_net = init_net(parameterization, model, classes)
-      trained_net = training_net(untrained_net, parameterization, train_loader, device)
-      report(
-        cohen_kappa=evaluate_net(trained_net, valid_loader, device)
-    )
-    
-    ax.create_experiment(
-    name="cifar10_experiment",
-    parameters=[
-        {"name": "lr", "type": "range", "bounds": [1e-6, 0.4],"log_scale": True},
-        {"name": "momentum", "type": "range", "bounds": [0.0, 1.0]},
-        {"name": "epoch", "type": "range", "bounds": [15, 40]},
-        {"name": "optimizer", "type": "choice", "values": ["SGD", "Adam"]}],
-    objective_name="cohen_kappa",
-    minimize=False)
-    
-    asha_scheduler = ASHAScheduler(
-    max_t=30,
-    grace_period=5,
-    reduction_factor=2)
+        # Ax primitive that initializes the training sequence --> Trains the model --> Calculates the evaluation metric
+        untrained_net = init_net(model)
+        trained_net = training_net(untrained_net, parameterization, train_loader)
+        return evaluate_net(model, valid_loader, device)
 
-    algo = AxSearch(ax_client=ax)
-    # Wrap AxSearcher in a concurrently limiter, to ensure that Bayesian optimization receives the
-    # data for completed trials before creating more trials
-    algo = tune.suggest.ConcurrencyLimiter(algo, max_concurrent=1)
-    tune.run(
-        tune.with_parameters(train_evaluate),
-        num_samples=3,
-        metric="cohen_kappa",
-        mode="max",
-        search_alg=algo,
-        verbose=0,  # Set this level to 1 to see status updates and to 2 to also see trial results.
-        scheduler=asha_scheduler # To use GPU, specify: 
-        #resources_per_trial={"gpu": 1, "cpu": 4}
+    best_parameters, values, experiment, model = optimize(
+        parameters=[
+            {"name": "lr", "type": "range", "bounds": [1e-6, 0.4], "log_scale": True},
+            {"name": "momentum", "type": "range", "bounds": [0.0, 1.0]},
+            {"name": "epoch", "type": "range", "bounds": [15, 40]},
+            {"name": "optimizer", "type": "choice", "values": ["SGD", "Adam"]},
+        ],
+        evaluation_function=train_evaluate,
+        objective_name="accuracy",
     )
 
-    best_parameters, values = ax.get_best_parameters()
-
-    data = ax.experiment.fetch_data()
+    data = experiment.fetch_data()
     df = data.df
-    best_arm_name = df.arm_name[df['mean'] == df['mean'].max()].values[0]
-    best_arm = ax.experiment.arms_by_name[best_arm_name]
+    best_arm_name = df.arm_name[df["mean"] == df["mean"].max()].values[0]
+    best_arm = experiment.arms_by_name[best_arm_name]
 
-    best_objectives = np.array([[trial.objective_mean*100 for trial in ax.experiment.trials.values()]])
-    
+    best_objectives = np.array(
+        [[trial.objective_mean * 100 for trial in experiment.trials.values()]]
+    )
+
     return best_arm, best_objectives
+
 
 def run_naive_rf():
     naive_rf_kappa = []
@@ -199,6 +206,10 @@ def run_naive_rf():
 
 
 def run_cnn32():
+    cnn32_kappa = []
+    cnn32_ece = []
+    cnn32_train_time = []
+    cnn32_test_time = []
     best_objs = []
     best_params = []
     for classes in classes_space:
@@ -225,39 +236,52 @@ def run_cnn32():
                 cifar_trainset,
                 cifar_testset,
                 samples,
-                batch = 3
             )
-            arm, best_obj = run_dn_image_es(
-                                            cnn32,
-                                            train_loader,
-                                            valid_loader,
-                                            test_loader,
-                                            classes
-                                        )
-            
+            start_time = time.perf_counter()
+            arm, best_obj = run_dn_image_es(cnn32, train_loader, valid_loader)
+            end_time = time.perf_counter()
+            train_time = end_time - start_time
+
             best_objs.append(best_obj)
             best_params.append(arm)
 
-            combined_train_valid_set = torch.utils.data.ConcatDataset([
-                                        train_loader.dataset.dataset, 
-                                        valid_loader.dataset.dataset,
-                                    ])
+            combined_train_valid_set = torch.utils.data.ConcatDataset(
+                [
+                    train_loader.dataset,
+                    valid_loader.dataset,
+                ]
+            )
             combined_train_valid_loader = torch.utils.data.DataLoader(
-                combined_train_valid_set, 
-                batch_size=4, 
+                combined_train_valid_set,
+                batch_size=40,
                 shuffle=True,
-)
-            model_retrain_aftertune = training_net(cnn32, arm.parameters, combined_train_valid_loader, device=device)
+            )
+            model_retrain_aftertune = training_net(
+                cnn32, arm.parameters, combined_train_valid_loader
+            )
 
-            test_accuracy = evaluate_net(model_retrain_aftertune, test_loader, 4, dev=device)
+            final_ck, final_ece, test_time = evaluate_net_final(
+                model_retrain_aftertune, test_loader, dev=device
+            )
+
+    cnn32_kappa.append(final_ck)
+    cnn32_ece.append(final_ece)
+    cnn32_train_time.append(train_time)
+    cnn32_test_time.append(test_time)
 
     print("cnn32 finished")
-    print(test_accuracy)
-    print(best_params)
-    return best_params, best_objs, test_accuracy
+    write_result("cnn32_bestparams.txt", best_params)
+    write_result("cnn32_kappa.txt", cnn32_kappa)
+    write_result("cnn32_ece.txt", cnn32_ece)
+    write_result("cnn32_train_time.txt", cnn32_train_time)
+    write_result("cnn32_test_time.txt", cnn32_test_time)
 
 
 def run_cnn32_2l():
+    cnn32_2l_kappa = []
+    cnn32_2l_ece = []
+    cnn32_2l_train_time = []
+    cnn32_2l_test_time = []
     best_objs = []
     best_params = []
     for classes in classes_space:
@@ -285,37 +309,51 @@ def run_cnn32_2l():
                 cifar_testset,
                 samples,
             )
-            arm, best_obj = run_dn_image_es(
-                                            cnn32_2l,
-                                            train_loader,
-                                            valid_loader,
-                                            test_loader,
-                                            classes
-                                        )
-            
+            start_time = time.perf_counter()
+            arm, best_obj = run_dn_image_es(cnn32_2l, train_loader, valid_loader)
+            end_time = time.perf_counter()
+            train_time = end_time - start_time
+
             best_objs.append(best_obj)
             best_params.append(arm)
 
-            combined_train_valid_set = torch.utils.data.ConcatDataset([
-                                        train_loader.dataset.dataset, 
-                                        valid_loader.dataset.dataset,
-                                    ])
+            combined_train_valid_set = torch.utils.data.ConcatDataset(
+                [
+                    train_loader.dataset,
+                    valid_loader.dataset,
+                ]
+            )
             combined_train_valid_loader = torch.utils.data.DataLoader(
-                combined_train_valid_set, 
-                batch_size=60, 
+                combined_train_valid_set,
+                batch_size=40,
                 shuffle=True,
-)
-            model_retrain_aftertune = training_net(cnn32_2l, arm.parameters, combined_train_valid_loader, device=device)
+            )
+            model_retrain_aftertune = training_net(
+                cnn32_2l, arm.parameters, combined_train_valid_loader
+            )
 
-            test_accuracy = evaluate_net(model_retrain_aftertune, test_loader, 60, dev=device)
+            final_ck, final_ece, test_time = evaluate_net_final(
+                model_retrain_aftertune, test_loader, dev=device
+            )
+
+    cnn32_2l_kappa.append(final_ck)
+    cnn32_2l_ece.append(final_ece)
+    cnn32_2l_train_time.append(train_time)
+    cnn32_2l_test_time.append(test_time)
 
     print("cnn32_2l finished")
-    print(test_accuracy)
-    print(best_params)
-    return best_params, best_objs, test_accuracy
+    write_result("cnn32_2l_bestparams.txt", best_params)
+    write_result("cnn32_2l_kappa.txt", cnn32_2l_kappa)
+    write_result("cnn32_2l_ece.txt", cnn32_2l_ece)
+    write_result("cnn32_2l_train_time.txt", cnn32_2l_train_time)
+    write_result("cnn32_2l_test_time.txt", cnn32_2l_test_time)
 
 
 def run_cnn32_5l():
+    cnn32_5l_kappa = []
+    cnn32_5l_ece = []
+    cnn32_5l_train_time = []
+    cnn32_5l_test_time = []
     best_objs = []
     best_params = []
     for classes in classes_space:
@@ -343,37 +381,51 @@ def run_cnn32_5l():
                 cifar_testset,
                 samples,
             )
-            arm, best_obj = run_dn_image_es(
-                                            cnn32_5l,
-                                            train_loader,
-                                            valid_loader,
-                                            test_loader,
-                                            classes
-                                        )
-            
+            start_time = time.perf_counter()
+            arm, best_obj = run_dn_image_es(cnn32_5l, train_loader, valid_loader)
+            end_time = time.perf_counter()
+            train_time = end_time - start_time
+
             best_objs.append(best_obj)
             best_params.append(arm)
 
-            combined_train_valid_set = torch.utils.data.ConcatDataset([
-                                        train_loader.dataset.dataset, 
-                                        valid_loader.dataset.dataset,
-                                    ])
+            combined_train_valid_set = torch.utils.data.ConcatDataset(
+                [
+                    train_loader.dataset,
+                    valid_loader.dataset,
+                ]
+            )
             combined_train_valid_loader = torch.utils.data.DataLoader(
-                combined_train_valid_set, 
-                batch_size=60, 
+                combined_train_valid_set,
+                batch_size=40,
                 shuffle=True,
-)
-            model_retrain_aftertune = training_net(cnn32_5l, arm.parameters, combined_train_valid_loader, device=device)
+            )
+            model_retrain_aftertune = training_net(
+                cnn32_5l, arm.parameters, combined_train_valid_loader
+            )
 
-            test_accuracy = evaluate_net(model_retrain_aftertune, test_loader, 60, dev=device)
+            final_ck, final_ece, test_time = evaluate_net_final(
+                model_retrain_aftertune, test_loader, dev=device
+            )
+
+    cnn32_5l_kappa.append(final_ck)
+    cnn32_5l_ece.append(final_ece)
+    cnn32_5l_train_time.append(train_time)
+    cnn32_5l_test_time.append(test_time)
 
     print("cnn32_5l finished")
-    print(test_accuracy)
-    print(best_params)
-    return best_params, best_objs, test_accuracy
+    write_result("cnn32_5l_bestparams.txt", best_params)
+    write_result("cnn32_5l_kappa.txt", cnn32_5l_kappa)
+    write_result("cnn32_5l_ece.txt", cnn32_5l_ece)
+    write_result("cnn32_5l_train_time.txt", cnn32_5l_train_time)
+    write_result("cnn32_5l_test_time.txt", cnn32_5l_test_time)
 
 
 def run_resnet18():
+    resnet18_kappa = []
+    resnet18_ece = []
+    resnet18_train_time = []
+    resnet18_test_time = []
     best_objs = []
     best_params = []
     for classes in classes_space:
@@ -403,35 +455,44 @@ def run_resnet18():
                 cifar_testset,
                 samples,
             )
-            arm, best_obj = run_dn_image_es(
-                                            res,
-                                            train_loader,
-                                            valid_loader,
-                                            test_loader,
-                                            classes
-                                        )
+            start_time = time.perf_counter()
+            arm, best_obj = run_dn_image_es(res, train_loader, valid_loader)
+            end_time = time.perf_counter()
+            train_time = end_time - start_time
+
             best_objs.append(best_obj)
             best_params.append(arm)
 
-            combined_train_valid_set = torch.utils.data.ConcatDataset([
-                                        train_loader.dataset.dataset, 
-                                        valid_loader.dataset.dataset,
-                                    ])
+            combined_train_valid_set = torch.utils.data.ConcatDataset(
+                [
+                    train_loader.dataset,
+                    valid_loader.dataset,
+                ]
+            )
             combined_train_valid_loader = torch.utils.data.DataLoader(
-                combined_train_valid_set, 
-                batch_size=60, 
+                combined_train_valid_set,
+                batch_size=40,
                 shuffle=True,
-)
-            model_retrain_aftertune = training_net(res, arm.parameters, combined_train_valid_loader, device=device)
+            )
+            model_retrain_aftertune = training_net(
+                res, arm.parameters, combined_train_valid_loader
+            )
 
-            resnet.eval()
-            with torch.no_grad():
-              test_accuracy = evaluate_net(model_retrain_aftertune, test_loader, 60, dev=device)
+            final_ck, final_ece, test_time = evaluate_net_final(
+                model_retrain_aftertune, test_loader, dev=device
+            )
 
+    resnet18_kappa.append(final_ck)
+    resnet18_ece.append(final_ece)
+    resnet18_train_time.append(train_time)
+    resnet18_test_time.append(test_time)
 
     print("resnet18 finished")
-    print(test_accuracy)
-    return best_params, best_objs, test_accuracy
+    write_result("resnet18_bestparams.txt", best_params)
+    write_result("resnet18_kappa.txt", resnet18_kappa)
+    write_result("resnet18_ece.txt", resnet18_ece)
+    write_result("resnet18_train_time.txt", resnet18_train_time)
+    write_result("resnet18_test_time.txt", resnet18_test_time)
 
 
 if __name__ == "__main__":
@@ -469,21 +530,21 @@ if __name__ == "__main__":
     cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
     cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
 
-    #run_naive_rf()
+    # run_naive_rf()
 
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
 
     run_cnn32()
-    # run_cnn32_2l()
-    # run_cnn32_5l()
+    run_cnn32_2l()
+    run_cnn32_5l()
 
-    # data_transforms = transforms.Compose(
-    #     [
-    #         transforms.ToTensor(),
-    #         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-    #     ]
-    # )
+    data_transforms = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ]
+    )
 
-    # run_resnet18()
+    run_resnet18()
