@@ -47,8 +47,8 @@ def random_sample_new(
             num_from_class = np.round(ratios[class_num]*samp_size)
             indices_class = np.argwhere(np.array(y_train) == class_spec).T[0]
             indices_to_add = np.random.choice(indices_class, int(num_from_class))
-            cur_indices.extend(indices_to_add)
-        final_inds.append(cur_indices)
+            cur_indices.extend(indices_to_add.astype(int))
+        final_inds.append(np.array(cur_indices).astype(float).tolist())
             
 
     return final_inds
@@ -141,19 +141,23 @@ def save_best_parameters(
     """
     Save Hyperparameters
     """
-    if exists(path_save + ".json") and save_methods_rewrite["json"] == 0:
+    if not path_save.endswith('.json'):
+        path_save = path_save+'.json'
+    if exists(path_save ) and save_methods_rewrite["json"] == 0:
         with open(path_save + ".json", "r") as json_file:
             dictionary = json.load(json_file)
         best_parameters_to_save = {**dictionary, **best_parameters}
     else:
         best_parameters_to_save = best_parameters
     #if not non_json:           
-    with open(path_save + ".json", "w") as fp:
+    with open(path_save , "w") as fp:
         json.dump(best_parameters_to_save, fp)
     #else:
     #    np.save(path_save + '.npy', best_parameters_to_save)
 
-
+def convert(o):
+    if isinstance(o, numpy.int64): return int(o)  
+    raise TypeError
 def open_data(path, format_file):
     """
     Open existing data
@@ -331,22 +335,22 @@ def save_vars_to_dict(
         json.dump(dict_to_save, fp)
 
 
-def model_define(model_name, best_params_dict, dataset):
+def model_define(model_name, best_params_dict, dataset, sample_size_ind):
     """ """
     if model_name == "RF":
         #display(best_params_dict[model_name])
         
-        display(best_params_dict[model_name][str(dataset)])
+        #display(best_params_dict[model_name][str(dataset)][int( sample_size_ind)])
         model = RandomForestClassifier(
-            **best_params_dict[model_name][str(dataset)],  n_jobs=-1
+            **best_params_dict[model_name][str(dataset)][str( sample_size_ind)],  n_jobs=-1
         )
     elif model_name == "DN":
-        model = TabNetClassifier(**best_params_dict[model_name][str(dataset)])
+        model = TabNetClassifier(**best_params_dict[model_name][str(dataset)][str( sample_size_ind)])
     elif model_name == "GBDT":
         model = xgb.XGBClassifier(
             booster="gbtree",
             base_score=0.5,
-            **best_params_dict[model_name][str(dataset)],
+            **best_params_dict[model_name][str(dataset)][str( sample_size_ind)],
             n_estimators=500
         )
     else:

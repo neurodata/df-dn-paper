@@ -17,24 +17,24 @@ return_default = False
 #hyperparameters options
 
 # general
-dataset_indices_max = 40 #72
+dataset_indices_max = 5#40 #72
 max_shape_to_run = 1000 #0
 
 # RF
-criterions = ['gini'] #['gini', 'entropy']
+criterions = ['gini', 'entropy']# ['gini'] #
 #max_features = ['sqrt','log2',0.5,0.8,1]
 max_depth = [1,3,10,None]
 bootstrap = [True]# [True, False]
 n_estimators_range  = [10,50,100,300]
 
 # GBDT
-eta =[0.1]# [0.1,0.3,0.7,0.9]
-gamma = [0]#[0,0.2]
-subsample = [0.5]# [0.5,0.7,1]
+eta = [0.1,0.3] #,0.7,0.9] #[0.1]# [0.1,0.3,0.7,0.9]
+gamma = [0,0.2]# [0]#[0,0.2]
+subsample = [0.5,0.7,1]#[0.5]# [0.5,0.7,1]
 sampling_method = ['uniform'] # ['uniform','gradient_based']
 colsample_bynode = [0.5] #[0.5,1]
 lambda_vals = [0.2] #[0.2,0.6,1]
-alpha_vals  = [0.2] #[0.2,0.6,1]
+alpha_vals  =[0.2,0.6]## [0.2] #[0.2,0.6,1]
 
 # TabNet
 n_d = [8] # [8,20, 64]
@@ -44,7 +44,7 @@ n_shared = [1] # [1,2,5]
 #n_estimators_range = [20] #[20,100,200,500]
 n_steps = [3] #[3, 5, 8, 10]
 lambda_sparse = [0.1] #[0.1, 1e-2, 1e-3, 1e-4]
-momentum = [0.01, 0.02, 0.05, 0.1, 0.4]
+momentum = [0.01, 0.02]#, 0.05, 0.1, 0.4]
 
 # Saving parameters
 path_save = "metrics/cc18_all_parameters"
@@ -129,7 +129,10 @@ best_parameters = {
 }
 all_params = {model_name: {} for model_name, val in models_to_run.items() if val == 1}
 
-calc_times = {model_name: {dataset_index: {} for dataset_index in np.arange(dataset_indices_max)}
+#calc_times = {model_name: {}    for model_name in models_to_run.keys()
+#}
+
+calc_times = {model_name: {int(dataset_index): {} for dataset_index in np.arange(dataset_indices_max)}
     for model_name in models_to_run.keys()
 }
 
@@ -148,7 +151,8 @@ Choose dataset indices
 
 dataset_indices = list(range(dataset_indices_max))
 dict_data_indices = {dataset_ind: {} for dataset_ind in dataset_indices}
-ss_inds_full = {dataset_ind: None for dataset_ind in dataset_indices}
+# ss_inds_full is a dictionary of the indices taken for different datasets
+ss_inds_full = {} #{dataset_ind: None for dataset_ind in dataset_indices}
 
 
 """
@@ -234,16 +238,16 @@ for dataset_index, dataset in enumerate(dataset_indices):
                         varCV,
                         sample_size_index
                     )
-                    calc_times[model_name][dataset_index][sample_size_index] = calc_time
+                    calc_times[model_name][int(dataset_index)][int(sample_size_index)] = calc_time
 
-save_best_parameters(save_methods, save_methods_rewrite, path_save, best_parameters)
-#save_best_parameters(save_methods, save_methods_rewrite, path_save, best_parameters)
-save_best_parameters(
-    save_methods, save_methods_rewrite, path_save_dict_data_indices, dict_data_indices
-)
-save_best_parameters(
-    save_methods, save_methods_rewrite, "metrics/varied_size_dict.json", ss_inds_full
-)
-save_best_parameters(
-    save_methods, save_methods_rewrite, "metrics/tuning_times.json", calc_times
-)
+    save_best_parameters(save_methods, save_methods_rewrite, path_save, best_parameters)
+    #save_best_parameters(save_methods, save_methods_rewrite, path_save, best_parameters)
+    save_best_parameters(
+        save_methods, save_methods_rewrite, path_save_dict_data_indices, dict_data_indices
+    )
+    save_best_parameters(
+        save_methods, save_methods_rewrite, "metrics/varied_size_dict.json", ss_inds_full
+    )
+    save_best_parameters(
+        save_methods, save_methods_rewrite, "metrics/tuning_times.json", calc_times
+    )

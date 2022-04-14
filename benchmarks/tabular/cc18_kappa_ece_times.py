@@ -29,8 +29,8 @@ dictionary_params = json.load(f)
 f2 = open(path_train_val_test_indices + ".json")
 dict_data_indices = json.load(f2)
 
-f3 = open("metrics/varied_size_dict.json") #varied size are final indices for each model. it is dict -> dataset -> index sampline -> list
-ss_inds_full = json.load(f3)
+#f3 = open("metrics/varied_size_dict.json") #varied size are final indices for each model. it is dict -> dataset -> index sampline -> list
+#ss_inds_full = json.load(f3)
 
 models_to_scale = {
     "RF": 0,
@@ -121,7 +121,7 @@ for dataset_index, dataset in enumerate(train_indices):
     if X.shape[0] > max_shape_to_run:
         X, y = sample_large_datasets(X, y, max_shape_to_run)
         
-    train_indices = dict_data_indices[str(dataset_index)][training_samp_ind]["train"]
+    train_indices = dict_data_indices[str(dataset_index)]["train"]
     test_indices = dict_data_indices[str(dataset_index)]["test"]
 
 
@@ -146,8 +146,8 @@ for dataset_index, dataset in enumerate(train_indices):
             model_name: np.zeros((reps)) for model_name in best_params_dict.keys()
         }
         
-        X_train_new = X_train[ss_inds[sample_size_index]]
-        y_train_new = y_train[ss_inds[sample_size_index]]
+        X_train_new = X_train[np.array(ss_inds[sample_size_index]).astype(int)]
+        y_train_new = y_train[np.array(ss_inds[sample_size_index]).astype(int)]
 
         # Repeat for number of repetitions, averaging results
         for model_name, model_best_params in best_params_dict.items():
@@ -162,7 +162,7 @@ for dataset_index, dataset in enumerate(train_indices):
                     train_test_times[model_name][dataset] = {}
 
                 try:
-                    model = model_define(model_name, best_params_dict, dataset_index)
+                    model = model_define(model_name, best_params_dict, dataset_index, sample_size_index)
 
                     start_time = time.perf_counter()
                     model.fit(X_train_new, y_train_new)
