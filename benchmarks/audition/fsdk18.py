@@ -271,7 +271,9 @@ if __name__ == "__main__":
     n_classes = int(args.m)
     feature_type = str(args.f)
 
-    path_recordings, labels_chosen, get_labels = preprocessdataset(str(args.data),str(args.labels) )
+    path_recordings, labels_chosen, get_labels = preprocessdataset(
+        str(args.data), str(args.labels)
+    )
 
     # data is normalized upon loading
     # load dataset
@@ -280,7 +282,7 @@ if __name__ == "__main__":
     )
     nums = list(range(18))
     # Choose samples space in ratio of 2:1:1 based on class size
-    samples_space = np.geomspace(10, 150*(n_classes), num=6, dtype=int)
+    samples_space = np.geomspace(10, 150 * (n_classes), num=6, dtype=int)
     # define path, samples space and number of class combinations
     if feature_type == "melspectrogram":
         prefix = args.m + "_class_mel/"

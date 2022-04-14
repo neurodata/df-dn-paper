@@ -46,10 +46,13 @@ class FSDKaggle18Dataset(Dataset):
         self.annotations = pd.read_csv(annotations_file)
         self.audio_dir = audio_dir
 
-        
         # select subset of data that only contains 300 samples per class
-        labels_chosen = annotations_file[annotations_file["label"].map(annotations_file["label"].value_counts() == 300)]
-        
+        labels_chosen = annotations_file[
+            annotations_file["label"].map(
+                annotations_file["label"].value_counts() == 300
+            )
+        ]
+
         training_files = []
         for file in os.listdir(self.audio_dir):
             for x in labels_chosen.fname.to_list():
