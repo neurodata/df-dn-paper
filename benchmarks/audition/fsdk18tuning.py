@@ -5,10 +5,12 @@ Coauthors: Haoyin Xu
            Adway Kanhere
 """
 from toolbox import *
+from fsdk18preprocess import *
 import argparse
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import scale
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import torchvision.models as models
@@ -32,24 +34,14 @@ logger.setLevel(
 
 warnings.filterwarnings("ignore")
 
-def init_net(parameterization, model, classes):
+# Ax function to initialize the model
+def init_net(model):
   net = model
-
-  # Add required CNN model here
-  # resnet = models.resnet18(pretrained=True)
-
-  # # The depth of unfreezing is also a hyperparameter
-  # for param in resnet.parameters():
-  #     param.requires_grad = False # Freeze feature extractor
-  
-  # num_ftrs = resnet.fc.in_features
-                                    
-  # resnet.fc = nn.Linear(num_ftrs, 3)
   return net # return untrained model
 
 
 # Add parameters
-def training_net(model, parameters, train_data, train_labels, device):
+def training_net(model, parameters, train_data, train_labels):
   # Training loop copied over from run_dn_image_es()
   dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
   model.to(dev)
@@ -106,7 +98,39 @@ def evaluate_net(model, given_data, given_labels, batch, dev):
 
   test_labels = np.array(given_labels.tolist())
   return (
-      cohen_kappa_score(test_preds, test_labels)
+      accuracy_score(test_preds, test_labels)
+  )
+
+def evaluate_net_final(model, given_data, given_labels, batch, dev):
+  
+  # Function that evaluates the cohen kappa.
+
+  model.eval()
+  start_time = time.perf_counter()
+  prob_cal = nn.Softmax(dim=1)
+  test_preds = []
+  with torch.no_grad():
+      for i in range(0, len(given_data), batch):
+          inputs = given_data[i : i + batch].to(dev)
+          labels = given_labels[i : i + batch].to(dev)
+
+          outputs = model(inputs)
+          _, predicted = torch.max(outputs.data, 1)
+          test_preds = np.concatenate((test_preds, predicted.tolist()))
+
+          test_prob = prob_cal(outputs)
+          if i == 0:
+              test_probs = test_prob.tolist()
+          else:
+              test_probs = np.concatenate((test_probs, test_prob.tolist()))
+
+  test_labels = np.array(given_labels.tolist())
+  end_time = time.perf_counter()
+  test_time = end_time - start_time
+  return (
+      cohen_kappa_score(test_preds, test_labels),
+      get_ece(test_probs, test_preds, test_labels),
+      test_time
   )
 
 def run_dn_image_es(
@@ -125,9 +149,6 @@ def run_dn_image_es(
     """
     
     #init_net(parameters, classes)
-
-    #training_net(model, parameters, train_data, train_labels, valid_data, valid_labels, parameters, device)
-
     # train_evaluate()
     batch = 60
 
@@ -136,9 +157,9 @@ def run_dn_image_es(
     def train_evaluate(parameterization):
     # Ax primitive that initializes the training sequence --> Trains the model --> Calculates the evaluation metric
       untrained_net = init_net(parameterization, model, classes)
-      trained_net = training_net(untrained_net, parameterization, train_data, train_labels, device)
+      trained_net = training_net(untrained_net, parameterization, train_data, train_labels)
       report(
-        cohen_kappa=evaluate_net(trained_net, valid_data, valid_labels, batch, device)
+        accuracy=evaluate_net(trained_net, valid_data, valid_labels, batch, device)
     )
     
     ax.create_experiment(
@@ -148,7 +169,7 @@ def run_dn_image_es(
         {"name": "momentum", "type": "range", "bounds": [0.0, 1.0]},
         {"name": "epoch", "type": "range", "bounds": [15, 40]},
         {"name": "optimizer", "type": "choice", "values": ["SGD", "Adam"]}],
-    objective_name="cohen_kappa",
+    objective_name="accuracy",
     minimize=False)
     
     asha_scheduler = ASHAScheduler(
@@ -163,14 +184,12 @@ def run_dn_image_es(
     tune.run(
         train_evaluate,
         num_samples=20,
-        metric="cohen_kappa",
+        metric="accuracy",
         mode="max",
         search_alg=algo,
         verbose=0,  # Set this level to 1 to see status updates and to 2 to also see trial results.
         scheduler=asha_scheduler# To use GPU, specify: resources_per_trial={"gpu": 1}.
     )
-
-    best_parameters, values = ax.get_best_parameters()
 
     data = ax.experiment.fetch_data()
     df = data.df
@@ -221,11 +240,10 @@ def run_cnn32():
     cnn32_test_time = []
     best_objs = []
     best_params = []
-    test_res = []
-    for classes in classes_space:
+    for samples in samples_space:
 
         # cohen_kappa vs num training samples (cnn32)
-        for samples in samples_space:
+        for classes in classes_space:
             # train data
             cnn32 = SimpleCNN32Filter(len(classes))
             # 3000 samples, 80% train is 2400 samples, 20% test
@@ -245,7 +263,11 @@ def run_cnn32():
             ) = prepare_data(
                 train_images, train_labels, test_images, test_labels, samples, classes
             )
+
+            start_time = time.perf_counter()
             arm, best_obj = run_dn_image_es(cnn32, train_images, train_labels,valid_images, valid_labels, test_images, test_labels, classes)
+            end_time = time.perf_counter()
+            train_time = end_time - start_time
             
             best_objs.append(best_obj)
             best_params.append(arm)
@@ -254,11 +276,19 @@ def run_cnn32():
             combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim = 0)
             model_retrain_aftertune = training_net(cnn32, arm.parameters, combined_train_valid_data, combined_train_valid_labels, device=device)
 
-            test_accuracy = evaluate_net(model_retrain_aftertune, test_images, test_labels, 60, dev=device)
+            final_ck, final_ece, test_time = evaluate_net_final(model_retrain_aftertune, test_images, test_labels, 60, dev=device)
+
+            cnn32_kappa.append(final_ck)
+            cnn32_ece.append(final_ece)
+            cnn32_train_time.append(train_time)
+            cnn32_test_time.append(test_time)
 
     print("cnn32 finished")
-    print(test_accuracy)
-    return best_params, best_objs, test_accuracy
+    write_result("cnn32_bestparams.txt", best_params)
+    write_result("cnn32_kappa.txt", cnn32_kappa)
+    write_result("cnn32_ece.txt", cnn32_ece)
+    write_result("cnn32_train_time.txt", cnn32_train_time)
+    write_result("cnn32_test_time.txt", cnn32_test_time)
 
 def run_cnn32_2l():
     cnn32_2l_kappa = []
@@ -267,11 +297,10 @@ def run_cnn32_2l():
     cnn32_2l_test_time = []
     best_objs = []
     best_params = []
-    test_res = []
-    for classes in classes_space:
+    for samples in samples_space:
 
         # cohen_kappa vs num training samples (cnn32_2l)
-        for samples in samples_space:
+        for classes in classes_space:
             # train data
             cnn32_2l = SimpleCNN32Filter2Layers(len(classes))
             # 3000 samples, 80% train is 2400 samples, 20% test
@@ -292,7 +321,10 @@ def run_cnn32_2l():
                 train_images, train_labels, test_images, test_labels, samples, classes
             )
 
+            start_time = time.perf_counter()
             arm, best_obj = run_dn_image_es(cnn32_2l, train_images, train_labels,valid_images, valid_labels, test_images, test_labels, classes)
+            end_time = time.perf_counter()
+            train_time = end_time - start_time
             
             best_objs.append(best_obj)
             best_params.append(arm)
@@ -301,11 +333,19 @@ def run_cnn32_2l():
             combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim = 0)
             model_retrain_aftertune = training_net(cnn32_2l, arm.parameters, combined_train_valid_data, combined_train_valid_labels, device=device)
 
-            test_accuracy = evaluate_net(model_retrain_aftertune, test_images, test_labels, 60, dev=device)
+            final_ck, final_ece, test_time = evaluate_net_final(model_retrain_aftertune, test_images, test_labels, 60, dev=device)
+
+            cnn32_2l_kappa.append(final_ck)
+            cnn32_2l_ece.append(final_ece)
+            cnn32_2l_train_time.append(train_time)
+            cnn32_2l_test_time.append(test_time)
 
     print("cnn32_2l finished")
-    print(test_accuracy)
-    return best_params, best_objs, test_accuracy
+    write_result("cnn32_2l_bestparams.txt", best_params)
+    write_result("cnn32_2l_kappa.txt", cnn32_2l_kappa)
+    write_result("cnn32_2l_ece.txt", cnn32_2l_ece)
+    write_result("cnn32_2l_train_time.txt", cnn32_2l_train_time)
+    write_result("cnn32_2l_test_time.txt", cnn32_2l_test_time)
 
 
 def run_cnn32_5l():
@@ -315,11 +355,10 @@ def run_cnn32_5l():
     cnn32_5l_test_time = []
     best_objs = []
     best_params = []
-    test_res = []
-    for classes in classes_space:
+    for samples in samples_space:
 
         # cohen_kappa vs num training samples (cnn32_5l)
-        for samples in samples_space:
+        for classes in classes_space:
             # train data
             cnn32_5l = SimpleCNN32Filter5Layers(len(classes))
             # 3000 samples, 80% train is 2400 samples, 20% test
@@ -340,7 +379,10 @@ def run_cnn32_5l():
                 train_images, train_labels, test_images, test_labels, samples, classes
             )
 
+            start_time = time.perf_counter()
             arm, best_obj = run_dn_image_es(cnn32_5l, train_images, train_labels,valid_images, valid_labels, test_images, test_labels, classes)
+            end_time = time.perf_counter()
+            train_time = end_time - start_time
             
             best_objs.append(best_obj)
             best_params.append(arm)
@@ -349,11 +391,19 @@ def run_cnn32_5l():
             combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim = 0)
             model_retrain_aftertune = training_net(cnn32_5l, arm.parameters, combined_train_valid_data, combined_train_valid_labels, device=device)
 
-            test_accuracy = evaluate_net(model_retrain_aftertune, test_images, test_labels, 60, dev=device)
+            final_ck, final_ece, test_time = evaluate_net_final(model_retrain_aftertune, test_images, test_labels, 60, dev=device)
+
+            cnn32_5l_kappa.append(final_ck)
+            cnn32_5l_ece.append(final_ece)
+            cnn32_5l_train_time.append(train_time)
+            cnn32_5l_test_time.append(test_time)
 
     print("cnn32_5l finished")
-    print(test_accuracy)
-    return best_params, best_objs, test_accuracy
+    write_result("cnn32_5l_bestparams.txt", best_params)
+    write_result("cnn32_5l_kappa.txt", cnn32_5l_kappa)
+    write_result("cnn32_5l_ece.txt", cnn32_5l_ece)
+    write_result("cnn32_5l_train_time.txt", cnn32_5l_train_time)
+    write_result("cnn32_5l_test_time.txt", cnn32_5l_test_time)
 
 
 def run_resnet18():
@@ -363,12 +413,11 @@ def run_resnet18():
     resnet18_test_time = []
     best_objs = []
     best_params = []
-    test_res = []
 
-    for classes in classes_space:
-
+    for samples in samples_space:
         # cohen_kappa vs num training samples (resnet18)
-        for samples in samples_space:
+        for classes in classes_space:
+            # Initialize model
             resnet = models.resnet18(pretrained=True)
             num_ftrs = resnet.fc.in_features
             resnet.fc = nn.Linear(num_ftrs, len(classes))
@@ -390,13 +439,17 @@ def run_resnet18():
             ) = prepare_data(
                 train_images, train_labels, test_images, test_labels, samples, classes
             )
+
             # need to duplicate channel because batch norm cant have 1 channel images
 
             train_images = torch.cat((train_images, train_images, train_images), dim=1)
             valid_images = torch.cat((valid_images,valid_images, valid_images), dim=1)
             test_images = torch.cat((test_images,test_images, test_images), dim=1)
 
+            start_time = time.perf_counter()
             arm, best_obj = run_dn_image_es(resnet, train_images, train_labels,valid_images, valid_labels, test_images, test_labels, classes)
+            end_time = time.perf_counter()
+            train_time = end_time - start_time
             
             best_objs.append(best_obj)
             best_params.append(arm)
@@ -405,14 +458,20 @@ def run_resnet18():
             combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim = 0)
             model_retrain_aftertune = training_net(resnet, arm.parameters, combined_train_valid_data, combined_train_valid_labels, device=device)
 
-            resnet.eval()
-            with torch.no_grad():
-              test_accuracy = evaluate_net(model_retrain_aftertune, test_images, test_labels, 60, dev=device)
+            final_ck, final_ece, test_time = evaluate_net_final(model_retrain_aftertune, test_images, test_labels, 60, dev=device)
 
+            resnet18_kappa.append(final_ck)
+            resnet18_ece.append(final_ece)
+            resnet18_train_time.append(train_time)
+            resnet18_test_time.append(test_time)
 
+    
     print("resnet18 finished")
-    print(test_accuracy)
-    return best_params, best_objs, test_accuracy
+    write_result("resnet18_bestparams.txt", best_params)
+    write_result("resnet18_kappa.txt", resnet18_kappa)
+    write_result("resnet18_ece.txt", resnet18_ece)
+    write_result("resnet18_train_time.txt", resnet18_train_time)
+    write_result("resnet18_test_time.txt", resnet18_test_time)
 
 
 if __name__ == "__main__":
@@ -427,49 +486,8 @@ if __name__ == "__main__":
     n_classes = int(args.m)
     feature_type = str(args.f)
 
-    train_folder = str(args.data)
-    train_label = pd.read_csv(str(args.labels))
-
-    # select subset of data that only contains 300 samples per class
-    labels_chosen = train_label[
-        train_label["label"].map(train_label["label"].value_counts() == 300)
-    ]
-
-    training_files = []
-    for file in os.listdir(train_folder):
-        for x in labels_chosen.fname.to_list():
-            if file.endswith(x):
-                training_files.append(file)
-
-    path_recordings = []
-    for audiofile in training_files:
-        path_recordings.append(os.path.join(train_folder, audiofile))
-
-    # convert selected label names to integers
-    labels_to_index = {
-        "Acoustic_guitar": 0,
-        "Applause": 1,
-        "Bass_drum": 2,
-        "Trumpet": 3,
-        "Clarinet": 4,
-        "Double_bass": 5,
-        "Laughter": 6,
-        "Shatter": 7,
-        "Snare_drum": 8,
-        "Saxophone": 9,
-        "Tearing": 10,
-        "Flute": 11,
-        "Hi-hat": 12,
-        "Violin_or_fiddle": 13,
-        "Squeak": 14,
-        "Fart": 15,
-        "Fireworks": 16,
-        "Cello": 17,
-    }
-
-    # encode labels to integers
-    get_labels = labels_chosen["label"].replace(labels_to_index).to_list()
-    labels_chosen = labels_chosen.reset_index()
+    # Preprocess and subset the data
+    path_recordings, labels_chosen, get_labels = preprocessdataset(str(args.data),str(args.labels) )
 
     # data is normalized upon loading
     # load dataset
@@ -511,8 +529,8 @@ if __name__ == "__main__":
     fsdk18_test_images = testx.reshape(-1, 32 * 32)
     fsdk18_test_labels = testy.copy()
 
-    #run_naive_rf()
-    #run_cnn32()
-    #run_cnn32_2l()
+    run_naive_rf()
+    run_cnn32()
+    run_cnn32_2l()
     run_cnn32_5l()
-    #run_resnet18()
+    run_resnet18()

@@ -7,6 +7,7 @@ from toolbox import *
 import argparse
 import random
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
 
 import torchvision.models as models
 import torchvision.datasets as datasets
@@ -94,7 +95,7 @@ def evaluate_net(model, test_loader, dev):
                 test_probs = np.concatenate((test_probs, test_prob.tolist()))
 
     return (
-        cohen_kappa_score(test_preds, test_labels)
+        accuracy_score(test_preds, test_labels)
     )
 
 def run_dn_image_es(
