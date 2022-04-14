@@ -217,13 +217,13 @@ def run_cnn32():
         # cohen_kappa vs num training samples (cnn32)
         for samples in samples_space:
             # train data
-            cifar_trainset = datasets.CIFAR10(
+            cifar_trainset = datasets.CIFAR100(
                 root="./", train=True, download=True, transform=data_transforms
             )
             cifar_train_labels = np.array(cifar_trainset.targets)
 
             # test data
-            cifar_testset = datasets.CIFAR10(
+            cifar_testset = datasets.CIFAR100(
                 root="./", train=False, download=True, transform=data_transforms
             )
             cifar_test_labels = np.array(cifar_testset.targets)
@@ -289,13 +289,13 @@ def run_cnn32_2l():
         # cohen_kappa vs num training samples (cnn32_2l)
         for samples in samples_space:
             # train data
-            cifar_trainset = datasets.CIFAR10(
+            cifar_trainset = datasets.CIFAR100(
                 root="./", train=True, download=True, transform=data_transforms
             )
             cifar_train_labels = np.array(cifar_trainset.targets)
 
             # test data
-            cifar_testset = datasets.CIFAR10(
+            cifar_testset = datasets.CIFAR100(
                 root="./", train=False, download=True, transform=data_transforms
             )
             cifar_test_labels = np.array(cifar_testset.targets)
@@ -361,13 +361,13 @@ def run_cnn32_5l():
         # cohen_kappa vs num training samples (cnn32_5l)
         for samples in samples_space:
             # train data
-            cifar_trainset = datasets.CIFAR10(
+            cifar_trainset = datasets.CIFAR100(
                 root="./", train=True, download=True, transform=data_transforms
             )
             cifar_train_labels = np.array(cifar_trainset.targets)
 
             # test data
-            cifar_testset = datasets.CIFAR10(
+            cifar_testset = datasets.CIFAR100(
                 root="./", train=False, download=True, transform=data_transforms
             )
             cifar_test_labels = np.array(cifar_testset.targets)
@@ -433,13 +433,13 @@ def run_resnet18():
         # cohen_kappa vs num training samples (resnet18)
         for samples in samples_space:
             # train data
-            cifar_trainset = datasets.CIFAR10(
+            cifar_trainset = datasets.CIFAR100(
                 root="./", train=True, download=True, transform=data_transforms
             )
             cifar_train_labels = np.array(cifar_trainset.targets)
 
             # test data
-            cifar_testset = datasets.CIFAR10(
+            cifar_testset = datasets.CIFAR100(
                 root="./", train=False, download=True, transform=data_transforms
             )
             cifar_test_labels = np.array(cifar_testset.targets)
@@ -497,15 +497,15 @@ def run_resnet18():
 
 if __name__ == "__main__":
 
-    # Example usage: python cifar_10.py -m 3
+    # Example usage: python cifar_100.py -m 90
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", help="class number")
     args = parser.parse_args()
     n_classes = int(args.m)
     prefix = args.m + "_class/"
-    samples_space = np.geomspace(10, 10000, num=8, dtype=int)
+    samples_space = np.geomspace(100, 10000, num=8, dtype=int)
 
-    nums = list(range(10))
+    nums = list(range(100))
     random.shuffle(nums)
     classes_space = list(combinations_45(nums, n_classes))
 
@@ -514,14 +514,14 @@ if __name__ == "__main__":
     normalize = lambda x: (x - scale) / scale
 
     # train data
-    cifar_trainset = datasets.CIFAR10(
+    cifar_trainset = datasets.CIFAR100(
         root="./", train=True, download=True, transform=None
     )
     cifar_train_images = normalize(cifar_trainset.data)
     cifar_train_labels = np.array(cifar_trainset.targets)
 
     # test data
-    cifar_testset = datasets.CIFAR10(
+    cifar_testset = datasets.CIFAR100(
         root="./", train=False, download=True, transform=None
     )
     cifar_test_images = normalize(cifar_testset.data)
