@@ -246,6 +246,7 @@ def run_cnn32():
     cnn32_ece = []
     cnn32_train_time = []
     cnn32_test_time = []
+    cnn32_tune_time = []
     best_objs = []
     best_params = []
     for samples in samples_space:
@@ -284,13 +285,15 @@ def run_cnn32():
                 classes,
             )
             end_time = time.perf_counter()
-            train_time = end_time - start_time
+            tune_time = end_time - start_time
 
             best_objs.append(best_obj)
             best_params.append(arm)
 
             combined_train_valid_data = torch.cat((train_images, valid_images), dim=0)
             combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim=0)
+            
+            start_time = time.perf_counter()
             model_retrain_aftertune = training_net(
                 cnn32,
                 arm.parameters,
@@ -298,6 +301,8 @@ def run_cnn32():
                 combined_train_valid_labels,
                 device=device,
             )
+            end_time = time.perf_counter()
+            train_time = end_time - start_time
 
             final_ck, final_ece, test_time = evaluate_net_final(
                 model_retrain_aftertune, test_images, test_labels, 60, dev=device
@@ -305,6 +310,7 @@ def run_cnn32():
 
             cnn32_kappa.append(final_ck)
             cnn32_ece.append(final_ece)
+            cnn32_tune_time.append(tune_time)
             cnn32_train_time.append(train_time)
             cnn32_test_time.append(test_time)
 
@@ -312,6 +318,7 @@ def run_cnn32():
     write_result("cnn32_bestparams.txt", best_params)
     write_result("cnn32_kappa.txt", cnn32_kappa)
     write_result("cnn32_ece.txt", cnn32_ece)
+    write_result("cnn32_tune_time.txt", cnn32_tune_time)
     write_result("cnn32_train_time.txt", cnn32_train_time)
     write_result("cnn32_test_time.txt", cnn32_test_time)
 
@@ -320,6 +327,7 @@ def run_cnn32_2l():
     cnn32_2l_kappa = []
     cnn32_2l_ece = []
     cnn32_2l_train_time = []
+    cnn32_2l_tune_time = []
     cnn32_2l_test_time = []
     best_objs = []
     best_params = []
@@ -359,13 +367,15 @@ def run_cnn32_2l():
                 classes,
             )
             end_time = time.perf_counter()
-            train_time = end_time - start_time
+            tune_time = end_time - start_time
 
             best_objs.append(best_obj)
             best_params.append(arm)
 
             combined_train_valid_data = torch.cat((train_images, valid_images), dim=0)
             combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim=0)
+            
+            start_time = time.perf_counter()
             model_retrain_aftertune = training_net(
                 cnn32_2l,
                 arm.parameters,
@@ -373,6 +383,8 @@ def run_cnn32_2l():
                 combined_train_valid_labels,
                 device=device,
             )
+            end_time = time.perf_counter()
+            train_time = end_time - start_time
 
             final_ck, final_ece, test_time = evaluate_net_final(
                 model_retrain_aftertune, test_images, test_labels, 60, dev=device
@@ -380,6 +392,7 @@ def run_cnn32_2l():
 
             cnn32_2l_kappa.append(final_ck)
             cnn32_2l_ece.append(final_ece)
+            cnn32_2l_tune_time.append(tune_time)
             cnn32_2l_train_time.append(train_time)
             cnn32_2l_test_time.append(test_time)
 
@@ -387,6 +400,7 @@ def run_cnn32_2l():
     write_result("cnn32_2l_bestparams.txt", best_params)
     write_result("cnn32_2l_kappa.txt", cnn32_2l_kappa)
     write_result("cnn32_2l_ece.txt", cnn32_2l_ece)
+    write_result("cnn32_2l_tune_time.txt", cnn32_2l_tune_time)
     write_result("cnn32_2l_train_time.txt", cnn32_2l_train_time)
     write_result("cnn32_2l_test_time.txt", cnn32_2l_test_time)
 
@@ -394,6 +408,7 @@ def run_cnn32_2l():
 def run_cnn32_5l():
     cnn32_5l_kappa = []
     cnn32_5l_ece = []
+    cnn32_5l_tune_time = []
     cnn32_5l_train_time = []
     cnn32_5l_test_time = []
     best_objs = []
@@ -434,13 +449,15 @@ def run_cnn32_5l():
                 classes,
             )
             end_time = time.perf_counter()
-            train_time = end_time - start_time
+            tune_time = end_time - start_time
 
             best_objs.append(best_obj)
             best_params.append(arm)
 
             combined_train_valid_data = torch.cat((train_images, valid_images), dim=0)
             combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim=0)
+            
+            start_time = time.perf_counter()
             model_retrain_aftertune = training_net(
                 cnn32_5l,
                 arm.parameters,
@@ -448,6 +465,8 @@ def run_cnn32_5l():
                 combined_train_valid_labels,
                 device=device,
             )
+            end_time = time.perf_counter()
+            train_time = end_time - start_time
 
             final_ck, final_ece, test_time = evaluate_net_final(
                 model_retrain_aftertune, test_images, test_labels, 60, dev=device
@@ -455,6 +474,7 @@ def run_cnn32_5l():
 
             cnn32_5l_kappa.append(final_ck)
             cnn32_5l_ece.append(final_ece)
+            cnn32_5l_tune_time.append(tune_time)
             cnn32_5l_train_time.append(train_time)
             cnn32_5l_test_time.append(test_time)
 
@@ -462,6 +482,7 @@ def run_cnn32_5l():
     write_result("cnn32_5l_bestparams.txt", best_params)
     write_result("cnn32_5l_kappa.txt", cnn32_5l_kappa)
     write_result("cnn32_5l_ece.txt", cnn32_5l_ece)
+    write_result("cnn32_5l_tune_time.txt", cnn32_5l_tune_time)
     write_result("cnn32_5l_train_time.txt", cnn32_5l_train_time)
     write_result("cnn32_5l_test_time.txt", cnn32_5l_test_time)
 
@@ -469,6 +490,7 @@ def run_cnn32_5l():
 def run_resnet18():
     resnet18_kappa = []
     resnet18_ece = []
+    resnet18_tune_time = []
     resnet18_train_time = []
     resnet18_test_time = []
     best_objs = []
@@ -518,13 +540,15 @@ def run_resnet18():
                 classes,
             )
             end_time = time.perf_counter()
-            train_time = end_time - start_time
+            tune_time = end_time - start_time
 
             best_objs.append(best_obj)
             best_params.append(arm)
 
             combined_train_valid_data = torch.cat((train_images, valid_images), dim=0)
             combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim=0)
+            
+            start_time = time.perf_counter()
             model_retrain_aftertune = training_net(
                 resnet,
                 arm.parameters,
@@ -532,6 +556,8 @@ def run_resnet18():
                 combined_train_valid_labels,
                 device=device,
             )
+            end_time = time.perf_counter()
+            train_time = end_time - start_time
 
             final_ck, final_ece, test_time = evaluate_net_final(
                 model_retrain_aftertune, test_images, test_labels, 60, dev=device
@@ -539,6 +565,7 @@ def run_resnet18():
 
             resnet18_kappa.append(final_ck)
             resnet18_ece.append(final_ece)
+            resnet18_tune_time.append(tune_time)
             resnet18_train_time.append(train_time)
             resnet18_test_time.append(test_time)
 
@@ -546,6 +573,7 @@ def run_resnet18():
     write_result("resnet18_bestparams.txt", best_params)
     write_result("resnet18_kappa.txt", resnet18_kappa)
     write_result("resnet18_ece.txt", resnet18_ece)
+    write_result("resnet18_tune_time.txt", resnet18_tune_time)
     write_result("resnet18_train_time.txt", resnet18_train_time)
     write_result("resnet18_test_time.txt", resnet18_test_time)
 
