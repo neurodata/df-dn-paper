@@ -24,27 +24,27 @@ max_shape_to_run = 1000 #0
 criterions = ['gini', 'entropy']# ['gini'] #
 #max_features = ['sqrt','log2',0.5,0.8,1]
 max_depth = [1,3,10,None]
-bootstrap = [True]# [True, False]
+bootstrap = [True, False]
 n_estimators_range  = [10,50,100,300]
 
 # GBDT
 eta = [0.1,0.3] #,0.7,0.9] #[0.1]# [0.1,0.3,0.7,0.9]
-gamma = [0,0.2]# [0]#[0,0.2]
+gamma = [0.3,0.2]# [0]#[0,0.2]
 subsample = [0.5,0.7,1]#[0.5]# [0.5,0.7,1]
-sampling_method = ['uniform'] # ['uniform','gradient_based']
-colsample_bynode = [0.5] #[0.5,1]
-lambda_vals = [0.2] #[0.2,0.6,1]
+sampling_method = ['uniform','gradient_based']
+colsample_bynode = [0.5,1]
+lambda_vals = [0.2,0.6,1]
 alpha_vals  =[0.2,0.6]## [0.2] #[0.2,0.6,1]
 
 # TabNet
-n_d = [8] # [8,20, 64]
-n_a = [8] # [8,10]
+n_d = [8,20, 64]
+n_a = [8,10]
 gamma_tabnet = [1.3] #[1.3,3,8]
-n_shared = [1] # [1,2,5]
+n_shared = [1,2,5]
 #n_estimators_range = [20] #[20,100,200,500]
 n_steps = [3] #[3, 5, 8, 10]
 lambda_sparse = [0.1] #[0.1, 1e-2, 1e-3, 1e-4]
-momentum = [0.01, 0.02]#, 0.05, 0.1, 0.4]
+momentum = [0.01]#, 0.02]#, 0.05, 0.1, 0.4]
 
 # Saving parameters
 path_save = "metrics/cc18_all_parameters"
