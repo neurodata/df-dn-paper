@@ -17,7 +17,7 @@ return_default = False
 #hyperparameters options
 
 # general
-dataset_indices_max = 5#40 #72
+dataset_indices_max = 25#40 #72
 max_shape_to_run = 1000 #0
 
 # RF

@@ -29,8 +29,8 @@ dictionary_params = json.load(f)
 f2 = open(path_train_val_test_indices + ".json")
 dict_data_indices = json.load(f2)
 
-#f3 = open("metrics/varied_size_dict.json") #varied size are final indices for each model. it is dict -> dataset -> index sampline -> list
-#ss_inds_full = json.load(f3)
+f3 = open("metrics/varied_size_dict.json") #varied size are final indices for each model. it is dict -> dataset -> index sampline -> list
+ss_inds_full = json.load(f3)
 
 models_to_scale = {
     "RF": 0,
@@ -138,7 +138,10 @@ for dataset_index, dataset in enumerate(train_indices):
     #)
 
     # Iterate through each sample size per dataset
-    ss_inds = ss_inds_full[dataset_index]
+    try:
+        ss_inds = ss_inds_full[dataset_index]
+    except:
+        ss_inds = ss_inds_full[str(dataset_index)]
     for sample_size_index, real_sample_size in enumerate(training_sample_sizes):
         real_sample_size  = int(real_sample_size)
         cohen_ece_results_dict = {metric: {} for metric in ["cohen_kappa", "ece"]}
