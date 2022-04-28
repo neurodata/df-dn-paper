@@ -31,9 +31,18 @@ logger.setLevel(
 warnings.filterwarnings("ignore")
 
 
-def init_net(model):
-    net = model
-    return net  # return untrained model
+def init_net(model, classes, parameters):
+    if model == 'cnn32':
+        net = SimpleCNN32Filter(len(classes))
+    elif model == 'cnn32_2l':
+        net = SimpleCNN32Filter2Layers(len(classes))
+    elif model == 'cnn32_5l':
+        net = SimpleCNN32Filter5Layers(len(classes))
+    elif model == 'resnet':
+        net = models.resnet18(pretrained=True)
+        num_ftrs = net.fc.in_features
+        net.fc = nn.Linear(num_ftrs, len(classes))  
+    return net # return untrained model
 
 
 # Add parameters
@@ -134,7 +143,7 @@ def evaluate_net_final(model, test_loader, dev):
     )
 
 
-def run_dn_image_es(model, train_loader, valid_loader):
+def run_dn_image_es(model, train_loader, valid_loader,classes):
     """
     Peforms multiclass predictions for a deep network classifier with set number
     of samples and early stopping
@@ -144,9 +153,9 @@ def run_dn_image_es(model, train_loader, valid_loader):
 
     def train_evaluate(parameterization):
         # Ax primitive that initializes the training sequence --> Trains the model --> Calculates the evaluation metric
-        untrained_net = init_net(model)
+        untrained_net = init_net(model, classes, parameterization)
         trained_net = training_net(untrained_net, parameterization, train_loader)
-        return evaluate_net(model, valid_loader, device)
+        return evaluate_net(trained_net, valid_loader, device)
 
     best_parameters, values, experiment, model = optimize(
         parameters=[
@@ -236,7 +245,7 @@ def run_cnn32():
                 samples,
             )
             start_time = time.perf_counter()
-            arm, best_obj = run_dn_image_es(cnn32, train_loader, valid_loader)
+            arm, best_obj = run_dn_image_es('cnn32', train_loader, valid_loader,classes)
             end_time = time.perf_counter()
             tune_time = end_time - start_time
 
@@ -255,9 +264,11 @@ def run_cnn32():
                 shuffle=True,
             )
             
+            cnn32_final = SimpleCNN32Filter(len(classes))
+
             start_time = time.perf_counter()
             model_retrain_aftertune = training_net(
-                cnn32, arm.parameters, combined_train_valid_loader
+                cnn32_final, arm.parameters, combined_train_valid_loader
             )
             end_time = time.perf_counter()
             train_time = end_time - start_time
@@ -315,7 +326,7 @@ def run_cnn32_2l():
                 samples,
             )
             start_time = time.perf_counter()
-            arm, best_obj = run_dn_image_es(cnn32_2l, train_loader, valid_loader)
+            arm, best_obj = run_dn_image_es('cnn32_2l', train_loader, valid_loader, classes)
             end_time = time.perf_counter()
             tune_time = end_time - start_time
 
@@ -333,9 +344,11 @@ def run_cnn32_2l():
                 batch_size=40,
                 shuffle=True,
             )
+            cnn32_2l_final = SimpleCNN32Filter2Layers(len(classes))
+
             start_time = time.perf_counter()
             model_retrain_aftertune = training_net(
-                cnn32_2l, arm.parameters, combined_train_valid_loader
+                cnn32_2l_final, arm.parameters, combined_train_valid_loader
             )
             end_time = time.perf_counter()
             train_time = end_time - start_time
@@ -393,7 +406,7 @@ def run_cnn32_5l():
                 samples,
             )
             start_time = time.perf_counter()
-            arm, best_obj = run_dn_image_es(cnn32_5l, train_loader, valid_loader)
+            arm, best_obj = run_dn_image_es('cnn32_5l', train_loader, valid_loader)
             end_time = time.perf_counter()
             tune_time = end_time - start_time
 
@@ -411,9 +424,12 @@ def run_cnn32_5l():
                 batch_size=40,
                 shuffle=True,
             )
+
+            cnn32_5l_final = SimpleCNN32Filter5Layers(len(classes))
+
             start_time = time.perf_counter()
             model_retrain_aftertune = training_net(
-                cnn32_5l, arm.parameters, combined_train_valid_loader
+                cnn32_5l_final, arm.parameters, combined_train_valid_loader
             )
             end_time = time.perf_counter()
             train_time = end_time - start_time
@@ -473,7 +489,7 @@ def run_resnet18():
                 samples,
             )
             start_time = time.perf_counter()
-            arm, best_obj = run_dn_image_es(res, train_loader, valid_loader)
+            arm, best_obj = run_dn_image_es('resnet', train_loader, valid_loader,classes)
             end_time = time.perf_counter()
             tune_time = end_time - start_time
 
@@ -491,10 +507,13 @@ def run_resnet18():
                 batch_size=40,
                 shuffle=True,
             )
+            res_final = models.resnet18(pretrained=True)
+            num_ftrs = res_final.fc.in_features
+            res_final.fc = nn.Linear(num_ftrs, len(classes))
 
             start_time = time.perf_counter()
             model_retrain_aftertune = training_net(
-                res, arm.parameters, combined_train_valid_loader
+                res_final, arm.parameters, combined_train_valid_loader
             )
             end_time = time.perf_counter()
             train_time = end_time - start_time

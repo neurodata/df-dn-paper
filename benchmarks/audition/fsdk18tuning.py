@@ -36,9 +36,18 @@ logger.setLevel(
 warnings.filterwarnings("ignore")
 
 # Ax function to initialize the model
-def init_net(model):
-    net = model
-    return net  # return untrained model
+def init_net(model, classes, parameters):
+    if model == 'cnn32':
+        net = SimpleCNN32Filter(len(classes))
+    elif model == 'cnn32_2l':
+        net = SimpleCNN32Filter2Layers(len(classes))
+    elif model == 'cnn32_5l':
+        net = SimpleCNN32Filter5Layers(len(classes))
+    elif model == 'resnet':
+        net = models.resnet18(pretrained=True)
+        num_ftrs = net.fc.in_features
+        net.fc = nn.Linear(num_ftrs, len(classes))  
+    return net # return untrained model
 
 
 # Add parameters
@@ -161,7 +170,7 @@ def run_dn_image_es(
 
     def train_evaluate(parameterization):
         # Ax primitive that initializes the training sequence --> Trains the model --> Calculates the evaluation metric
-        untrained_net = init_net(parameterization, model, classes)
+        untrained_net = init_net(model, classes, parameterization)
         trained_net = training_net(
             untrained_net, parameterization, train_data, train_labels
         )
@@ -275,7 +284,7 @@ def run_cnn32():
 
             start_time = time.perf_counter()
             arm, best_obj = run_dn_image_es(
-                cnn32,
+                'cnn32',
                 train_images,
                 train_labels,
                 valid_images,
@@ -293,9 +302,11 @@ def run_cnn32():
             combined_train_valid_data = torch.cat((train_images, valid_images), dim=0)
             combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim=0)
             
+            cnn32_final  = SimpleCNN32Filter(len(classes))
+
             start_time = time.perf_counter()
             model_retrain_aftertune = training_net(
-                cnn32,
+                cnn32_final,
                 arm.parameters,
                 combined_train_valid_data,
                 combined_train_valid_labels,
@@ -357,7 +368,7 @@ def run_cnn32_2l():
 
             start_time = time.perf_counter()
             arm, best_obj = run_dn_image_es(
-                cnn32_2l,
+                'cnn32_2l',
                 train_images,
                 train_labels,
                 valid_images,
@@ -375,9 +386,11 @@ def run_cnn32_2l():
             combined_train_valid_data = torch.cat((train_images, valid_images), dim=0)
             combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim=0)
             
+            cnn32_2l_final = SimpleCNN32Filter2Layers(len(classes))
+
             start_time = time.perf_counter()
             model_retrain_aftertune = training_net(
-                cnn32_2l,
+                cnn32_2l_final,
                 arm.parameters,
                 combined_train_valid_data,
                 combined_train_valid_labels,
@@ -439,7 +452,7 @@ def run_cnn32_5l():
 
             start_time = time.perf_counter()
             arm, best_obj = run_dn_image_es(
-                cnn32_5l,
+                'cnn32_5l',
                 train_images,
                 train_labels,
                 valid_images,
@@ -457,9 +470,11 @@ def run_cnn32_5l():
             combined_train_valid_data = torch.cat((train_images, valid_images), dim=0)
             combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim=0)
             
+            cnn32_5l_final = SimpleCNN32Filter5Layers(len(classes))
+
             start_time = time.perf_counter()
             model_retrain_aftertune = training_net(
-                cnn32_5l,
+                cnn32_5l_final,
                 arm.parameters,
                 combined_train_valid_data,
                 combined_train_valid_labels,
@@ -530,7 +545,7 @@ def run_resnet18():
 
             start_time = time.perf_counter()
             arm, best_obj = run_dn_image_es(
-                resnet,
+                'resnet',
                 train_images,
                 train_labels,
                 valid_images,
@@ -548,9 +563,13 @@ def run_resnet18():
             combined_train_valid_data = torch.cat((train_images, valid_images), dim=0)
             combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim=0)
             
+            resnet_final = models.resnet18(pretrained=True)
+            num_ftrs = resnet_final.fc.in_features
+            resnet_final.fc = nn.Linear(num_ftrs, len(classes))
+
             start_time = time.perf_counter()
             model_retrain_aftertune = training_net(
-                resnet,
+                resnet_final,
                 arm.parameters,
                 combined_train_valid_data,
                 combined_train_valid_labels,
