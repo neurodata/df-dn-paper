@@ -9,3 +9,10 @@ seaborn
 torch==1.8.1
 torchaudio==0.8.1
 torchvision==0.9.1
+ax-platform
+ray==1.11.0
+plotly
+pandas
+sklearn
+jinja2
+botorch
