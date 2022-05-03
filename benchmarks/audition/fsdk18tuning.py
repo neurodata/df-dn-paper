@@ -515,9 +515,9 @@ def run_resnet18():
         # cohen_kappa vs num training samples (resnet18)
         for classes in classes_space:
             # Initialize model
-            resnet = models.resnet18(pretrained=True)
-            num_ftrs = resnet.fc.in_features
-            resnet.fc = nn.Linear(num_ftrs, len(classes))
+            resnet18 = models.resnet18(pretrained=True)
+            num_ftrs = resnet18.fc.in_features
+            resnet18.fc = nn.Linear(num_ftrs, len(classes))
             # train data
             # 3000 samples, 80% train is 2400 samples, 20% test
             train_images = trainx.copy()
