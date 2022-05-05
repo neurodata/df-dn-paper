@@ -264,6 +264,7 @@ def run_cnn32():
                 combined_train_valid_set,
                 batch_size=40,
                 shuffle=True,
+                drop_last=True,
             )
             cnn32_final = SimpleCNN32Filter(len(classes))
             start_time = time.perf_counter()
@@ -345,6 +346,7 @@ def run_cnn32_2l():
                 combined_train_valid_set,
                 batch_size=40,
                 shuffle=True,
+                drop_last=True,
             )
 
             cnn32_2l_final = SimpleCNN32Filter2Layers(len(classes))
@@ -428,6 +430,7 @@ def run_cnn32_5l():
                 combined_train_valid_set,
                 batch_size=40,
                 shuffle=True,
+                drop_last=True,
             )
 
             cnn32_5l_final = SimpleCNN32Filter5Layers(len(classes))
@@ -514,6 +517,7 @@ def run_resnet18():
                 combined_train_valid_set,
                 batch_size=40,
                 shuffle=True,
+                drop_last=True,
             )
 
             res_final = models.resnet18(pretrained=True)

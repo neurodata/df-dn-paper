@@ -17,6 +17,7 @@ import torchvision.models as models
 import warnings
 import random
 import ax
+import torch
 from ax.plot.trace import optimization_trace_single_method
 from ax.service.managed_loop import optimize
 from ax.utils.notebook.plotting import render, init_notebook_plotting
@@ -34,6 +35,8 @@ logger.setLevel(
 )  # Reduce the number of Ray warnings that are not relevant here.
 
 warnings.filterwarnings("ignore")
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # Ax function to initialize the model
 def init_net(model, classes, parameters):
@@ -244,10 +247,10 @@ def run_naive_rf():
             naive_rf_test_time.append(test_time)
 
     print("naive_rf finished")
-    write_result(prefix + "naive_rf_kappa.txt", naive_rf_kappa)
-    write_result(prefix + "naive_rf_ece.txt", naive_rf_ece)
-    write_result(prefix + "naive_rf_train_time.txt", naive_rf_train_time)
-    write_result(prefix + "naive_rf_test_time.txt", naive_rf_test_time)
+    write_result("naive_rf_kappa.txt", naive_rf_kappa)
+    write_result("naive_rf_ece.txt", naive_rf_ece)
+    write_result("naive_rf_train_time.txt", naive_rf_train_time)
+    write_result("naive_rf_test_time.txt", naive_rf_test_time)
 
 
 def run_cnn32():
@@ -310,7 +313,6 @@ def run_cnn32():
                 arm.parameters,
                 combined_train_valid_data,
                 combined_train_valid_labels,
-                device=device,
             )
             end_time = time.perf_counter()
             train_time = end_time - start_time
@@ -394,7 +396,6 @@ def run_cnn32_2l():
                 arm.parameters,
                 combined_train_valid_data,
                 combined_train_valid_labels,
-                device=device,
             )
             end_time = time.perf_counter()
             train_time = end_time - start_time
@@ -478,7 +479,6 @@ def run_cnn32_5l():
                 arm.parameters,
                 combined_train_valid_data,
                 combined_train_valid_labels,
-                device=device,
             )
             end_time = time.perf_counter()
             train_time = end_time - start_time
@@ -573,7 +573,6 @@ def run_resnet18():
                 arm.parameters,
                 combined_train_valid_data,
                 combined_train_valid_labels,
-                device=device,
             )
             end_time = time.perf_counter()
             train_time = end_time - start_time
@@ -620,7 +619,10 @@ if __name__ == "__main__":
         path_recordings, labels_chosen, get_labels, feature_type
     )
     nums = list(range(18))
-    samples_space = np.geomspace(10, 450, num=6, dtype=int)
+    if n_classes == 3:
+        samples_space = np.geomspace(10, 450, num=6, dtype=int)
+    else:
+        samples_space = np.geomspace(10,1200, num=6, dtype=int)
     # define path, samples space and number of class combinations
     if feature_type == "melspectrogram":
         prefix = args.m + "_class_mel/"
@@ -654,8 +656,13 @@ if __name__ == "__main__":
     fsdk18_test_images = testx.reshape(-1, 32 * 32)
     fsdk18_test_labels = testy.copy()
 
+    print("Running RF tuning \n")
     run_naive_rf()
+    print("Running CNN32 tuning \n")
     run_cnn32()
+    print("Running CNN32_2l tuning \n")
     run_cnn32_2l()
+    print("Running CNN32_5l tuning \n")
     run_cnn32_5l()
+    print("Running Resnet tuning \n")
     run_resnet18()

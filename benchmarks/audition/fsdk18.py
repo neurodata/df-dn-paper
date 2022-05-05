@@ -282,7 +282,10 @@ if __name__ == "__main__":
     )
     nums = list(range(18))
     # Choose samples space in ratio of 2:1:1 based on class size
-    samples_space = np.geomspace(10, 150 * (n_classes), num=6, dtype=int)
+    if n_classes == 3:
+        samples_space = np.geomspace(10, 450, num=6, dtype=int)
+    else:
+        samples_space = np.geomspace(10,1200, num=6, dtype=int)
     # define path, samples space and number of class combinations
     if feature_type == "melspectrogram":
         prefix = args.m + "_class_mel/"
