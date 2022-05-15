@@ -285,7 +285,7 @@ if __name__ == "__main__":
     if n_classes == 3:
         samples_space = np.geomspace(10, 450, num=6, dtype=int)
     else:
-        samples_space = np.geomspace(10,1200, num=6, dtype=int)
+        samples_space = np.geomspace(10, 1200, num=6, dtype=int)
     # define path, samples space and number of class combinations
     if feature_type == "melspectrogram":
         prefix = args.m + "_class_mel/"
