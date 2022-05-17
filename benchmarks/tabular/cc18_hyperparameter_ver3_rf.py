@@ -21,12 +21,20 @@ dataset_indices_max = 72
 max_shape_to_run = 1000 #0
 
 # RF
-criterions =['gini']# ['gini', 'entropy']# ['gini'] #
+criterions =['gini', 'entropy']#['gini']# ['gini', 'entropy']# ['gini'] #
 #max_features = ['sqrt','log2',0.5,0.8,1]
-max_depth = [2, 10]# [1,3,10,None]
-bootstrap = [True]#[True, False]
-n_estimators_range  = []# [10,50,100,300]
+max_depth =  [1,3,10,15]#[2, 10]#
+bootstrap = [True,False]#[True, False]
+n_estimators_range  = [10,50,100,300]# [10,50,100,300]
 
+# GBDT
+# eta = [0.1,0.2,0.3,0.4,0.5]# [0.1,0.3] #,0.7,0.9] #[0.1]# [0.1,0.3,0.7,0.9] #default=0
+# gamma = [0,0.3,0.2,0.1]#[0.3,0.2]# [0]#[0,0.2] #default=0
+# subsample = [0.7,1,0.5,0.6]# [0.5,0.7,1]#[0.5]# [0.5,0.7,1]# [default=1]
+# sampling_method = ['uniform','gradient_based'] # [default= uniform]
+# colsample_bynode = [0.9,1]#[0.5,1] #[default=1]
+# lambda_vals = [0.2,0.9,1,1.1]# [0.2,0.6,1]#default=1
+# alpha_vals  =[0.2,0.9,1,1.1]#,0.6]## [0.2] #[0.2,0.6,1]
 # GBDT
 eta = [0.1,0.2]# [0.1,0.3] #,0.7,0.9] #[0.1]# [0.1,0.3,0.7,0.9]
 gamma = [0.3]#[0.3,0.2]# [0]#[0,0.2]
@@ -36,6 +44,16 @@ colsample_bynode = [0.5]#[0.5,1]
 lambda_vals = [0.2]# [0.2,0.6,1]
 alpha_vals  =[0.2]#,0.6]## [0.2] #[0.2,0.6,1]
 
+
+# TabNet
+# n_d = [7,8,9,10,11]#,20, 64] #(default=8)
+# n_a = [7,8,9,10,11]#,10] # (default=8)
+# gamma_tabnet =[1, 1.3, 1.5,1.8]# [1.3] #[1.3,3,8]# (default=1.3)
+# n_shared = [1,2,5]#[1,2,5] #(default=2, Usual values range from 1 to 5)
+# #n_estimators_range = [20] #[20,100,200,500]
+# n_steps = [3,5,7,10] #[3, 5, 8, 10] #(default=3, usually between 3 and 10)
+# lambda_sparse = [1e-3, 1e-2, 0.1] #[0.1, 1e-2, 1e-3, 1e-4] # (default = 1e-3)
+# momentum = [0.01, 0.02]#, 0.02]#, 0.05, 0.1, 0.4]
 # TabNet
 n_d = [8,9]#,20, 64]
 n_a = [8]#,10]
@@ -256,5 +274,9 @@ for dataset_index, dataset in enumerate(dataset_indices):
         save_methods, save_methods_rewrite, "metrics/tuning_times.json", calc_times
     )
     save_best_parameters(
-        save_methods, save_methods_rewrite, "metrics/tuning_times.json", test_perf
+        save_methods, save_methods_rewrite, "metrics/tuning_times.json", calc_times
     )
+    np.save('test_perf_version1.npy',test_perf)
+    #save_best_parameters(
+    #    save_methods, save_methods_rewrite, "metrics/tuning_times.json", test_perf
+    #)

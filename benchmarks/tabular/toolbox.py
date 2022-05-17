@@ -16,7 +16,7 @@ from os.path import exists
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import train_test_split
 import time
-
+from sklearn.metrics import cohen_kappa_score
 
 def random_sample_new(
     X_train,
@@ -200,7 +200,18 @@ def create_parameters(model_name, varargin, p=None):
         )
     return parameters
 
+def create_model(model_name, params = {}):
+    if model_name == "DN":
+        model = TabNetClassifier(**params)
+    elif model_name ==  "RF":
+        model = RandomForestClassifier(**params)
+    elif model_name ==  "GBDT": 
+        model = xgb.XGBClassifier(booster="gbtree", base_score=0.5, **params)
+    else:
+        raise NameError('model name does not exist')
 
+    
+    return model
 def do_calcs_per_model(
     all_parameters,
     best_parameters,
@@ -215,12 +226,22 @@ def do_calcs_per_model(
     val_indices,
     p=None,
     varCV=None,
-    sample_size_index = -1
+    sample_size_index = -1,
+    calc_test_perf = False,
+    test_perf = {}
 ):
     """
     find best parameters for given sample_size, dataset_index, model_name
+    Inputs:
+        - 
+        - 
+    Outputs:
+        - all_parameters:  a dictionary with keys model name -> dataset index -> sample size index with all parameters
+        - best_parameters: a dictionary with keys model name -> dataset index -> sample size index with the best parameters
+        - all_params:      cv parameters results
+        - calc_time:       calculation time
     """
-    model = classifiers[model_name]
+    model = create_model(model_name)# classifiers[model_name]
     varCVmodel = varCV[model_name]
     parameters = create_parameters(model_name, varargin, p)
     start_time = time.perf_counter()
@@ -234,24 +255,39 @@ def do_calcs_per_model(
     clf.fit(X, y)
     end_time = time.perf_counter()
     print(all_parameters[model_name].keys())
+    
+    if model_name not in all_parameters.keys():     all_parameters[model_name]= {}
+    if model_name not in best_parameters.keys():    best_parameters[model_name] = {}
+    if model_name not in all_params.keys():         all_params[model_name] = {}
+    if model_name not in test_perf.keys():         test_perf[model_name] = {}
+        
+        
     if dataset_index not in all_parameters[model_name].keys():
         all_parameters[model_name][dataset_index] = {}
         best_parameters[model_name][dataset_index] = {}
         all_params[model_name][dataset_index] = {}
+        test_perf[model_name][dataset_index] = {}
         
     if sample_size_index not in all_parameters[model_name][dataset_index].keys():
         all_parameters[model_name][dataset_index][sample_size_index] = {}
         best_parameters[model_name][dataset_index][sample_size_index] = {}
         all_params[model_name][dataset_index][sample_size_index] = {}
+        test_perf[model_name][dataset_index][sample_size_index] = {}
         
         
     all_parameters[model_name][dataset_index][sample_size_index] = list(parameters)
-    #print(clf.best_params_)
-    #raise ValueError('fgf')
     best_parameters[model_name][dataset_index][sample_size_index] = clf.best_params_
+    
+    #best_params_cur = clf.best_params_
+    
+    
+    
+    
     all_params[model_name][dataset_index][sample_size_index] = clf.cv_results_["params"]
     calc_time = end_time - start_time
-    return all_parameters, best_parameters, all_params, calc_time
+    if calc_test_perf:
+        test_perf[model_name][dataset_index][sample_size_index] = clf.cv_results_["mean_test_score"]
+    return all_parameters, best_parameters, all_params, calc_time, test_perf
 
 
 def load_cc18():

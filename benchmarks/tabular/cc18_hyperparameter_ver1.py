@@ -25,16 +25,16 @@ criterions =['gini']# ['gini', 'entropy']# ['gini'] #
 #max_features = ['sqrt','log2',0.5,0.8,1]
 max_depth = [2, 10]# [1,3,10,None]
 bootstrap = [True]#[True, False]
-n_estimators_range  = []# [10,50,100,300]
+n_estimators_range  = [10]# [10,50,100,300]
 
 # GBDT
-eta = [0.1,0.2]# [0.1,0.3] #,0.7,0.9] #[0.1]# [0.1,0.3,0.7,0.9]
-gamma = [0.3]#[0.3,0.2]# [0]#[0,0.2]
-subsample = [0.7]# [0.5,0.7,1]#[0.5]# [0.5,0.7,1]
-sampling_method = ['uniform']#['uniform','gradient_based']
-colsample_bynode = [0.5]#[0.5,1]
-lambda_vals = [0.2]# [0.2,0.6,1]
-alpha_vals  =[0.2]#,0.6]## [0.2] #[0.2,0.6,1]
+eta = [0.1,0.2,0.3,0.4,0.5]# [0.1,0.3] #,0.7,0.9] #[0.1]# [0.1,0.3,0.7,0.9] #default=0
+gamma = [0,0.3,0.2,0.1]#[0.3,0.2]# [0]#[0,0.2] #default=0
+subsample = [0.7,1,0.5,0.6]# [0.5,0.7,1]#[0.5]# [0.5,0.7,1]# [default=1]
+sampling_method = ['uniform','gradient_based'] # [default= uniform]
+colsample_bynode = [0.9,1]#[0.5,1] #[default=1]
+lambda_vals = [0.2,0.9,1,1.1]# [0.2,0.6,1]#default=1
+alpha_vals  =[0.2,0.9,1,1.1]#,0.6]## [0.2] #[0.2,0.6,1]
 
 # TabNet
 n_d = [8,9]#,20, 64]
@@ -256,5 +256,9 @@ for dataset_index, dataset in enumerate(dataset_indices):
         save_methods, save_methods_rewrite, "metrics/tuning_times.json", calc_times
     )
     save_best_parameters(
-        save_methods, save_methods_rewrite, "metrics/tuning_times.json", test_perf
+        save_methods, save_methods_rewrite, "metrics/tuning_times.json", calc_times
     )
+    np.save('test_perf_version1.npy',test_perf)
+    #save_best_parameters(
+    #    save_methods, save_methods_rewrite, "metrics/tuning_times.json", test_perf
+    #)
