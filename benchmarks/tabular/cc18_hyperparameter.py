@@ -11,58 +11,43 @@ from toolbox import *
 
 
 # Define executrion variables (to save memory & execution time)
-reload_data = False  # indicator of whether to upload the data again
+reload_data = False             # indicator of whether to upload the data again
 return_default = False
 
-#hyperparameters options
+"""
+Hyperparameters options
+"""
 
-# general
-dataset_indices_max = 5# 72
-max_shape_to_run = 1000 #0
+# General Parameters
+dataset_indices_max = 72
+max_shape_to_run = 1000 
 
-# RF
-criterions =['gini', 'entropy']#['gini']# ['gini', 'entropy']# ['gini'] #
-max_features = ['sqrt','log2',0.5,0.8,1]
-max_depth =  [1,3,10,15]#[2, 10]#
-bootstrap = [True,False]#[True, False]
-n_estimators_range  = [10,50,100,300]# [10,50,100,300]
+# RF Hyper-Parameters
+criterions         = ['gini', 'entropy']
+max_features       = ['sqrt','log2',0.5,0.8,1]
+max_depth          =  [1,3,7,8,9,10,15]
+bootstrap          = [True,False]
+n_estimators_range = [10,50,100,300]# [10,50,100,300]
 
-# GBDT
-eta = [0.1,0.2,0.3,0.4,0.5]# [0.1,0.3] #,0.7,0.9] #[0.1]# [0.1,0.3,0.7,0.9] #default=0
-gamma = [0,0.3,0.2,0.1]#[0.3,0.2]# [0]#[0,0.2] #default=0
-subsample = [0.7,1,0.5,0.6]# [0.5,0.7,1]#[0.5]# [0.5,0.7,1]# [default=1]
-sampling_method = ['uniform','gradient_based'] # [default= uniform]
-colsample_bynode = [0.9,1]#[0.5,1] #[default=1]
-lambda_vals = [0.2,0.9,1,1.1]# [0.2,0.6,1]#default=1
-alpha_vals  =[0.2,0.9,1,1.1]#,0.6]## [0.2] #[0.2,0.6,1]
-# GBDT
-# eta = [0.1,0.2]# [0.1,0.3] #,0.7,0.9] #[0.1]# [0.1,0.3,0.7,0.9]
-# gamma = [0.3]#[0.3,0.2]# [0]#[0,0.2]
-# subsample = [0.7]# [0.5,0.7,1]#[0.5]# [0.5,0.7,1]
-# sampling_method = ['uniform']#['uniform','gradient_based']
-# colsample_bynode = [0.5]#[0.5,1]
-# lambda_vals = [0.2]# [0.2,0.6,1]
-# alpha_vals  =[0.2]#,0.6]## [0.2] #[0.2,0.6,1]
+# GBDT hyperparameters
+eta                = [0.1,0.2,0.3,0.4,0.5,0.7,0.9]# default=0
+gamma              = [0,0.3,0.2,0.1,0.2]          # default=0
+subsample          = [0.5,0.6,0.7,1]              # default=1
+sampling_method    = ['uniform','gradient_based'] # default= uniform
+colsample_bynode   = [0.4,0.5,0.9,1]              # default = 1
+lambda_vals        = [0.2,0.9,1,1.1]              # default = 1
+alpha_vals         = [0.2,0.9,1,1.1]              # defaulte = 1
+max_depth          = [2,3,4,6,10,12]
 
 
 # TabNet
-n_d = [7,8,9,10,11]#,20, 64] #(default=8)
-n_a = [7,8,9,10,11]#,10] # (default=8)
-gamma_tabnet =[1, 1.3, 1.5,1.8]# [1.3] #[1.3,3,8]# (default=1.3)
-n_shared = [1,2,5]#[1,2,5] #(default=2, Usual values range from 1 to 5)
-#n_estimators_range = [20] #[20,100,200,500]
-n_steps = [3,5,7,10] #[3, 5, 8, 10] #(default=3, usually between 3 and 10)
-lambda_sparse = [1e-3, 1e-2, 0.1] #[0.1, 1e-2, 1e-3, 1e-4] # (default = 1e-3)
-momentum = [0.01, 0.02]#, 0.02]#, 0.05, 0.1, 0.4]
-# TabNet
-# n_d = [8,9]#,20, 64]
-# n_a = [8]#,10]
-# gamma_tabnet =[1.3]# [1.3] #[1.3,3,8]
-# n_shared = [5]#[1,2,5]
-# #n_estimators_range = [20] #[20,100,200,500]
-# n_steps = [3] #[3, 5, 8, 10]
-# lambda_sparse = [0.1] #[0.1, 1e-2, 1e-3, 1e-4]
-# momentum = [0.01]#, 0.02]#, 0.05, 0.1, 0.4]
+n_d                = [7,8,9,10,11]                # default=8
+n_a                = [7,8,9,10,11]                # default=8
+gamma_tabnet       = [1, 1.3, 1.5,1.8]            # default=1.3
+n_shared           = [1,2,5]                      # default=2, Usual values range from 1 to 5
+n_steps            = [2,3,5,7,8,10,15]            # default=3, usually between 3 and 10
+lambda_sparse      = [1e-4, 1e-3, 1e-2, 0.1]      # default = 1e-3
+momentum           = [0.01, 0.02,0.05,0.1,0.4]                 
 
 # Saving parameters
 path_save = "metrics/cc18_all_parameters"
@@ -71,8 +56,7 @@ save_methods = {"text_dict": 0, "csv": 0, "json": 1}
 save_methods_rewrite = {"text_dict": 0, "csv": 0, "json": 1}
 
 if return_default:
-    (
-       
+    (      
         dataset_indices_max,
         max_shape_to_run,
         models_to_run,
@@ -112,7 +96,7 @@ varargin = {
          'lambda_sparse':lambda_sparse , 'n_steps':n_steps},
    "GBDT":
         { "subsample": subsample, 'alpha':alpha_vals,  'lambda': lambda_vals,
-         'colsample_bynode':colsample_bynode, 'sampling_method':sampling_method,'gamma':gamma,'eta':eta}, 
+         'colsample_bynode':colsample_bynode, 'sampling_method':sampling_method,'gamma':gamma,'eta':eta,'max_depth':max_depth}, 
     "RF":
         {'n_estimators':n_estimators_range, 'criterion':criterions,'max_depth':max_depth,'bootstrap':bootstrap}
 }
@@ -146,9 +130,7 @@ best_parameters = {
     model_name: {} for model_name, val in models_to_run.items() if val == 1
 }
 all_params = {model_name: {} for model_name, val in models_to_run.items() if val == 1}
-test_perf = {model_name: {} for model_name, val in models_to_run.items() if val == 1}
-#calc_times = {model_name: {}    for model_name in models_to_run.keys()
-#}
+
 
 calc_times = {model_name: {int(dataset_index): {} for dataset_index in np.arange(dataset_indices_max)}
     for model_name in models_to_run.keys()
@@ -170,7 +152,7 @@ Choose dataset indices
 dataset_indices = list(range(dataset_indices_max))
 dict_data_indices = {dataset_ind: {} for dataset_ind in dataset_indices}
 # ss_inds_full is a dictionary of the indices taken for different datasets
-ss_inds_full = {} #{dataset_ind: None for dataset_ind in dataset_indices}
+ss_inds_full = {} 
 
 
 """
@@ -203,8 +185,7 @@ for dataset_index, dataset in enumerate(dataset_indices):
 
 
     p = X.shape[1]
-    #ss_inds = random_sample_all[dataset]
-    #random_sample_new( X_train, y_train, training_sample_sizes  )
+
     X_train = X[train_indices]
     y_train = y[train_indices]
     training_sample_sizes = np.geomspace(
@@ -214,11 +195,7 @@ for dataset_index, dataset in enumerate(dataset_indices):
         X_train, y_train, training_sample_sizes
     )
     ss_inds_full[dataset_index] = ss_inds
-      #X_train_new = X_train[ss_inds[sample_size_index]]
-        #ss_inds = random_sample_all[dataset]
-    #random_sample_new(
-    #    X_train, y_train, training_sample_sizes
-    #)
+
     for sample_size_index, sample_size in enumerate(training_sample_sizes):
         print(np.array(ss_inds[sample_size_index], dtype = int))
         #print(train_indices)
@@ -240,7 +217,7 @@ for dataset_index, dataset in enumerate(dataset_indices):
                         scaler.fit(X)
                         X = scaler.transform(X)
                         
-                    all_parameters, best_parameters, all_params,calc_time, test_perf = do_calcs_per_model(
+                    all_parameters, best_parameters, all_params,calc_time = do_calcs_per_model(
                         all_parameters,
                         best_parameters,
                         all_params,
@@ -255,15 +232,13 @@ for dataset_index, dataset in enumerate(dataset_indices):
                         p,
                         varCV,
                         sample_size_index,
-                        calc_test_perf = True,
-                        test_perf = test_perf
+                                              
                     )
-                    # Store calculation time
+
                     calc_times[model_name][int(dataset_index)][int(sample_size_index)] = calc_time
-                    print('size dict')
-                    print(len(best_parameters[model_name]))
+
     save_best_parameters(save_methods, save_methods_rewrite, path_save, best_parameters)
-    #save_best_parameters(save_methods, save_methods_rewrite, path_save, best_parameters)
+
     save_best_parameters(
         save_methods, save_methods_rewrite, path_save_dict_data_indices, dict_data_indices
     )
@@ -276,7 +251,3 @@ for dataset_index, dataset in enumerate(dataset_indices):
     save_best_parameters(
         save_methods, save_methods_rewrite, "metrics/tuning_times.json", calc_times
     )
-    np.save('test_perf_version1.npy',test_perf)
-    #save_best_parameters(
-    #    save_methods, save_methods_rewrite, "metrics/tuning_times.json", test_perf
-    #)

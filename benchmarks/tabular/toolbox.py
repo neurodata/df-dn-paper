@@ -31,9 +31,6 @@ def random_sample_new(
     """
     ratios  = []
     [uniques, counts] = np.unique(y_train, return_counts = True)
-    #print(counts)
-    #print(uniques)
-    #print(y_train)
     for unique_num, unique_class in enumerate(uniques):
         unique_count = counts[unique_num]
         ratios.append(unique_count / len(y_train))
@@ -53,86 +50,7 @@ def random_sample_new(
 
     return final_inds
     
-    
-#def random_sample_new(
-#    X_train,
-#    y_train,
-#    training_sample_sizes,
-#    seed_rand=0,
-#    min_rep_per_class=1,
-#):
-#    """
-#    Peforms multiclass predictions for a random forest classifier with fixed total samples.
-#    min_rep_per_class = minimal number of train samples for a specific label
-#    """
-#    np.random.seed(seed_rand)
-#    training_sample_sizes = sorted(training_sample_sizes)
-#    num_classes = len(np.unique(y_train))
-#    classes_spec = np.unique(y_train)
-#    
-#    # number of samples from each class
-#    previous_partitions_len = np.zeros(num_classes)    
-#    
-#    previous_inds = {class_val: [] for class_val in classes_spec}
-#    final_inds = []
-#    # Check that the training sample size is big enough to include all class representations
-#    
-#    [_,u ] = np.unique(y_train,return_counts=True)
-#    if min(u) <= np.ceil(np.max(training_sample_sizes) / num_classes):
-#        print(u)
-#        print(training_sample_sizes)
-#        raise ValueError('minimum sample from class is lower than required sampling size')
-#    if np.floor(np.min(training_sample_sizes) / num_classes) < min_rep_per_class:
-#        raise ValueError("Not enough samples for each class, decreasing number of classes" )
-#        
-#    for samp_size_count, samp_size in enumerate(training_sample_sizes):
-#        # samp_size count = # of the counter of the sample size
-#        # samp_size       =  the sample size itself 
-#        # partitions       = the group of samples for each class
-#        partitions = np.array_split(np.array(range(samp_size)), num_classes)
-#        # partitions_real - how much to add for each class
-#        partitions_real = [
-#            len(part_new) - previous_partitions_len[class_c]
-#            for class_c, part_new in enumerate(partitions)
-#        ]  # partitions_real is the number of additional samples we have to take
-#        
-#        indices_classes_addition_all = []  # For each samples size = what indices are taken for all classes together
-#        for class_count, class_val in enumerate(classes_spec):
-#            print('class_val')
-#            print(class_val)
-#            print(partitions_real[class_count] )
-#            
-#            indices_class = np.argwhere(np.array(y_train) == class_val).T[0]
-#            indices_class_original = [ind_class for ind_class in indices_class if ind_class not in previous_inds[class_val]    ]
-#            print(len(indices_class_original))
-#            np.random.shuffle(indices_class_original)
-#            
-#            # is the # to add to a class <= len of total possible indices to add to the class
-#            if partitions_real[class_count] <= len(indices_class_original):
-#                indices_class_addition = indices_class_original[
-#                    : int(partitions_real[class_count])
-#                ]
-#                previous_inds[class_val].extend(indices_class_addition)
-#                indices_classes_addition_all.extend(indices_class_addition)
-#
-#            else:
-#                print('samp size')
-#                print(samp_size)
-#                
-#                raise ValueError(
-#                    "Class %s does not have enough samples" % str(class_val)
-#                )
-#        if final_inds:
-#            indices_prev = final_inds[-1].copy()
-#        else:
-#            indices_prev = []
-#        indices_class_addtion_and_prev = indices_prev + indices_class_addition
-#        final_inds.append(indices_class_addtion_and_prev)
-#        previous_partitions_len = [len(parti) for parti in partitions]
-#
-#    return final_inds
-##
-##
+
 
 
 def save_best_parameters(
@@ -149,15 +67,15 @@ def save_best_parameters(
         best_parameters_to_save = {**dictionary, **best_parameters}
     else:
         best_parameters_to_save = best_parameters
-    #if not non_json:           
+         
     with open(path_save , "w") as fp:
         json.dump(best_parameters_to_save, fp)
-    #else:
-    #    np.save(path_save + '.npy', best_parameters_to_save)
+
 
 def convert(o):
-    if isinstance(o, numpy.int64): return int(o)  
+    if isinstance(o, np.int64): return int(o)  
     raise TypeError
+    
 def open_data(path, format_file):
     """
     Open existing data
@@ -227,8 +145,7 @@ def do_calcs_per_model(
     p=None,
     varCV=None,
     sample_size_index = -1,
-    calc_test_perf = False,
-    test_perf = {}
+
 ):
     """
     find best parameters for given sample_size, dataset_index, model_name
@@ -259,35 +176,30 @@ def do_calcs_per_model(
     if model_name not in all_parameters.keys():     all_parameters[model_name]= {}
     if model_name not in best_parameters.keys():    best_parameters[model_name] = {}
     if model_name not in all_params.keys():         all_params[model_name] = {}
-    if model_name not in test_perf.keys():         test_perf[model_name] = {}
+
         
         
     if dataset_index not in all_parameters[model_name].keys():
         all_parameters[model_name][dataset_index] = {}
         best_parameters[model_name][dataset_index] = {}
         all_params[model_name][dataset_index] = {}
-        test_perf[model_name][dataset_index] = {}
+
         
     if sample_size_index not in all_parameters[model_name][dataset_index].keys():
         all_parameters[model_name][dataset_index][sample_size_index] = {}
         best_parameters[model_name][dataset_index][sample_size_index] = {}
         all_params[model_name][dataset_index][sample_size_index] = {}
-        test_perf[model_name][dataset_index][sample_size_index] = {}
+
         
         
     all_parameters[model_name][dataset_index][sample_size_index] = list(parameters)
     best_parameters[model_name][dataset_index][sample_size_index] = clf.best_params_
     
-    #best_params_cur = clf.best_params_
-    
-    
-    
     
     all_params[model_name][dataset_index][sample_size_index] = clf.cv_results_["params"]
     calc_time = end_time - start_time
-    if calc_test_perf:
-        test_perf[model_name][dataset_index][sample_size_index] = clf.cv_results_["mean_test_score"]
-    return all_parameters, best_parameters, all_params, calc_time, test_perf
+
+    return all_parameters, best_parameters, all_params, calc_time
 
 
 def load_cc18():
@@ -374,9 +286,6 @@ def save_vars_to_dict(
 def model_define(model_name, best_params_dict, dataset, sample_size_ind):
     """ """
     if model_name == "RF":
-        #display(best_params_dict[model_name])
-        
-        #display(best_params_dict[model_name][str(dataset)][int( sample_size_ind)])
         model = RandomForestClassifier(
             **best_params_dict[model_name][str(dataset)][str( sample_size_ind)],  n_jobs=-1
         )

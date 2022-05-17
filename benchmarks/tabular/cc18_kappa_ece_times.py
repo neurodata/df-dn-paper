@@ -20,30 +20,28 @@ reload_data = False  # indicator of whether to upload the data again
 path_save = "metrics/cc18_all_parameters"
 path_params = "metrics/dict_parameters"
 path_train_val_test_indices = "metrics/dict_data_indices"
-#with open(path_params + ".json", "r") as json_file:
-#    dictionary_params = json.load(json_file)
+
 f = open('metrics/dict_parameters.json');
 dictionary_params = json.load(f)
 
 f2 = open(path_train_val_test_indices + ".json")
 dict_data_indices = json.load(f2)
 
-f3 = open("metrics/varied_size_dict.json") #varied size are final indices for each model. it is dict -> dataset -> index sampline -> list
+f3 = open("metrics/varied_size_dict.json") # varied size are final indices for each model. The is a dict -> dataset -> index sampline -> list
 ss_inds_full = json.load(f3)
 
 models_to_scale = {
-    "RF": 1,
+    "RF": 0,
     "DN": 1,
-    "GBDT": 1,
+    "GBDT": 0,
 } 
 
 
-#f3 = open(ss_inds_path + ".json")
-#dict_data_indices = json.load(f2)
-#with open(path_train_val_test_indices + ".json", "r") as json_file:
-#    dict_data_indices = json.load(json_file)
 
-path = path_save  # "metrics/cc18_all_parameters"
+"""
+Define Saving Paths
+"""
+path = path_save 
 type_file = ".json"
 dataset_indices_max = dictionary_params["dataset_indices_max"]
 max_shape_to_run = dictionary_params["max_shape_to_run"]
@@ -72,11 +70,11 @@ if reload_data or "dataset_name" not in locals():
 Upload best parameters
 """
 
-#if "best_params_dict" not in locals():
+
 f_best        = open(path+".json")
 best_params_dict = json.load(f_best)
 
-#train_indices = [i for i in range(dataset_indices_max)]
+
 
 """
 Create empty arrays to index sample sizes, kappa values, and ece scores
@@ -132,10 +130,7 @@ for dataset_index, dataset in enumerate(np.array(list(dict_data_indices.keys()),
             len(np.unique(y_train)) * 5, X_train.shape[0], num=8, dtype=int
         )
     
-        #ss_inds = random_sample_all[dataset]
-        #random_sample_new(
-        #    X_train, y_train, training_sample_sizes
-        #)
+
     
         # Iterate through each sample size per dataset
         try:
@@ -234,7 +229,7 @@ for dataset_index, dataset in enumerate(np.array(list(dict_data_indices.keys()),
 new_dict = {}
 for key_met in evolution_dict.keys():
     new_dict[str(key_met)] = mod_dict(evolution_dict[key_met], tuple)
-#new_dict_times = mod_dict(train_test_times, tuple)
+
 
 
 """
