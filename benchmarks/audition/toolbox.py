@@ -10,7 +10,6 @@ import os
 import cv2
 import librosa
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.metrics import cohen_kappa_score
 
@@ -18,97 +17,75 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.data import Dataset
 import torchaudio
 import torchaudio.transforms as trans
 
 
-class FSDKaggle18Dataset(Dataset):
+def preprocessdataset(data_folder, labels_file):
     """
-    This class is based on torch.utils.data.Dataset for loading the entire
-    FSDKaggle18 Dataset using native torch and torchaudio primitives.
-
-    ----------------------------------------------------
+    This function performs pre-preocessing of the FSDKaggle18 dataset such that:
+    - Of all the labels, select only those which contain 300 samples per label
+    - Extract the corresponding audio files for the selected labels
+    --------------------------------------------
     Input parameters:
-      annotations_file: str
-      Path to the file containing the ground truths
-
-      audio_dir: str
-      Path to the folder containing the audio files
-
+        data_folder: str
+          Path to the folder containing the raw audio files
+        labels_file: str
+          Path to the csv file containing the labels
     Returns:
-    instance of torch.utils.data.Dataset() returning the audio file together with it's corresponding label.
-
+        path_recordings: list
+          list containing the full path for each selected raw audio file
+        labels_chosen: pandas DataFrame
+          DataFrame of ground truth labels and metadata of all the selected raw audio files
+        get_labels: array
+          array of encoded unique label numbers
     """
 
-    def __init__(self, annotations_file, audio_dir):
-        # loop through the csv entries and only add entries from folders in the folder list
-        self.annotations = pd.read_csv(annotations_file)
-        self.audio_dir = audio_dir
-        data_final = []
-        for filepaths in os.listdir(self.audio_dir):
-            data_final.append(os.path.join(self.audio_dir, filepaths))
-        self.data_final = data_final
+    train_folder = data_folder
+    train_label = pd.read_csv(labels_file)
 
-    def __getitem__(self, index):
-        audio_sample_path = self._get_sample_path(index)
-        label = self._get_label_(index)
-        signal, sr = torchaudio.load(audio_sample_path)
-        return signal, sr, label
+    # select subset of data that only contains 300 samples per class
+    labels_chosen = train_label[
+        train_label["label"].map(train_label["label"].value_counts() == 300)
+    ]
 
-    def _get_sample_path(self, index):
-        return os.path.join(self.audio_dir, self.annotations.iloc[index, 0])
+    training_files = []
+    for file in os.listdir(train_folder):
+        for x in labels_chosen.fname.to_list():
+            if file.endswith(x):
+                training_files.append(file)
 
-    def _get_label_(self, index1):
-        labels_to_index = {
-            "Acoustic_guitar": 0,
-            "Applause": 1,
-            "Bark": 2,
-            "Bass_drum": 3,
-            "Burping_or_eructation": 4,
-            "Bus": 5,
-            "Cello": 6,
-            "Chime": 7,
-            "Clarinet": 8,
-            "Computer_keyboard": 9,
-            "Cough": 10,
-            "Cowbell": 11,
-            "Double_bass": 12,
-            "Drawer_open_or_close": 13,
-            "Electric_piano": 14,
-            "Fart": 15,
-            "Finger_snapping": 16,
-            "Fireworks": 17,
-            "Flute": 18,
-            "Glockenspiel": 19,
-            "Gong": 20,
-            "Gunshot_or_gunfire": 21,
-            "Harmonica": 22,
-            "Hi-hat": 23,
-            "Keys_jangling": 24,
-            "Knock": 25,
-            "Laughter": 26,
-            "Meow": 27,
-            "Microwave_oven": 28,
-            "Oboe": 29,
-            "Saxophone": 30,
-            "Scissors": 31,
-            "Shatter": 32,
-            "Snare_drum": 33,
-            "Squeak": 34,
-            "Tambourine": 35,
-            "Tearing": 36,
-            "Telephone": 37,
-            "Trumpet": 38,
-            "Violin_or_fiddle": 39,
-            "Writing": 40,
-        }
-        get_labels = self.annotations["label"].replace(labels_to_index).to_list()
-        y_value = get_labels[index1]
-        return y_value
+    path_recordings = []
+    for audiofile in training_files:
+        path_recordings.append(os.path.join(train_folder, audiofile))
 
-    def __len__(self):
-        return len(os.listdir(self.audio_dir))
+    # convert selected label names to integers
+    labels_to_index = {
+        "Acoustic_guitar": 0,
+        "Applause": 1,
+        "Bass_drum": 2,
+        "Trumpet": 3,
+        "Clarinet": 4,
+        "Double_bass": 5,
+        "Laughter": 6,
+        "Shatter": 7,
+        "Snare_drum": 8,
+        "Saxophone": 9,
+        "Tearing": 10,
+        "Flute": 11,
+        "Hi-hat": 12,
+        "Violin_or_fiddle": 13,
+        "Squeak": 14,
+        "Fart": 15,
+        "Fireworks": 16,
+        "Cello": 17,
+    }
+
+    # encode labels to integers
+    get_labels = labels_chosen["label"].replace(labels_to_index).to_list()
+    labels_chosen = labels_chosen.reset_index()
+
+    return path_recordings, labels_chosen, get_labels
 
 
 def load_fsdk18(path_recordings, labels_file, label_arr, feature_type="spectrogram"):
