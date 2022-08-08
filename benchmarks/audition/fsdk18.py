@@ -201,7 +201,8 @@ def run_dn_image_es(
         mode="max",
         search_alg=algo,
         verbose=0,  # Set this level to 1 to see status updates and to 2 to also see trial results.
-        scheduler=asha_scheduler,  # To use GPU, specify: resources_per_trial={"gpu": 1}.
+        scheduler=asha_scheduler,  # To use GPU, specify:
+        resources_per_trial={"gpu": 1},
     )
 
     data = ax.experiment.fetch_data()
@@ -242,10 +243,10 @@ def run_naive_rf():
             naive_rf_test_time.append(test_time)
 
     print("naive_rf finished")
-    write_result("naive_rf_kappa.txt", naive_rf_kappa)
-    write_result("naive_rf_ece.txt", naive_rf_ece)
-    write_result("naive_rf_train_time.txt", naive_rf_train_time)
-    write_result("naive_rf_test_time.txt", naive_rf_test_time)
+    write_result(prefix + "naive_rf_kappa.txt", naive_rf_kappa)
+    write_result(prefix + "naive_rf_ece.txt", naive_rf_ece)
+    write_result(prefix + "naive_rf_train_time.txt", naive_rf_train_time)
+    write_result(prefix + "naive_rf_test_time.txt", naive_rf_test_time)
 
 
 def run_cnn32():
@@ -323,12 +324,12 @@ def run_cnn32():
             cnn32_test_time.append(test_time)
 
     print("cnn32 finished")
-    write_result("cnn32_bestparams.txt", best_params)
-    write_result("cnn32_kappa.txt", cnn32_kappa)
-    write_result("cnn32_ece.txt", cnn32_ece)
-    write_result("cnn32_tune_time.txt", cnn32_tune_time)
-    write_result("cnn32_train_time.txt", cnn32_train_time)
-    write_result("cnn32_test_time.txt", cnn32_test_time)
+    write_result(prefix + "cnn32_bestparams.txt", best_params)
+    write_result(prefix + "cnn32_kappa.txt", cnn32_kappa)
+    write_result(prefix + "cnn32_ece.txt", cnn32_ece)
+    write_result(prefix + "cnn32_tune_time.txt", cnn32_tune_time)
+    write_result(prefix + "cnn32_train_time.txt", cnn32_train_time)
+    write_result(prefix + "cnn32_test_time.txt", cnn32_test_time)
 
 
 def run_cnn32_2l():
@@ -406,12 +407,12 @@ def run_cnn32_2l():
             cnn32_2l_test_time.append(test_time)
 
     print("cnn32_2l finished")
-    write_result("cnn32_2l_bestparams.txt", best_params)
-    write_result("cnn32_2l_kappa.txt", cnn32_2l_kappa)
-    write_result("cnn32_2l_ece.txt", cnn32_2l_ece)
-    write_result("cnn32_2l_tune_time.txt", cnn32_2l_tune_time)
-    write_result("cnn32_2l_train_time.txt", cnn32_2l_train_time)
-    write_result("cnn32_2l_test_time.txt", cnn32_2l_test_time)
+    write_result(prefix + "cnn32_2l_bestparams.txt", best_params)
+    write_result(prefix + "cnn32_2l_kappa.txt", cnn32_2l_kappa)
+    write_result(prefix + "cnn32_2l_ece.txt", cnn32_2l_ece)
+    write_result(prefix + "cnn32_2l_tune_time.txt", cnn32_2l_tune_time)
+    write_result(prefix + "cnn32_2l_train_time.txt", cnn32_2l_train_time)
+    write_result(prefix + "cnn32_2l_test_time.txt", cnn32_2l_test_time)
 
 
 def run_cnn32_5l():
@@ -489,12 +490,12 @@ def run_cnn32_5l():
             cnn32_5l_test_time.append(test_time)
 
     print("cnn32_5l finished")
-    write_result("cnn32_5l_bestparams.txt", best_params)
-    write_result("cnn32_5l_kappa.txt", cnn32_5l_kappa)
-    write_result("cnn32_5l_ece.txt", cnn32_5l_ece)
-    write_result("cnn32_5l_tune_time.txt", cnn32_5l_tune_time)
-    write_result("cnn32_5l_train_time.txt", cnn32_5l_train_time)
-    write_result("cnn32_5l_test_time.txt", cnn32_5l_test_time)
+    write_result(prefix + "cnn32_5l_bestparams.txt", best_params)
+    write_result(prefix + "cnn32_5l_kappa.txt", cnn32_5l_kappa)
+    write_result(prefix + "cnn32_5l_ece.txt", cnn32_5l_ece)
+    write_result(prefix + "cnn32_5l_tune_time.txt", cnn32_5l_tune_time)
+    write_result(prefix + "cnn32_5l_train_time.txt", cnn32_5l_train_time)
+    write_result(prefix + "cnn32_5l_test_time.txt", cnn32_5l_test_time)
 
 
 def run_resnet18():
@@ -583,12 +584,12 @@ def run_resnet18():
             resnet18_test_time.append(test_time)
 
     print("resnet18 finished")
-    write_result("resnet18_bestparams.txt", best_params)
-    write_result("resnet18_kappa.txt", resnet18_kappa)
-    write_result("resnet18_ece.txt", resnet18_ece)
-    write_result("resnet18_tune_time.txt", resnet18_tune_time)
-    write_result("resnet18_train_time.txt", resnet18_train_time)
-    write_result("resnet18_test_time.txt", resnet18_test_time)
+    write_result(prefix + "resnet18_bestparams.txt", best_params)
+    write_result(prefix + "resnet18_kappa.txt", resnet18_kappa)
+    write_result(prefix + "resnet18_ece.txt", resnet18_ece)
+    write_result(prefix + "resnet18_tune_time.txt", resnet18_tune_time)
+    write_result(prefix + "resnet18_train_time.txt", resnet18_train_time)
+    write_result(prefix + "resnet18_test_time.txt", resnet18_test_time)
 
 
 if __name__ == "__main__":
@@ -652,7 +653,7 @@ if __name__ == "__main__":
     fsdk18_test_labels = testy.copy()
 
     print("Running RF tuning \n")
-    run_naive_rf()
+    # run_naive_rf()
     print("Running CNN32 tuning \n")
     run_cnn32()
     print("Running CNN32_2l tuning \n")
