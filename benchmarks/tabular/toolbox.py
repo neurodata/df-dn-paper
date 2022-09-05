@@ -7,7 +7,6 @@ Coauthors: Michael Ainsworth
 
 
 import numpy as np
-from random import sample
 from sklearn.ensemble import RandomForestClassifier
 from pytorch_tabnet.tab_model import TabNetClassifier
 import xgboost as xgb
@@ -15,7 +14,9 @@ import openml
 import json
 from os.path import exists
 from sklearn.model_selection import RandomizedSearchCV
-
+from sklearn.model_selection import train_test_split
+import time
+from sklearn.metrics import cohen_kappa_score
 
 def random_sample_new(
     X_train,
@@ -28,88 +29,59 @@ def random_sample_new(
     Peforms multiclass predictions for a random forest classifier with fixed total samples.
     min_rep_per_class = minimal number of train samples for a specific label
     """
+    ratios  = []
+    [uniques, counts] = np.unique(y_train, return_counts = True)
+    for unique_num, unique_class in enumerate(uniques):
+        unique_count = counts[unique_num]
+        ratios.append(unique_count / len(y_train))
+          
     np.random.seed(seed_rand)
-    training_sample_sizes = sorted(training_sample_sizes)
-    num_classes = len(np.unique(y_train))
-    classes_spec = np.unique(y_train)
-    previous_partitions_len = np.zeros(num_classes)
-    previous_inds = {class_val: [] for class_val in classes_spec}
     final_inds = []
-    # Check that the training sample size is big enough to include all class representations
-    if np.floor(np.min(training_sample_sizes) / num_classes) < min_rep_per_class:
-        raise ValueError(
-            "Not enough samples for each class, decreasing number of classes"
-        )
-    for samp_size_count, samp_size in enumerate(training_sample_sizes):
-        partitions = np.array_split(np.array(range(samp_size)), num_classes)
-        partitions_real = [
-            len(part_new) - previous_partitions_len[class_c]
-            for class_c, part_new in partitions
-        ]  # partitions_real is the number of additional samples we have to take
-        indices_classes_addition_all = (
-            []
-        )  # For each samples size = what indices are taken for all classes together
-        for class_count, class_val in enumerate(classes_spec):
-            indices_class = np.argwhere(np.array(y_train) == class_val).T[0]
-            indices_class_original = [
-                ind_class
-                for ind_class in indices_class
-                if ind_class not in previous_inds[class_val]
-            ]
-            np.random.shuffle(indices_class_original)
-            if partitions_real[class_count] <= len(indices_class_original):
-                indices_class_addition = indices_class_original[
-                    : partitions_real[class_count]
-                ]
-                previous_inds[class_val].extend(indices_class_addition)
-                indices_classes_addition_all.extend(indices_class_addition)
-
-            else:
-                raise ValueError(
-                    "Class %s does not have enough samples" % str(class_val)
-                )
-        if final_inds:
-            indices_prev = final_inds[-1].copy()
-        else:
-            indices_prev = []
-        indices_class_addtion_and_prev = indices_prev + indices_class_addition
-        final_inds.append(indices_class_addtion_and_prev)
-        previous_partitions_len = [len(parti) for parti in partitions]
+    for samp_num, samp_size in enumerate(training_sample_sizes):
+        
+        cur_indices = []
+        for class_num, class_spec in enumerate(uniques):
+            num_from_class = np.round(ratios[class_num]*samp_size)
+            indices_class = np.argwhere(np.array(y_train) == class_spec).T[0]
+            indices_to_add = np.random.choice(indices_class, int(num_from_class))
+            cur_indices.extend(indices_to_add.astype(int))
+        final_inds.append(np.array(cur_indices).astype(float).tolist())
+            
 
     return final_inds
+    
 
-
-def sample_large_datasets(X_data, y_data, max_size=10000):
-    """
-    For large datasets with over 10000 samples, resample the data to only include
-    10000 random samples.
-    """
-    inds = [i for i in range(X_data.shape[0])]
-    fin = sorted(sample(inds, max_size))
-    return X_data[fin], y_data[fin]
 
 
 def save_best_parameters(
-    save_methods, save_methods_rewrite, path_save, best_parameters
+    save_methods, save_methods_rewrite, path_save, best_parameters, non_json = False
 ):
     """
     Save Hyperparameters
     """
-    if exists(path_save + ".json") and save_methods_rewrite["json"] == 0:
+    if not path_save.endswith('.json'):
+        path_save = path_save+'.json'
+    if exists(path_save ) and save_methods_rewrite["json"] == 0:
         with open(path_save + ".json", "r") as json_file:
             dictionary = json.load(json_file)
         best_parameters_to_save = {**dictionary, **best_parameters}
     else:
         best_parameters_to_save = best_parameters
-    with open(path_save + ".json", "w") as fp:
+         
+    with open(path_save , "w") as fp:
         json.dump(best_parameters_to_save, fp)
 
 
+def convert(o):
+    if isinstance(o, np.int64): return int(o)  
+    raise TypeError
+    
 def open_data(path, format_file):
     """
     Open existing data
     """
-    dictionary = json.load(path + ".json")
+    f = open(path + ".json")
+    dictionary = json.load(f)
     return dictionary
 
 
@@ -118,13 +90,10 @@ def create_parameters(model_name, varargin, p=None):
     Functions to calculate model performance and parameters.
     """
     if model_name == "DN":
-        parameters = {
-            "hidden_layer_sizes": varargin["node_range"],
-            "alpha": varargin["alpha_range_nn"],
-        }
+        parameters = varargin['DN']
     elif model_name == "RF":
 
-        parameters = {
+        parameters_dict1 = {
             "max_features": list(
                 set(
                     [
@@ -135,20 +104,32 @@ def create_parameters(model_name, varargin, p=None):
                         round(p),
                     ]
                 )
-            )
+            ),
+                               
         }
+        parameters_dict2 = varargin['RF']
+        parameters = {**parameters_dict1, **parameters_dict2}
     elif model_name == "GBDT":
-        parameters = {
-            "learning_rate": varargin["alpha_range_nn"],
-            "subsample": varargin["subsample"],
-        }
+        parameters = varargin['GBDT']
+        
     else:
         raise ValueError(
             "Model name is invalid. Please check the keys of models_to_run"
         )
     return parameters
 
+def create_model(model_name, params = {}):
+    if model_name == "DN":
+        model = TabNetClassifier(**params)
+    elif model_name ==  "RF":
+        model = RandomForestClassifier(**params)
+    elif model_name ==  "GBDT": 
+        model = xgb.XGBClassifier(booster="gbtree", base_score=0.5, **params)
+    else:
+        raise NameError('model name does not exist')
 
+    
+    return model
 def do_calcs_per_model(
     all_parameters,
     best_parameters,
@@ -163,25 +144,62 @@ def do_calcs_per_model(
     val_indices,
     p=None,
     varCV=None,
+    sample_size_index = -1,
+
 ):
     """
     find best parameters for given sample_size, dataset_index, model_name
+    Inputs:
+        - 
+        - 
+    Outputs:
+        - all_parameters:  a dictionary with keys model name -> dataset index -> sample size index with all parameters
+        - best_parameters: a dictionary with keys model name -> dataset index -> sample size index with the best parameters
+        - all_params:      cv parameters results
+        - calc_time:       calculation time
     """
-    model = classifiers[model_name]
+    model = create_model(model_name)# classifiers[model_name]
     varCVmodel = varCV[model_name]
     parameters = create_parameters(model_name, varargin, p)
+    start_time = time.perf_counter()
     clf = RandomizedSearchCV(
         model,
         parameters,
         n_jobs=varCVmodel["n_jobs"],
         cv=[(train_indices, val_indices)],
-        verbose=varCVmodel["verbose"],
+        verbose=varCVmodel["verbose"],scoring="accuracy"
     )
     clf.fit(X, y)
-    all_parameters[model_name][dataset_index] = parameters
-    best_parameters[model_name][dataset_index] = clf.best_params_
-    all_params[model_name][dataset_index] = clf.cv_results_["params"]
-    return all_parameters, best_parameters, all_params
+    end_time = time.perf_counter()
+    print(all_parameters[model_name].keys())
+    
+    if model_name not in all_parameters.keys():     all_parameters[model_name]= {}
+    if model_name not in best_parameters.keys():    best_parameters[model_name] = {}
+    if model_name not in all_params.keys():         all_params[model_name] = {}
+
+        
+        
+    if dataset_index not in all_parameters[model_name].keys():
+        all_parameters[model_name][dataset_index] = {}
+        best_parameters[model_name][dataset_index] = {}
+        all_params[model_name][dataset_index] = {}
+
+        
+    if sample_size_index not in all_parameters[model_name][dataset_index].keys():
+        all_parameters[model_name][dataset_index][sample_size_index] = {}
+        best_parameters[model_name][dataset_index][sample_size_index] = {}
+        all_params[model_name][dataset_index][sample_size_index] = {}
+
+        
+        
+    all_parameters[model_name][dataset_index][sample_size_index] = list(parameters)
+    best_parameters[model_name][dataset_index][sample_size_index] = clf.best_params_
+    
+    
+    all_params[model_name][dataset_index][sample_size_index] = clf.cv_results_["params"]
+    calc_time = end_time - start_time
+
+    return all_parameters, best_parameters, all_params, calc_time
 
 
 def load_cc18():
@@ -260,24 +278,24 @@ def save_vars_to_dict(
         "shape_2_evolution": shape_2_evolution,
         "shape_2_all_sample_sizes": shape_2_all_sample_sizes,
     }
-
+    #print(dataset_indices_max)
     with open(path_to_save, "w") as fp:
         json.dump(dict_to_save, fp)
 
 
-def model_define(model_name, best_params_dict, dataset):
+def model_define(model_name, best_params_dict, dataset, sample_size_ind):
     """ """
     if model_name == "RF":
         model = RandomForestClassifier(
-            **best_params_dict[model_name][dataset], n_estimators=500, n_jobs=-1
+            **best_params_dict[model_name][str(dataset)][str( sample_size_ind)],  n_jobs=-1
         )
     elif model_name == "DN":
-        model = TabNetClassifier(**best_params_dict[model_name][dataset])
+        model = TabNetClassifier(**best_params_dict[model_name][str(dataset)][str( sample_size_ind)])
     elif model_name == "GBDT":
         model = xgb.XGBClassifier(
             booster="gbtree",
             base_score=0.5,
-            **best_params_dict[model_name][dataset],
+            **best_params_dict[model_name][str(dataset)][str( sample_size_ind)],
             n_estimators=500
         )
     else:
@@ -341,19 +359,32 @@ def get_ece(predicted_posterior, predicted_label, true_label, num_bins=40):
     return score
 
 
+
 def find_indices_train_val_test(
-    X_shape,
+    y_data,
     ratio=[2, 1, 1],
     keys_types=["train", "val", "test"],
     dict_data_indices={},
     dataset_ind=0,
 ):
-    ratio_base = [int(el) for el in np.linspace(0, X_shape, np.sum(ratio) + 1)]
-    ratio_base_limits = np.hstack([[0], ratio_base[np.cumsum(ratio)]])
-    list_indices = np.arange(X_shape)
-    np.random.shuffle(list_indices)
-    for ind_counter, ind_min in enumerate(ratio_base_limits[:-1]):
-        ind_max = ratio_base_limits[ind_counter + 1]
-        cur_indices = list_indices[ind_min:ind_max]
-        dict_data_indices[dataset_ind][keys_types[ind_counter]] = cur_indices
+    """
+    This function comes to find the indices of train, validation and test sets
+    """
+    fractions = ratio/np.sum(ratio)
+    fractions_train_val = ratio[:-1]/np.sum(ratio[:-1])
+    list_indices = np.arange(len(y_data))
+    index_train_val, index_test, labels_train_val,labels_test = train_test_split(list_indices, y_data, test_size=fractions[-1], stratify=y_data, random_state = 0)
+    index_train, index_val, labels_train,labels_test = train_test_split(index_train_val,labels_train_val , test_size=fractions_train_val[-1], stratify=labels_train_val , random_state = 0)
+   
+    cur_indices_list = [index_train, index_val, index_test]
+    for ind_counter, key_type in enumerate(keys_types):
+        dict_data_indices[dataset_ind][key_type] = np.unique(cur_indices_list[ind_counter]).tolist(); #astype(int))
     return dict_data_indices
+
+def sample_large_datasets(X_data, y_data, max_size=10000,random_state= 0):
+    """
+    For large datasets with over 10000 samples, resample the data to only include
+    10000 random samples.
+    """
+    X_data, _, y_data, _ = train_test_split(X_data, y_data, train_size=max_size, stratify=y_data,random_state=random_state)
+    return X_data, y_data

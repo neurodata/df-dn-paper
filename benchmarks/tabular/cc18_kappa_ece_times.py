@@ -7,7 +7,6 @@ Coauthors: Michael Ainsworth
 
 from sklearn import datasets
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import cohen_kappa_score
 import time
 from toolbox import *
 
@@ -21,13 +20,28 @@ reload_data = False  # indicator of whether to upload the data again
 path_save = "metrics/cc18_all_parameters"
 path_params = "metrics/dict_parameters"
 path_train_val_test_indices = "metrics/dict_data_indices"
-with open(path_params + ".json", "r") as json_file:
-    dictionary_params = json.load(json_file)
 
-with open(path_train_val_test_indices + ".json", "r") as json_file:
-    dict_data_indices = json.load(json_file)
+f = open('metrics/dict_parameters.json');
+dictionary_params = json.load(f)
 
-path = path_save  # "metrics/cc18_all_parameters"
+f2 = open(path_train_val_test_indices + ".json")
+dict_data_indices = json.load(f2)
+
+f3 = open("metrics/varied_size_dict.json") # varied size are final indices for each model. The is a dict -> dataset -> index sampline -> list
+ss_inds_full = json.load(f3)
+
+models_to_scale = {
+    "RF": 0,
+    "DN": 1,
+    "GBDT": 0,
+} 
+
+
+
+"""
+Define Saving Paths
+"""
+path = path_save 
 type_file = ".json"
 dataset_indices_max = dictionary_params["dataset_indices_max"]
 max_shape_to_run = dictionary_params["max_shape_to_run"]
@@ -37,7 +51,7 @@ file_type_to_load = ".json"
 Number of repetitions for each CV fold at each sample size
 """
 
-reps = 1
+reps = 10
 shape_2_all_sample_sizes = dictionary_params["shape_2_all_sample_sizes"]
 shape_2_evolution = dictionary_params["shape_2_evolution"]
 n_splits = dictionary_params["shape_2_evolution"]
@@ -56,16 +70,17 @@ if reload_data or "dataset_name" not in locals():
 Upload best parameters
 """
 
-if "best_params_dict" not in locals():
-    best_params_dict = open_data(path, "text_dict")
 
-train_indices = [i for i in range(dataset_indices_max)]
+f_best        = open(path+".json")
+best_params_dict = json.load(f_best)
+
+
 
 """
 Create empty arrays to index sample sizes, kappa values, and ece scores
 """
 
-all_sample_sizes = np.zeros((len(train_indices), shape_2_all_sample_sizes))
+all_sample_sizes = np.zeros((dataset_indices_max, shape_2_all_sample_sizes))
 
 """
 Empty arrays to index times into
@@ -77,6 +92,10 @@ train_times = {
 test_times = {model_name: None for model_name in dictionary_params["classifiers_names"]}
 
 train_test_times = {model_name: {} for model_name in best_params_dict.keys()}
+#train_test_times = {
+    #metric: {model_name: {} for model_name in best_params_dict.keys()}
+    #for metric in ["cohen_kappa", "ece"]
+#}
 
 
 evolution_dict = {
@@ -89,117 +108,128 @@ For each dataset, train and predict for every sample size
 Record outputs using Cohen's Kappa and ECE
 """
 
-for dataset_index, dataset in enumerate(train_indices):
-    print("\n\nCurrent Dataset: ", dataset)
+for dataset_index, dataset in enumerate(np.array(list(dict_data_indices.keys()),dtype = int)):
+    if len(dict_data_indices[str(dataset)]) > 0:
+        print("\n\nCurrent Dataset: ", dataset)
+    
+        X = X_data_list[dataset]
+        y = y_data_list[dataset]
+        
+            # If data set has over 10000 samples, resample to contain 10000
+        if X.shape[0] > max_shape_to_run:
+            X, y = sample_large_datasets(X, y, max_shape_to_run)
+            
+        train_indices = dict_data_indices[str(dataset)]["train"]
+        test_indices = dict_data_indices[str(dataset)]["test"]
+    
+    
+        X_train, X_test = X[train_indices], X[test_indices]
+        y_train, y_test = y[train_indices], y[test_indices]
+    
+        training_sample_sizes = np.geomspace(
+            len(np.unique(y_train)) * 5, X_train.shape[0], num=8, dtype=int
+        )
+    
 
-    X = X_data_list[dataset]
-    y = y_data_list[dataset]
-    train_indices = dict_data_indices[dataset_index]["train"]
-    test_indices = dict_data_indices[dataset_index]["test"]
-
-    # If data set has over 10000 samples, resample to contain 10000
-    if X.shape[0] > max_shape_to_run:
-        X, y = sample_large_datasets(X, y)
-
-    scaler = StandardScaler()
-    scaler.fit(X)
-    X = scaler.transform(X)
-
-    X_train, X_test = X[train_indices], X[test_indices]
-    y_train, y_test = y[train_indices], y[test_indices]
-
-    training_sample_sizes = np.geomspace(
-        len(np.unique(y_train)) * 5, X_train.shape[0], num=8, dtype=int
-    )
-    ss_inds = random_sample_new(
-        X_train, y_train, training_sample_sizes, classes=num_classes
-    )
-
-    # Iterate through each sample size per dataset
-    for sample_size_index, real_sample_size in enumerate(training_sample_sizes):
-        cohen_ece_results_dict = {metric: {} for metric in ["cohen_kappa", "ece"]}
-        train_test_times_cur = {
-            model_name: np.zeros((reps)) for model_name in best_params_dict.keys()
-        }
-
-        X_train_new = X_train[ss_inds[sample_size_index]]
-        y_train_new = y_train[ss_inds[sample_size_index]]
-
-        # Repeat for number of repetitions, averaging results
-        for model_name, model_best_params in best_params_dict.items():
-            if models_to_run[model_name]:
-                if dataset not in train_test_times["cohen_kappa"][model_name].keys():
-                    train_test_times["cohen_kappa"][model_name][dataset] = {}
-                    train_test_times["ece"][model_name][dataset] = {}
-
-                try:
-                    model = model_define(model_name, best_params_dict, dataset_index)
-
-                    start_time = time.perf_counter()
-                    model.fit(X_train_new, y_train_new)
-                    end_time = time.perf_counter()
-                    train_time = end_time - start_time
-
-                    predictions = model.predict(X_test)
-                    predict_probas = model.predict_proba(X_test)
-
-                    cohen_kappa = cohen_kappa_score(y_test, predictions)
-                    cohen_ece_results_dict["cohen_kappa"][model_name] = cohen_kappa
-                    ece = get_ece(predict_probas, predictions, y_test)
-                    cohen_ece_results_dict["ece"][model_name] = ece
-
-                    train_test_times_cur[model_name] = train_time
-
-                except ValueError:
-                    print(model_name)
-
-                if dataset not in evolution_dict["cohen_kappa"][model_name].keys():
-                    evolution_dict["cohen_kappa"][model_name][dataset] = {}
-                    evolution_dict["ece"][model_name][dataset] = {}
-                if (
-                    real_sample_size
-                    not in evolution_dict["cohen_kappa"][model_name][dataset].keys()
-                ):
-                    evolution_dict["cohen_kappa"][model_name][dataset][
+    
+        # Iterate through each sample size per dataset
+        try:
+            ss_inds = ss_inds_full[dataset_index]
+        except:
+            ss_inds = ss_inds_full[str(dataset_index)]
+        for sample_size_index, real_sample_size in enumerate(training_sample_sizes):
+            real_sample_size  = int(real_sample_size)
+            cohen_ece_results_dict = {metric: {} for metric in ["cohen_kappa", "ece"]}
+            train_test_times_cur = {
+                model_name: np.zeros((reps)) for model_name in best_params_dict.keys()
+            }
+            
+            X_train_new = X_train[np.array(ss_inds[sample_size_index]).astype(int)]
+            y_train_new = y_train[np.array(ss_inds[sample_size_index]).astype(int)]
+    
+            # Repeat for number of repetitions, averaging results
+            for model_name, model_best_params in best_params_dict.items():
+                if models_to_run[model_name]:
+                    if models_to_scale[model_name ]:
+                        scaler = StandardScaler()
+                        scaler.fit(X_train_new)
+                        X_train_new = scaler.transform(X_train_new)
+                        X_test_new = scaler.transform(X_test)
+                    else:
+                        X_test_new = X_test
+                    if str(dataset) not in train_test_times[model_name].keys():
+                        train_test_times[model_name][dataset] = {}
+                        train_test_times[model_name][dataset] = {}
+    
+                    try:
+                        model = model_define(model_name, best_params_dict, dataset_index, sample_size_index)
+    
+                        start_time = time.perf_counter()
+                        model.fit(X_train_new, y_train_new)
+                        end_time = time.perf_counter()
+                        train_time = end_time - start_time
+    
+                        predictions = model.predict(X_test)
+                        predict_probas = model.predict_proba(X_test)
+    
+                        cohen_kappa = cohen_kappa_score(y_test, predictions)
+                        cohen_ece_results_dict["cohen_kappa"][model_name] = cohen_kappa
+                        ece = get_ece(predict_probas, predictions, y_test)
+                        cohen_ece_results_dict["ece"][model_name] = ece
+    
+                        train_test_times_cur[model_name] = train_time
+    
+                    except ValueError:
+                        print(model_name)
+    
+                    if str(dataset) not in evolution_dict["cohen_kappa"][model_name].keys():
+                        evolution_dict["cohen_kappa"][model_name][str(dataset)] = {}
+                        evolution_dict["ece"][model_name][str(dataset)] = {}
+                    if (
                         real_sample_size
-                    ] = []
-                    evolution_dict["ece"][model_name][dataset][real_sample_size] = []
-                    train_test_times[model_name][dataset][real_sample_size] = []
-                    train_test_times[model_name][dataset][real_sample_size] = []
-
-                evolution_dict["cohen_kappa"][model_name][dataset][
-                    real_sample_size
-                ].append(cohen_ece_results_dict["cohen_kappa"][model_name])
-                evolution_dict["ece"][model_name][dataset][real_sample_size].append(
-                    cohen_ece_results_dict["ece"][model_name]
-                )
-                evolution_dict[model_name][dataset][real_sample_size].append(
-                    train_test_times_cur[model_name]
-                )
-
-                # Changing the results to tuple enabling easier saving to json and ectacting the fata after that.
-
-                train_test_times[model_name][dataset][real_sample_size] = tuple(
-                    train_test_times[model_name][dataset][real_sample_size]
-                )
-
-                evolution_dict["cohen_kappa"][model_name][dataset][
-                    real_sample_size
-                ] = tuple(
-                    evolution_dict["cohen_kappa"][model_name][dataset][real_sample_size]
-                )
-
-                evolution_dict["ece"][model_name][dataset][real_sample_size] = tuple(
-                    evolution_dict["ece"][model_name][dataset][real_sample_size]
-                )
-
-    # Record sample sizes used
-    all_sample_sizes[dataset_index][:] = np.array(training_sample_sizes)
+                        not in evolution_dict["cohen_kappa"][model_name][str(dataset)].keys()
+                    ):
+                        evolution_dict["cohen_kappa"][model_name][str(dataset)][
+                            str(real_sample_size)
+                        ] = []
+                        evolution_dict["ece"][model_name][str(dataset)][str(real_sample_size)] = []
+                        train_test_times[model_name][str(dataset)][str(real_sample_size)] = []
+                        train_test_times[model_name][str(dataset)][str(real_sample_size)] = []
+    
+                    evolution_dict["cohen_kappa"][model_name][str(dataset)][
+                        real_sample_size
+                    ].append(cohen_ece_results_dict["cohen_kappa"][model_name])
+                    
+                    evolution_dict["ece"][model_name][str(dataset)][str(real_sample_size)].append(
+                        cohen_ece_results_dict["ece"][model_name]
+                    )
+                    train_test_times[model_name][str(dataset)][str(real_sample_size)].append(
+                        train_test_times_cur[model_name]
+                    )
+    
+                    # Changing the results to tuple enabling easier saving to json and ectacting the fata after that.
+    
+                    train_test_times[model_name][dataset][real_sample_size] = tuple(
+                        train_test_times[model_name][str(dataset)][str(real_sample_size)]
+                    )
+    
+                    evolution_dict["cohen_kappa"][model_name][str(dataset)][
+                        str(real_sample_size)
+                    ] = tuple(
+                        evolution_dict["cohen_kappa"][model_name][str(dataset)][str(real_sample_size)]
+                    )
+    
+                    evolution_dict["ece"][model_name][str(dataset)][str(real_sample_size)] = tuple(
+                        evolution_dict["ece"][model_name][str(dataset)][str(real_sample_size)]
+                    )
+    
+        # Record sample sizes used
+        all_sample_sizes[dataset_index][:] = np.array(training_sample_sizes)
 
 new_dict = {}
 for key_met in evolution_dict.keys():
-    new_dict[key_met] = mod_dict(evolution_dict[key_met], tuple)
-new_dict_times = mod_dict(train_test_times, tuple)
+    new_dict[str(key_met)] = mod_dict(evolution_dict[key_met], tuple)
+
 
 
 """
@@ -213,12 +243,12 @@ save_best_parameters(
     save_methods,
     save_methods_rewrite,
     "metrics/cc18_sample_sizes.json",
-    all_sample_sizes,
+    all_sample_sizes.tolist(),
 )
 
 save_best_parameters(
     save_methods, save_methods_rewrite, "results/cc18_kappa_and_ece", new_dict
 )
 save_best_parameters(
-    save_methods, save_methods_rewrite, "results/cc18_training_times", new_dict_times
+    save_methods, save_methods_rewrite, "results/cc18_training_times", train_test_times
 )
