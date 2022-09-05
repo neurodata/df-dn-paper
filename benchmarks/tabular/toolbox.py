@@ -18,6 +18,7 @@ from sklearn.model_selection import train_test_split
 import time
 from sklearn.metrics import cohen_kappa_score
 
+
 def random_sample_new(
     X_train,
     y_train,
@@ -29,53 +30,52 @@ def random_sample_new(
     Peforms multiclass predictions for a random forest classifier with fixed total samples.
     min_rep_per_class = minimal number of train samples for a specific label
     """
-    ratios  = []
-    [uniques, counts] = np.unique(y_train, return_counts = True)
+    ratios = []
+    [uniques, counts] = np.unique(y_train, return_counts=True)
     for unique_num, unique_class in enumerate(uniques):
         unique_count = counts[unique_num]
         ratios.append(unique_count / len(y_train))
-          
+
     np.random.seed(seed_rand)
     final_inds = []
     for samp_num, samp_size in enumerate(training_sample_sizes):
-        
+
         cur_indices = []
         for class_num, class_spec in enumerate(uniques):
-            num_from_class = np.round(ratios[class_num]*samp_size)
+            num_from_class = np.round(ratios[class_num] * samp_size)
             indices_class = np.argwhere(np.array(y_train) == class_spec).T[0]
             indices_to_add = np.random.choice(indices_class, int(num_from_class))
             cur_indices.extend(indices_to_add.astype(int))
         final_inds.append(np.array(cur_indices).astype(float).tolist())
-            
 
     return final_inds
-    
-
 
 
 def save_best_parameters(
-    save_methods, save_methods_rewrite, path_save, best_parameters, non_json = False
+    save_methods, save_methods_rewrite, path_save, best_parameters, non_json=False
 ):
     """
     Save Hyperparameters
     """
-    if not path_save.endswith('.json'):
-        path_save = path_save+'.json'
-    if exists(path_save ) and save_methods_rewrite["json"] == 0:
+    if not path_save.endswith(".json"):
+        path_save = path_save + ".json"
+    if exists(path_save) and save_methods_rewrite["json"] == 0:
         with open(path_save + ".json", "r") as json_file:
             dictionary = json.load(json_file)
         best_parameters_to_save = {**dictionary, **best_parameters}
     else:
         best_parameters_to_save = best_parameters
-         
-    with open(path_save , "w") as fp:
+
+    with open(path_save, "w") as fp:
         json.dump(best_parameters_to_save, fp)
 
 
 def convert(o):
-    if isinstance(o, np.int64): return int(o)  
+    if isinstance(o, np.int64):
+        return int(o)
     raise TypeError
-    
+
+
 def open_data(path, format_file):
     """
     Open existing data
@@ -90,7 +90,7 @@ def create_parameters(model_name, varargin, p=None):
     Functions to calculate model performance and parameters.
     """
     if model_name == "DN":
-        parameters = varargin['DN']
+        parameters = varargin["DN"]
     elif model_name == "RF":
 
         parameters_dict1 = {
@@ -105,31 +105,32 @@ def create_parameters(model_name, varargin, p=None):
                     ]
                 )
             ),
-                               
         }
-        parameters_dict2 = varargin['RF']
+        parameters_dict2 = varargin["RF"]
         parameters = {**parameters_dict1, **parameters_dict2}
     elif model_name == "GBDT":
-        parameters = varargin['GBDT']
-        
+        parameters = varargin["GBDT"]
+
     else:
         raise ValueError(
             "Model name is invalid. Please check the keys of models_to_run"
         )
     return parameters
 
-def create_model(model_name, params = {}):
+
+def create_model(model_name, params={}):
     if model_name == "DN":
         model = TabNetClassifier(**params)
-    elif model_name ==  "RF":
+    elif model_name == "RF":
         model = RandomForestClassifier(**params)
-    elif model_name ==  "GBDT": 
+    elif model_name == "GBDT":
         model = xgb.XGBClassifier(booster="gbtree", base_score=0.5, **params)
     else:
-        raise NameError('model name does not exist')
+        raise NameError("model name does not exist")
 
-    
     return model
+
+
 def do_calcs_per_model(
     all_parameters,
     best_parameters,
@@ -144,21 +145,20 @@ def do_calcs_per_model(
     val_indices,
     p=None,
     varCV=None,
-    sample_size_index = -1,
-
+    sample_size_index=-1,
 ):
     """
     find best parameters for given sample_size, dataset_index, model_name
     Inputs:
-        - 
-        - 
+        -
+        -
     Outputs:
         - all_parameters:  a dictionary with keys model name -> dataset index -> sample size index with all parameters
         - best_parameters: a dictionary with keys model name -> dataset index -> sample size index with the best parameters
         - all_params:      cv parameters results
         - calc_time:       calculation time
     """
-    model = create_model(model_name)# classifiers[model_name]
+    model = create_model(model_name)  # classifiers[model_name]
     varCVmodel = varCV[model_name]
     parameters = create_parameters(model_name, varargin, p)
     start_time = time.perf_counter()
@@ -167,35 +167,33 @@ def do_calcs_per_model(
         parameters,
         n_jobs=varCVmodel["n_jobs"],
         cv=[(train_indices, val_indices)],
-        verbose=varCVmodel["verbose"],scoring="accuracy"
+        verbose=varCVmodel["verbose"],
+        scoring="accuracy",
     )
     clf.fit(X, y)
     end_time = time.perf_counter()
     print(all_parameters[model_name].keys())
-    
-    if model_name not in all_parameters.keys():     all_parameters[model_name]= {}
-    if model_name not in best_parameters.keys():    best_parameters[model_name] = {}
-    if model_name not in all_params.keys():         all_params[model_name] = {}
 
-        
-        
+    if model_name not in all_parameters.keys():
+        all_parameters[model_name] = {}
+    if model_name not in best_parameters.keys():
+        best_parameters[model_name] = {}
+    if model_name not in all_params.keys():
+        all_params[model_name] = {}
+
     if dataset_index not in all_parameters[model_name].keys():
         all_parameters[model_name][dataset_index] = {}
         best_parameters[model_name][dataset_index] = {}
         all_params[model_name][dataset_index] = {}
 
-        
     if sample_size_index not in all_parameters[model_name][dataset_index].keys():
         all_parameters[model_name][dataset_index][sample_size_index] = {}
         best_parameters[model_name][dataset_index][sample_size_index] = {}
         all_params[model_name][dataset_index][sample_size_index] = {}
 
-        
-        
     all_parameters[model_name][dataset_index][sample_size_index] = list(parameters)
     best_parameters[model_name][dataset_index][sample_size_index] = clf.best_params_
-    
-    
+
     all_params[model_name][dataset_index][sample_size_index] = clf.cv_results_["params"]
     calc_time = end_time - start_time
 
@@ -278,7 +276,7 @@ def save_vars_to_dict(
         "shape_2_evolution": shape_2_evolution,
         "shape_2_all_sample_sizes": shape_2_all_sample_sizes,
     }
-    #print(dataset_indices_max)
+    # print(dataset_indices_max)
     with open(path_to_save, "w") as fp:
         json.dump(dict_to_save, fp)
 
@@ -287,15 +285,18 @@ def model_define(model_name, best_params_dict, dataset, sample_size_ind):
     """ """
     if model_name == "RF":
         model = RandomForestClassifier(
-            **best_params_dict[model_name][str(dataset)][str( sample_size_ind)],  n_jobs=-1
+            **best_params_dict[model_name][str(dataset)][str(sample_size_ind)],
+            n_jobs=-1
         )
     elif model_name == "DN":
-        model = TabNetClassifier(**best_params_dict[model_name][str(dataset)][str( sample_size_ind)])
+        model = TabNetClassifier(
+            **best_params_dict[model_name][str(dataset)][str(sample_size_ind)]
+        )
     elif model_name == "GBDT":
         model = xgb.XGBClassifier(
             booster="gbtree",
             base_score=0.5,
-            **best_params_dict[model_name][str(dataset)][str( sample_size_ind)],
+            **best_params_dict[model_name][str(dataset)][str(sample_size_ind)],
             n_estimators=500
         )
     else:
@@ -359,7 +360,6 @@ def get_ece(predicted_posterior, predicted_label, true_label, num_bins=40):
     return score
 
 
-
 def find_indices_train_val_test(
     y_data,
     ratio=[2, 1, 1],
@@ -370,21 +370,35 @@ def find_indices_train_val_test(
     """
     This function comes to find the indices of train, validation and test sets
     """
-    fractions = ratio/np.sum(ratio)
-    fractions_train_val = ratio[:-1]/np.sum(ratio[:-1])
+    fractions = ratio / np.sum(ratio)
+    fractions_train_val = ratio[:-1] / np.sum(ratio[:-1])
     list_indices = np.arange(len(y_data))
-    index_train_val, index_test, labels_train_val,labels_test = train_test_split(list_indices, y_data, test_size=fractions[-1], stratify=y_data, random_state = 0)
-    index_train, index_val, labels_train,labels_test = train_test_split(index_train_val,labels_train_val , test_size=fractions_train_val[-1], stratify=labels_train_val , random_state = 0)
-   
+    index_train_val, index_test, labels_train_val, labels_test = train_test_split(
+        list_indices, y_data, test_size=fractions[-1], stratify=y_data, random_state=0
+    )
+    index_train, index_val, labels_train, labels_test = train_test_split(
+        index_train_val,
+        labels_train_val,
+        test_size=fractions_train_val[-1],
+        stratify=labels_train_val,
+        random_state=0,
+    )
+
     cur_indices_list = [index_train, index_val, index_test]
     for ind_counter, key_type in enumerate(keys_types):
-        dict_data_indices[dataset_ind][key_type] = np.unique(cur_indices_list[ind_counter]).tolist(); #astype(int))
+        dict_data_indices[dataset_ind][key_type] = np.unique(
+            cur_indices_list[ind_counter]
+        ).tolist()
+        # astype(int))
     return dict_data_indices
 
-def sample_large_datasets(X_data, y_data, max_size=10000,random_state= 0):
+
+def sample_large_datasets(X_data, y_data, max_size=10000, random_state=0):
     """
     For large datasets with over 10000 samples, resample the data to only include
     10000 random samples.
     """
-    X_data, _, y_data, _ = train_test_split(X_data, y_data, train_size=max_size, stratify=y_data,random_state=random_state)
+    X_data, _, y_data, _ = train_test_split(
+        X_data, y_data, train_size=max_size, stratify=y_data, random_state=random_state
+    )
     return X_data, y_data
