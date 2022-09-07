@@ -307,20 +307,20 @@ if __name__ == "__main__":
     normalize = lambda x: (x - scale) / scale
 
     """
-    Originally, the SVHN dataset had a train:test split of 73257:26032 digits.
-    I will extract the test and training data below, contactenate them into a big set, and then split them into a 2:1:1 train:test:validate split.
+    SVHN dataset has a train:test ratio of 73257:26032.
+    Extract, contactenate and then split the data into a 2:1:1 ratio.
     """
     # original train data
     svhn_trainset = datasets.SVHN(
         root="./", split="train", download=True, transform=None
     )
     svhn_train_images = normalize(svhn_trainset.data)
-    svhn_train_labels = np.array(svhn_trainset.targets)
+    svhn_train_labels = np.array(svhn_trainset.labels)
 
     # original test data
     svhn_testset = datasets.SVHN(root="./", split="test", download=True, transform=None)
     svhn_test_images = normalize(svhn_testset.data)
-    svhn_test_labels = np.array(svhn_testset.targets)
+    svhn_test_labels = np.array(svhn_testset.labels)
 
     # train data concatenation (train: 100%)
     svhn_train_images = np.concatenate((svhn_train_images, svhn_test_images))
