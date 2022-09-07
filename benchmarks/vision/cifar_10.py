@@ -307,10 +307,8 @@ if __name__ == "__main__":
     normalize = lambda x: (x - scale) / scale
 
     """
-    Originally, the CIFAR10 dataset had a train:test split of 5:1, each containing 50000 and 10000 images.
-    I will split the data below and add some of the training data into validation and test to achieve the 2:1:1 split.
-    Since the dataset website stated that the original distribution of test and training data are randomized among classes,
-    I belive we can do this without interfering with the randomization of the dataset.
+    CIFAR10 has a train:test ratio of 5:1, containing 50000 and 10000 images.
+    Split the data into a 2:1:1 ratio.
     """
     # train data (50000)
     cifar_trainset = datasets.CIFAR10(
