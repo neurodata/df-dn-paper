@@ -299,8 +299,8 @@ def parameter_list_generator(num_iter):
         int(x) for x in np.linspace(start=50, stop=150, num=11)
     ]  # number of trees in the random forest
     max_features = [
-        "auto",
         "sqrt",
+        "log2",
     ]  # number of features in consideration at every split
     max_depth = [
         int(x) for x in np.linspace(10, 120, num=12)
@@ -309,6 +309,7 @@ def parameter_list_generator(num_iter):
     max_leaf_nodes = [
         int(x) for x in np.linspace(25, 125, num=5)
     ]  # maximum number of nodes that a tree can possess
+    n_jobs = [-1]
 
     param_grid = {
         "n_estimators": n_estimators,
@@ -316,6 +317,7 @@ def parameter_list_generator(num_iter):
         "max_depth": max_depth,
         "min_samples_split": min_samples_split,
         "max_leaf_nodes": max_leaf_nodes,
+        "n_jobs" = n_jobs,
     }
 
     param_list = list(ParameterSampler(param_grid, n_iter=num_iter, random_state=rng))
