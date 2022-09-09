@@ -11,7 +11,7 @@ from toolbox import *
 
 
 # Define executrion variables (to save memory & execution time)
-reload_data = False  # indicator of whether to upload the data again
+reload_data = True  # indicator of whether to upload the data again
 return_default = False
 
 """
@@ -20,7 +20,7 @@ Hyperparameters options
 
 # General Parameters
 dataset_indices_max = 72
-max_shape_to_run = 1000
+max_shape_to_run = 20000
 
 # RF Hyper-Parameters
 criterions = ["gini", "entropy"]
@@ -33,7 +33,7 @@ n_estimators_range = [10, 50, 100, 300]  # [10,50,100,300]
 eta = [0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 0.9]  # default=0
 gamma = [0, 0.3, 0.2, 0.1, 0.2]  # default=0
 subsample = [0.5, 0.6, 0.7, 1]  # default=1
-sampling_method = ["uniform", "gradient_based"]  # default= uniform
+sampling_method = ["uniform"]  # , "gradient_based"]  # default= uniform
 colsample_bynode = [0.4, 0.5, 0.9, 1]  # default = 1
 lambda_vals = [0.2, 0.9, 1, 1.1]  # default = 1
 alpha_vals = [0.2, 0.9, 1, 1.1]  # defaulte = 1
@@ -164,6 +164,7 @@ if (
     reload_data or "dataset_name" not in locals()
 ):  # Load the data only if required (by reload_data or if it is not defined)
     X_data_list, y_data_list, dataset_name = load_cc18()
+    print("Load CC18 datasets")
 
 """
 Choose dataset indices
@@ -187,7 +188,7 @@ for dataset_index, dataset in enumerate(dataset_indices):
     y = y_data_list[dataset]
 
     """
-    If data set has over 10000 samples, resample to contain 10000
+    If data set has over 20000 samples, resample to contain 20000
     """
 
     if X.shape[0] > max_shape_to_run:
@@ -215,7 +216,7 @@ for dataset_index, dataset in enumerate(dataset_indices):
 
     for sample_size_index, sample_size in enumerate(training_sample_sizes):
         print(np.array(ss_inds[sample_size_index], dtype=int))
-        # print(train_indices)
+
         train_indices = np.array(train_indices)
         train_indices_pers = train_indices[
             np.array(ss_inds[sample_size_index], dtype=int).astype(int)

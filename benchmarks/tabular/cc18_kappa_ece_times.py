@@ -157,8 +157,8 @@ for dataset_index, dataset in enumerate(
                     else:
                         X_test_new = X_test
                     if str(dataset) not in train_test_times[model_name].keys():
-                        train_test_times[model_name][dataset] = {}
-                        train_test_times[model_name][dataset] = {}
+                        train_test_times[model_name][str(dataset)] = {}
+                        train_test_times[model_name][str(dataset)] = {}
 
                     try:
                         model = model_define(
@@ -212,7 +212,7 @@ for dataset_index, dataset in enumerate(
                         ] = []
 
                     evolution_dict["cohen_kappa"][model_name][str(dataset)][
-                        real_sample_size
+                        str(real_sample_size)
                     ].append(cohen_ece_results_dict["cohen_kappa"][model_name])
 
                     evolution_dict["ece"][model_name][str(dataset)][
@@ -224,7 +224,9 @@ for dataset_index, dataset in enumerate(
 
                     # Changing the results to tuple enabling easier saving to json and ectacting the fata after that.
 
-                    train_test_times[model_name][dataset][real_sample_size] = tuple(
+                    train_test_times[model_name][str(dataset)][
+                        str(real_sample_size)
+                    ] = tuple(
                         train_test_times[model_name][str(dataset)][
                             str(real_sample_size)
                         ]
