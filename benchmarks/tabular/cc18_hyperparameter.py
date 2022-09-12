@@ -280,6 +280,3 @@ for dataset_index, dataset in enumerate(dataset_indices):
     save_best_parameters(
         save_methods, save_methods_rewrite, "metrics/tuning_times.json", calc_times
     )
-    save_best_parameters(
-        save_methods, save_methods_rewrite, "metrics/tuning_times.json", calc_times
-    )
