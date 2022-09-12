@@ -350,101 +350,101 @@ def run_rf_image_set(
     )
 
 
-def run_dn_image_es(
-    model,
-    train_data,
-    train_labels,
-    valid_data,
-    valid_labels,
-    test_data,
-    test_labels,
-    epochs=30,
-    lr=0.001,
-    batch=60,
-):
-    """
-    Peforms multiclass predictions for a deep network classifier with set number
-    of samples and early stopping
-    """
-    # define model
-    dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model.to(dev)
-    # loss and optimizer
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
-    # early stopping setup
-    prev_loss = float("inf")
-    flag = 0
-    start_time = time.perf_counter()
-    for epoch in range(epochs):  # loop over the dataset multiple times
-        model.train()
-        for i in range(0, len(train_data), batch):
-            # get the inputs
-            inputs = train_data[i : i + batch].to(dev)
-            labels = train_labels[i : i + batch].to(dev)
-            # zero the parameter gradients
-            optimizer.zero_grad()
-
-            # forward + backward + optimize
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-
-        # test generalization error for early stopping
-        model.eval()
-        cur_loss = 0
-        with torch.no_grad():
-            for i in range(0, len(valid_data), batch):
-                # get the inputs
-                inputs = valid_data[i : i + batch].to(dev)
-                labels = valid_labels[i : i + batch].to(dev)
-
-                # forward
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
-                cur_loss += loss
-        # early stop if 3 epochs in a row no loss decrease
-        if cur_loss < prev_loss:
-            prev_loss = cur_loss
-            flag = 0
-        else:
-            flag += 1
-            if flag >= 3:
-                print("early stopped at epoch: ", epoch)
-                break
-    end_time = time.perf_counter()
-    train_time = end_time - start_time
-
-    # test the model
-    model.eval()
-    prob_cal = nn.Softmax(dim=1)
-    start_time = time.perf_counter()
-    test_preds = []
-    with torch.no_grad():
-        for i in range(0, len(test_data), batch):
-            inputs = test_data[i : i + batch].to(dev)
-            labels = test_labels[i : i + batch].to(dev)
-
-            outputs = model(inputs)
-            _, predicted = torch.max(outputs.data, 1)
-            test_preds = np.concatenate((test_preds, predicted.tolist()))
-
-            test_prob = prob_cal(outputs)
-            if i == 0:
-                test_probs = test_prob.tolist()
-            else:
-                test_probs = np.concatenate((test_probs, test_prob.tolist()))
-
-    end_time = time.perf_counter()
-    test_time = end_time - start_time
-    test_labels = np.array(test_labels.tolist())
-    return (
-        cohen_kappa_score(test_preds, test_labels),
-        get_ece(test_probs, test_preds, test_labels),
-        train_time,
-        test_time,
-    )
+# def run_dn_image_es(
+#     model,
+#     train_data,
+#     train_labels,
+#     valid_data,
+#     valid_labels,
+#     test_data,
+#     test_labels,
+#     epochs=30,
+#     lr=0.001,
+#     batch=60,
+# ):
+#     """
+#     Peforms multiclass predictions for a deep network classifier with set number
+#     of samples and early stopping
+#     """
+#     # define model
+#     dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+#     model.to(dev)
+#     # loss and optimizer
+#     criterion = nn.CrossEntropyLoss()
+#     optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+#     # early stopping setup
+#     prev_loss = float("inf")
+#     flag = 0
+#     start_time = time.perf_counter()
+#     for epoch in range(epochs):  # loop over the dataset multiple times
+#         model.train()
+#         for i in range(0, len(train_data), batch):
+#             # get the inputs
+#             inputs = train_data[i : i + batch].to(dev)
+#             labels = train_labels[i : i + batch].to(dev)
+#             # zero the parameter gradients
+#             optimizer.zero_grad()
+#
+#             # forward + backward + optimize
+#             outputs = model(inputs)
+#             loss = criterion(outputs, labels)
+#             loss.backward()
+#             optimizer.step()
+#
+#         # test generalization error for early stopping
+#         model.eval()
+#         cur_loss = 0
+#         with torch.no_grad():
+#             for i in range(0, len(valid_data), batch):
+#                 # get the inputs
+#                 inputs = valid_data[i : i + batch].to(dev)
+#                 labels = valid_labels[i : i + batch].to(dev)
+#
+#                 # forward
+#                 outputs = model(inputs)
+#                 loss = criterion(outputs, labels)
+#                 cur_loss += loss
+#         # early stop if 3 epochs in a row no loss decrease
+#         if cur_loss < prev_loss:
+#             prev_loss = cur_loss
+#             flag = 0
+#         else:
+#             flag += 1
+#             if flag >= 3:
+#                 print("early stopped at epoch: ", epoch)
+#                 break
+#     end_time = time.perf_counter()
+#     train_time = end_time - start_time
+#
+#     # test the model
+#     model.eval()
+#     prob_cal = nn.Softmax(dim=1)
+#     start_time = time.perf_counter()
+#     test_preds = []
+#     with torch.no_grad():
+#         for i in range(0, len(test_data), batch):
+#             inputs = test_data[i : i + batch].to(dev)
+#             labels = test_labels[i : i + batch].to(dev)
+#
+#             outputs = model(inputs)
+#             _, predicted = torch.max(outputs.data, 1)
+#             test_preds = np.concatenate((test_preds, predicted.tolist()))
+#
+#             test_prob = prob_cal(outputs)
+#             if i == 0:
+#                 test_probs = test_prob.tolist()
+#             else:
+#                 test_probs = np.concatenate((test_probs, test_prob.tolist()))
+#
+#     end_time = time.perf_counter()
+#     test_time = end_time - start_time
+#     test_labels = np.array(test_labels.tolist())
+#     return (
+#         cohen_kappa_score(test_preds, test_labels),
+#         get_ece(test_probs, test_preds, test_labels),
+#         train_time,
+#         test_time,
+#     )
 
 
 def prepare_data(
