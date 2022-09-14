@@ -7,11 +7,13 @@ from toolbox import *
 
 import argparse
 import random
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import scale
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
+from copy import deepcopy
 import torchvision.models as models
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
@@ -53,12 +55,12 @@ def init_net(model, classes, parameters):
 
 
 # Add parameters
-def training_net(model, parameters, train_data, train_labels):
+def train_net(model, parameters, train_loader):
     # Training loop copied over from run_dn_image_es()
     dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(dev)
     epochs = parameters.get("epoch", 30)
-    batch = 60
+
     # loss and optimizer
     criterion = nn.CrossEntropyLoss()
 
@@ -73,10 +75,11 @@ def training_net(model, parameters, train_data, train_labels):
 
     for epoch in range(epochs):  # loop over the dataset multiple times
         model.train()
-        for i in range(0, len(train_data), batch):
+        for i, data in enumerate(train_loader, 0):
             # get the inputs
-            inputs = train_data[i : i + batch].to(dev)
-            labels = train_labels[i : i + batch].to(dev)
+            inputs, labels = data
+            inputs = inputs.clone().detach().to(dev)
+            labels = labels.clone().detach().to(dev)
             # zero the parameter gradients
             optimizer.zero_grad()
 
@@ -90,50 +93,55 @@ def training_net(model, parameters, train_data, train_labels):
 
 
 # Add parameters
-def evaluate_net(model, given_data, given_labels, batch, dev):
-
+def evaluate_net(model, test_loader, dev):
     # Function that evaluates the model and return the desired metrics
     model.eval()
     prob_cal = nn.Softmax(dim=1)
     test_preds = []
+    test_labels = []
     with torch.no_grad():
-        for i in range(0, len(given_data), batch):
-            inputs = given_data[i : i + batch].to(dev)
-            labels = given_labels[i : i + batch].to(dev)
+        for data in test_loader:
+            images, labels = data
+            images = images.clone().detach().to(dev)
+            labels = labels.clone().detach().to(dev)
+            test_labels = np.concatenate((test_labels, labels.tolist()))
 
-            outputs = model(inputs)
+            outputs = model(images)
             _, predicted = torch.max(outputs.data, 1)
             test_preds = np.concatenate((test_preds, predicted.tolist()))
 
             test_prob = prob_cal(outputs)
-            if i == 0:
+            if first:
                 test_probs = test_prob.tolist()
+                first = False
             else:
                 test_probs = np.concatenate((test_probs, test_prob.tolist()))
 
-    test_labels = np.array(given_labels.tolist())
     return accuracy_score(test_preds, test_labels)
 
 
-def evaluate_net_final(model, given_data, given_labels, batch, dev):
-
-    # Function that evaluates the cohen kappa.
+def evaluate_net_final(model, test_loader, dev):
+    # Function that evaluates the cohen kappa & ece.
     model.eval()
     start_time = time.perf_counter()
     prob_cal = nn.Softmax(dim=1)
     test_preds = []
+    test_labels = []
     with torch.no_grad():
-        for i in range(0, len(given_data), batch):
-            inputs = given_data[i : i + batch].to(dev)
-            labels = given_labels[i : i + batch].to(dev)
+        for data in test_loader:
+            images, labels = data
+            images = images.clone().detach().to(dev)
+            labels = labels.clone().detach().to(dev)
+            test_labels = np.concatenate((test_labels, labels.tolist()))
 
-            outputs = model(inputs)
+            outputs = model(images)
             _, predicted = torch.max(outputs.data, 1)
             test_preds = np.concatenate((test_preds, predicted.tolist()))
 
             test_prob = prob_cal(outputs)
-            if i == 0:
+            if first:
                 test_probs = test_prob.tolist()
+                first = False
             else:
                 test_probs = np.concatenate((test_probs, test_prob.tolist()))
 
@@ -149,34 +157,21 @@ def evaluate_net_final(model, given_data, given_labels, batch, dev):
 
 def run_dn_image_es(
     model,
-    train_data,
-    train_labels,
-    valid_data,
-    valid_labels,
-    test_data,
-    test_labels,
+    train_loader,
+    valid_loader,
     classes,
 ):
     """
     Peforms multiclass predictions for a deep network classifier with set number
     of samples and early stopping
     """
-
-    # init_net(parameters, classes)
-    # train_evaluate()
-    batch = 60
-
     ax = AxClient(enforce_sequential_optimization=False)
 
     def train_evaluate(parameterization):
-        # Ax primitive that initializes the training sequence --> Trains the model --> Calculates the evaluation metric
+        # Ax primitive that trains the model --> calculates the evaluation metric
         untrained_net = init_net(model, classes, parameterization)
-        trained_net = training_net(
-            untrained_net, parameterization, train_data, train_labels
-        )
-        report(
-            accuracy=evaluate_net(trained_net, valid_data, valid_labels, batch, device)
-        )
+        trained_net = train_net(untrained_net, parameterization, train_loader)
+        report(accuracy=evaluate_net(trained_net, valid_loader, device))
 
     ax.create_experiment(
         name="cifar_experiment",
@@ -190,7 +185,7 @@ def run_dn_image_es(
         minimize=False,
     )
 
-    asha_scheduler = ASHAScheduler(max_t=30, grace_period=5, reduction_factor=2)
+    asha_scheduler = ASHAScheduler(grace_period=5, reduction_factor=2)
 
     algo = AxSearch(ax_client=ax)
     # Wrap AxSearcher in a concurrently limiter, to ensure that Bayesian optimization receives the
@@ -262,31 +257,22 @@ def run_cnn32():
 
         # cohen_kappa vs num training samples (cnn32)
         for classes in classes_space:
-            (
-                train_images,
-                train_labels,
-                valid_images,
-                valid_labels,
-                test_images,
-                test_labels,
-            ) = prepare_data(
-                cifar_trainset.copy(),
+
+            # Create loaders
+            train_loader, valid_loader = create_loaders_ra(
                 cifar_train_labels.copy(),
-                cifar_testset.copy(),
-                cifar_test_labels.copy(),
-                samples,
+                cifar_valid_labels.copy(),
                 classes,
+                deepcopy(cifar_train_set),
+                deepcopy(cifar_valid_set),
+                samples,
             )
 
             start_time = time.perf_counter()
             arm, best_obj = run_dn_image_es(
                 "cnn32",
-                train_images,
-                train_labels,
-                valid_images,
-                valid_labels,
-                test_images,
-                test_labels,
+                train_loader,
+                valid_loader,
                 classes,
             )
             end_time = time.perf_counter()
@@ -295,23 +281,28 @@ def run_cnn32():
             best_objs.append(best_obj)
             best_params.append(arm)
 
-            combined_train_valid_data = torch.cat((train_images, valid_images), dim=0)
-            combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim=0)
-
             cnn32_final = SimpleCNN32Filter2Layers(len(classes))
 
+            train_valid_loader, test_loader = create_loaders_ra(
+                cifar_train_valid_labels.copy(),
+                cifar_test_labels.copy(),
+                classes,
+                deepcopy(cifar_train_valid_set),
+                deepcopy(cifar_test_set),
+                samples,
+            )
+
             start_time = time.perf_counter()
-            model_retrain_aftertune = training_net(
+            model_retrain_aftertune = train_net(
                 cnn32_final,
                 arm.parameters,
-                combined_train_valid_data,
-                combined_train_valid_labels,
+                train_valid_loader,
             )
             end_time = time.perf_counter()
             train_time = end_time - start_time
 
             final_ck, final_ece, test_time = evaluate_net_final(
-                model_retrain_aftertune, test_images, test_labels, 60, dev=device
+                model_retrain_aftertune, test_loader, dev=device
             )
 
             cnn32_kappa.append(final_ck)
@@ -320,13 +311,13 @@ def run_cnn32():
             cnn32_train_time.append(train_time)
             cnn32_test_time.append(test_time)
 
+            write_result(prefix + "cnn32_bestparams.txt", best_params)
+            write_result(prefix + "cnn32_kappa.txt", cnn32_kappa)
+            write_result(prefix + "cnn32_ece.txt", cnn32_ece)
+            write_result(prefix + "cnn32_tune_time.txt", cnn32_tune_time)
+            write_result(prefix + "cnn32_train_time.txt", cnn32_train_time)
+            write_result(prefix + "cnn32_test_time.txt", cnn32_test_time)
     print("cnn32 finished")
-    write_result(prefix + "cnn32_bestparams.txt", best_params)
-    write_result(prefix + "cnn32_kappa.txt", cnn32_kappa)
-    write_result(prefix + "cnn32_ece.txt", cnn32_ece)
-    write_result(prefix + "cnn32_tune_time.txt", cnn32_tune_time)
-    write_result(prefix + "cnn32_train_time.txt", cnn32_train_time)
-    write_result(prefix + "cnn32_test_time.txt", cnn32_test_time)
 
 
 def run_cnn32_2l():
@@ -341,21 +332,6 @@ def run_cnn32_2l():
 
         # cohen_kappa vs num training samples (cnn32_2l)
         for classes in classes_space:
-            (
-                train_images,
-                train_labels,
-                valid_images,
-                valid_labels,
-                test_images,
-                test_labels,
-            ) = prepare_data(
-                cifar_trainset.copy(),
-                cifar_train_labels.copy(),
-                cifar_testset.copy(),
-                cifar_test_labels.copy(),
-                samples,
-                classes,
-            )
 
             start_time = time.perf_counter()
             arm, best_obj = run_dn_image_es(
@@ -374,13 +350,10 @@ def run_cnn32_2l():
             best_objs.append(best_obj)
             best_params.append(arm)
 
-            combined_train_valid_data = torch.cat((train_images, valid_images), dim=0)
-            combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim=0)
-
             cnn32_2l_final = SimpleCNN32Filter2Layers(len(classes))
 
             start_time = time.perf_counter()
-            model_retrain_aftertune = training_net(
+            model_retrain_aftertune = train_net(
                 cnn32_2l_final,
                 arm.parameters,
                 combined_train_valid_data,
@@ -420,21 +393,6 @@ def run_cnn32_5l():
 
         # cohen_kappa vs num training samples (cnn32_5l)
         for classes in classes_space:
-            (
-                train_images,
-                train_labels,
-                valid_images,
-                valid_labels,
-                test_images,
-                test_labels,
-            ) = prepare_data(
-                cifar_trainset.copy(),
-                cifar_train_labels.copy(),
-                cifar_testset.copy(),
-                cifar_test_labels.copy(),
-                samples,
-                classes,
-            )
 
             start_time = time.perf_counter()
             arm, best_obj = run_dn_image_es(
@@ -453,13 +411,10 @@ def run_cnn32_5l():
             best_objs.append(best_obj)
             best_params.append(arm)
 
-            combined_train_valid_data = torch.cat((train_images, valid_images), dim=0)
-            combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim=0)
-
             cnn32_5l_final = SimpleCNN32Filter2Layers(len(classes))
 
             start_time = time.perf_counter()
-            model_retrain_aftertune = training_net(
+            model_retrain_aftertune = train_net(
                 cnn32_5l_final,
                 arm.parameters,
                 combined_train_valid_data,
@@ -507,9 +462,9 @@ def run_resnet18():
                 test_images,
                 test_labels,
             ) = prepare_data(
-                cifar_trainset.copy(),
+                cifar_train_set.copy(),
                 cifar_train_labels.copy(),
-                cifar_testset.copy(),
+                cifar_test_set.copy(),
                 cifar_test_labels.copy(),
                 samples,
                 classes,
@@ -532,15 +487,12 @@ def run_resnet18():
             best_objs.append(best_obj)
             best_params.append(arm)
 
-            combined_train_valid_data = torch.cat((train_images, valid_images), dim=0)
-            combined_train_valid_labels = torch.cat((train_labels, valid_labels), dim=0)
-
             resnet_final = models.resnet18(pretrained=True)
             num_ftrs = resnet_final.fc.in_features
             resnet_final.fc = nn.Linear(num_ftrs, len(classes))
 
             start_time = time.perf_counter()
-            model_retrain_aftertune = training_net(
+            model_retrain_aftertune = train_net(
                 resnet18_final,
                 arm.parameters,
                 combined_train_valid_data,
@@ -584,25 +536,25 @@ if __name__ == "__main__":
     classes_space = list(combinations_45(nums, n_classes))
 
     # normalize
-    scale = np.mean(np.arange(0, 256))
-    normalize = lambda x: (x - scale) / scale
+    # scale = np.mean(np.arange(0, 256))
+    # normalize = lambda x: (x - scale) / scale
 
-    # train data
-    cifar_trainset = datasets.CIFAR10(
-        root="./", train=True, download=True, transform=None
-    )
-    cifar_train_images = normalize(cifar_trainset.data)
-    cifar_train_labels = np.array(cifar_trainset.targets)
+    # # train data
+    # cifar_train_set = datasets.CIFAR10(
+    #     root="./", train=True, download=True, transform=None
+    # )
+    # cifar_train_images = normalize(cifar_train_set.data)
+    # cifar_train_labels = np.array(cifar_train_set.targets)
 
-    # test data
-    cifar_testset = datasets.CIFAR10(
-        root="./", train=False, download=True, transform=None
-    )
-    cifar_test_images = normalize(cifar_testset.data)
-    cifar_test_labels = np.array(cifar_testset.targets)
+    # # test data
+    # cifar_test_set = datasets.CIFAR10(
+    #     root="./", train=False, download=True, transform=None
+    # )
+    # cifar_test_images = normalize(cifar_test_set.data)
+    # cifar_test_labels = np.array(cifar_test_set.targets)
 
-    cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
-    cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
+    # cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
+    # cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
 
     # run_naive_rf()
 
@@ -611,66 +563,71 @@ if __name__ == "__main__":
     )
 
     # train data
-    cifar_trainset = datasets.CIFAR10(
+    cifar_train_set = datasets.CIFAR10(
         root="./", train=True, download=True, transform=data_transforms
     )
-    cifar_train_labels = np.array(cifar_trainset.targets)
 
     # test data
-    cifar_testset = datasets.CIFAR10(
+    cifar_test_set = datasets.CIFAR10(
         root="./", train=False, download=True, transform=data_transforms
     )
-    cifar_test_labels = np.array(cifar_testset.targets)
 
+    # Combine all data into whole set
+    cifar_whole_images = np.concatenate((cifar_train_set.data, cifar_test_set.data))
+    cifar_whole_labels = np.concatenate(
+        (np.array(cifar_train_set.targets), np.array(cifar_test_set.targets))
+    )
+
+    # Separate whole set into training set & valid set & test set with 2:1:1 ratio
     (
-        cifar_trainset,
-        cifar_testset,
-        cifar_train_labels,
+        cifar_train_valid_images,
+        cifar_test_images,
+        cifar_train_valid_labels,
         cifar_test_labels,
     ) = train_test_split(
-        torch.cat((cifar_trainset, cifar_testset), dim=0),
-        torch.cat((cifar_train_labels, cifar_test_labels), dim=0),
-        shuffle=True,
-        test_size=0.50,
-        train_size=0.50,
-        stratify=cifar_test_labels,
+        cifar_whole_images,
+        cifar_whole_labels,
+        test_size=0.25,
+        stratify=cifar_whole_labels,
     )
+    (
+        cifar_valid_images,
+        cifar_train_images,
+        cifar_valid_labels,
+        cifar_train_labels,
+    ) = train_test_split(
+        cifar_train_valid_images,
+        cifar_train_valid_labels,
+        test_size=0.67,
+        stratify=cifar_train_valid_labels,
+    )
+
+    # Create new datasets
+    cifar_train_valid_set = deepcopy(cifar_train_set)
+    cifar_train_valid_set.data = cifar_train_valid_images
+    cifar_train_valid_set.targets = cifar_train_valid_labels
+
+    cifar_valid_set = deepcopy(cifar_train_set)
+    cifar_valid_set.data = cifar_valid_images
+    cifar_valid_set.targets = cifar_valid_labels
+
+    cifar_test_set = deepcopy(cifar_train_set)
+    cifar_test_set.data = cifar_test_images
+    cifar_test_set.targets = cifar_test_labels
+
+    cifar_train_set.data = cifar_train_images
+    cifar_train_set.targets = cifar_train_labels
 
     run_cnn32()
-    run_cnn32_2l()
-    run_cnn32_5l()
+    # run_cnn32_2l()
+    # run_cnn32_5l()
 
-    data_transforms = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-        ]
-    )
+    # data_transforms = transforms.Compose(
+    #     [
+    #         transforms.ToTensor(),
+    #         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+    #     ]
+    # )
 
-    # train data
-    cifar_trainset = datasets.CIFAR10(
-        root="./", train=True, download=True, transform=data_transforms
-    )
-    cifar_train_labels = np.array(cifar_trainset.targets)
-
-    # test data
-    cifar_testset = datasets.CIFAR10(
-        root="./", train=False, download=True, transform=data_transforms
-    )
-    cifar_test_labels = np.array(cifar_testset.targets)
-
-    (
-        cifar_trainset,
-        cifar_testset,
-        cifar_train_labels,
-        cifar_test_labels,
-    ) = train_test_split(
-        torch.cat((cifar_trainset, cifar_testset), dim=0),
-        torch.cat((cifar_train_labels, cifar_test_labels), dim=0),
-        shuffle=True,
-        test_size=0.50,
-        train_size=0.50,
-        stratify=cifar_test_labels,
-    )
-
-    run_resnet18()
+    # init_dataset(data_transforms)
+    # run_resnet18()

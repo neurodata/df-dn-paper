@@ -540,3 +540,64 @@ def create_loaders_es(
     )
 
     return train_loader, valid_loader, test_loader
+
+
+def create_loaders_ra(
+    train_labels, test_labels, classes, trainset, testset, samples, batch=64
+):
+
+    classes = np.array(list(classes))
+    num_classes = len(classes)
+    partitions = np.array_split(np.array(range(samples)), num_classes)
+    # get indicies of classes we want
+    class_idxs = []
+    i = 0
+    for cls in classes:
+        class_idx = np.argwhere(train_labels == cls).flatten()
+        np.random.shuffle(class_idx)
+        class_idx = class_idx[: len(partitions[i])]
+        class_idxs.append(class_idx)
+        i += 1
+
+    np.random.shuffle(class_idxs)
+
+    train_idxs = np.concatenate(class_idxs)
+    # change the labels to be from 0-len(classes)
+    for i in train_idxs:
+        trainset.targets[i] = np.where(classes == trainset.targets[i])[0][0]
+
+    train_sampler = torch.utils.data.sampler.SubsetRandomSampler(train_idxs)
+    train_loader = torch.utils.data.DataLoader(
+        trainset,
+        batch_size=batch,
+        num_workers=16,
+        sampler=train_sampler,
+        drop_last=True,
+        pin_memory=True,
+    )
+
+    # get indicies of classes we want
+    test_idxs = []
+    validation_idxs = []
+    for cls in classes:
+        test_idx = np.argwhere(test_labels == cls).flatten()
+        test_idxs.append(test_idx)
+
+    test_idxs = np.concatenate(test_idxs)
+
+    # change the labels to be from 0-len(classes)
+    for i in test_idxs:
+        testset.targets[i] = np.where(classes == testset.targets[i])[0][0]
+
+    test_sampler = torch.utils.data.sampler.SubsetRandomSampler(test_idxs)
+    test_loader = torch.utils.data.DataLoader(
+        testset,
+        batch_size=batch,
+        shuffle=False,
+        num_workers=16,
+        sampler=test_sampler,
+        drop_last=True,
+        pin_memory=True,
+    )
+
+    return train_loader, test_loader
