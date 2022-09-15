@@ -6,23 +6,13 @@ Coauthors: Haoyin Xu
 """
 from toolbox import *
 import argparse
+import logging
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import scale
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-import torchvision.models as models
-import warnings
-import random
-import ax
-import torch
-from ax.plot.trace import optimization_trace_single_method
-from ax.service.managed_loop import optimize
-from ax.service.ax_client import AxClient
-import logging
-from ray import tune
-from ray.tune import report
-from ray.tune.suggest.ax import AxSearch
-from ray.tune.schedulers import ASHAScheduler
+
 
 logger = logging.getLogger(tune.__name__)
 logger.setLevel(
@@ -32,189 +22,6 @@ logger.setLevel(
 warnings.filterwarnings("ignore")
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-# Ax function to initialize the model
-def init_net(model, classes, parameters):
-    if model == "cnn32":
-        net = SimpleCNN32Filter(len(classes))
-    elif model == "cnn32_2l":
-        net = SimpleCNN32Filter2Layers(len(classes))
-    elif model == "cnn32_5l":
-        net = SimpleCNN32Filter5Layers(len(classes))
-    elif model == "resnet":
-        net = models.resnet18(pretrained=True)
-        num_ftrs = net.fc.in_features
-        net.fc = nn.Linear(num_ftrs, len(classes))
-    return net  # return untrained model
-
-
-# Add parameters
-def training_net(model, parameters, train_data, train_labels):
-    # Training loop copied over from run_dn_image_es()
-    dev = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model.to(dev)
-    epochs = parameters.get("epoch", 30)
-    batch = 60
-    # loss and optimizer
-    criterion = nn.CrossEntropyLoss()
-
-    if parameters.get("optimizer", "SGD"):
-        optimizer = optim.SGD(
-            model.parameters(),
-            lr=parameters.get("lr", 0.001),
-            momentum=parameters.get("momentum", 0.9),
-        )
-    if parameters.get("optimizer", "Adam"):
-        optimizer = optim.Adam(model.parameters(), lr=parameters.get("lr", 0.001))
-
-    for epoch in range(epochs):  # loop over the dataset multiple times
-        model.train()
-        for i in range(0, len(train_data), batch):
-            # get the inputs
-            inputs = train_data[i : i + batch].to(dev)
-            labels = train_labels[i : i + batch].to(dev)
-            # zero the parameter gradients
-            optimizer.zero_grad()
-
-            # forward + backward + optimize
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-
-    return model
-
-
-# Add parameters
-def evaluate_net(model, given_data, given_labels, batch, dev):
-
-    # Function that evaluates the model and return the desired metric to optimize. Copied over from run_dn_image_es()
-
-    model.eval()
-    prob_cal = nn.Softmax(dim=1)
-    test_preds = []
-    with torch.no_grad():
-        for i in range(0, len(given_data), batch):
-            inputs = given_data[i : i + batch].to(dev)
-            labels = given_labels[i : i + batch].to(dev)
-
-            outputs = model(inputs)
-            _, predicted = torch.max(outputs.data, 1)
-            test_preds = np.concatenate((test_preds, predicted.tolist()))
-
-            test_prob = prob_cal(outputs)
-            if i == 0:
-                test_probs = test_prob.tolist()
-            else:
-                test_probs = np.concatenate((test_probs, test_prob.tolist()))
-
-    test_labels = np.array(given_labels.tolist())
-    return accuracy_score(test_preds, test_labels)
-
-
-def evaluate_net_final(model, given_data, given_labels, batch, dev):
-
-    # Function that evaluates the cohen kappa.
-
-    model.eval()
-    start_time = time.perf_counter()
-    prob_cal = nn.Softmax(dim=1)
-    test_preds = []
-    with torch.no_grad():
-        for i in range(0, len(given_data), batch):
-            inputs = given_data[i : i + batch].to(dev)
-            labels = given_labels[i : i + batch].to(dev)
-
-            outputs = model(inputs)
-            _, predicted = torch.max(outputs.data, 1)
-            test_preds = np.concatenate((test_preds, predicted.tolist()))
-
-            test_prob = prob_cal(outputs)
-            if i == 0:
-                test_probs = test_prob.tolist()
-            else:
-                test_probs = np.concatenate((test_probs, test_prob.tolist()))
-
-    test_labels = np.array(given_labels.tolist())
-    end_time = time.perf_counter()
-    test_time = end_time - start_time
-    return (
-        cohen_kappa_score(test_preds, test_labels),
-        get_ece(test_probs, test_preds, test_labels),
-        test_time,
-    )
-
-
-def run_dn_image_es(
-    model,
-    train_data,
-    train_labels,
-    valid_data,
-    valid_labels,
-    test_data,
-    test_labels,
-    classes,
-):
-    """
-    Peforms multiclass predictions for a deep network classifier with set number
-    of samples and early stopping
-    """
-
-    # init_net(parameters, classes)
-    # train_evaluate()
-    batch = 60
-
-    ax = AxClient(enforce_sequential_optimization=False)
-
-    def train_evaluate(parameterization):
-        # Ax primitive that initializes the training sequence --> Trains the model --> Calculates the evaluation metric
-        untrained_net = init_net(model, classes, parameterization)
-        trained_net = training_net(
-            untrained_net, parameterization, train_data, train_labels
-        )
-        report(
-            accuracy=evaluate_net(trained_net, valid_data, valid_labels, batch, device)
-        )
-
-    ax.create_experiment(
-        name="fsdk18_experiment",
-        parameters=[
-            {"name": "lr", "type": "range", "bounds": [1e-6, 0.4], "log_scale": True},
-            {"name": "momentum", "type": "range", "bounds": [0.0, 1.0]},
-            {"name": "epoch", "type": "range", "bounds": [15, 40]},
-            {"name": "optimizer", "type": "choice", "values": ["SGD", "Adam"]},
-        ],
-        objective_name="accuracy",
-        minimize=False,
-    )
-
-    asha_scheduler = ASHAScheduler(max_t=30, grace_period=5, reduction_factor=2)
-
-    algo = AxSearch(ax_client=ax)
-    # Wrap AxSearcher in a concurrently limiter, to ensure that Bayesian optimization receives the
-    # data for completed trials before creating more trials
-    algo = tune.suggest.ConcurrencyLimiter(algo, max_concurrent=3)
-    tune.run(
-        train_evaluate,
-        num_samples=20,
-        metric="accuracy",
-        mode="max",
-        search_alg=algo,
-        verbose=0,  # Set this level to 1 to see status updates and to 2 to also see trial results.
-        scheduler=asha_scheduler,  # To use GPU, specify:
-        resources_per_trial={"gpu": 1},
-    )
-
-    data = ax.experiment.fetch_data()
-    df = data.df
-    best_arm_name = df.arm_name[df["mean"] == df["mean"].max()].values[0]
-    best_arm = ax.experiment.arms_by_name[best_arm_name]
-
-    best_objectives = np.array(
-        [[trial.objective_mean * 100 for trial in ax.experiment.trials.values()]]
-    )
-
-    return best_arm, best_objectives
 
 
 def run_naive_rf():
@@ -262,11 +69,8 @@ def run_cnn32():
         # cohen_kappa vs num training samples (cnn32)
         for classes in classes_space:
             # train data
-            cnn32 = SimpleCNN32Filter(len(classes))
-            # 3000 samples, 80% train is 2400 samples, 20% test
             train_images = trainx.copy()
             train_labels = trainy.copy()
-            # reshape in 4d array
             test_images = testx.copy()
             test_labels = testy.copy()
 
@@ -345,11 +149,8 @@ def run_cnn32_2l():
         # cohen_kappa vs num training samples (cnn32_2l)
         for classes in classes_space:
             # train data
-            cnn32_2l = SimpleCNN32Filter2Layers(len(classes))
-            # 3000 samples, 80% train is 2400 samples, 20% test
             train_images = trainx.copy()
             train_labels = trainy.copy()
-            # reshape in 4d array
             test_images = testx.copy()
             test_labels = testy.copy()
 
@@ -428,11 +229,8 @@ def run_cnn32_5l():
         # cohen_kappa vs num training samples (cnn32_5l)
         for classes in classes_space:
             # train data
-            cnn32_5l = SimpleCNN32Filter5Layers(len(classes))
-            # 3000 samples, 80% train is 2400 samples, 20% test
             train_images = trainx.copy()
             train_labels = trainy.copy()
-            # reshape in 4d array
             test_images = testx.copy()
             test_labels = testy.copy()
 
@@ -510,15 +308,9 @@ def run_resnet18():
     for samples in samples_space:
         # cohen_kappa vs num training samples (resnet18)
         for classes in classes_space:
-            # Initialize model
-            resnet18 = models.resnet18(pretrained=True)
-            num_ftrs = resnet18.fc.in_features
-            resnet18.fc = nn.Linear(num_ftrs, len(classes))
             # train data
-            # 3000 samples, 80% train is 2400 samples, 20% test
             train_images = trainx.copy()
             train_labels = trainy.copy()
-            # reshape in 4d array
             test_images = testx.copy()
             test_labels = testy.copy()
 
@@ -628,7 +420,7 @@ if __name__ == "__main__":
         prefix = args.m + "_class_mfcc/"
 
     # create list of classes with const random seed
-    random.Random(5).shuffle(nums)
+    np.random.shuffle(nums)
     classes_space = list(combinations_45(nums, n_classes))
 
     # scale the data
