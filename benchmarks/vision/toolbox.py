@@ -9,7 +9,8 @@ import logging
 from copy import deepcopy
 
 import numpy as np
-from sklearn.metrics import cohen_kappa_score
+from sklearn.metrics import cohen_kappa_score, accuracy_score
+from sklearn.model_selection import ParameterSampler
 
 import torch
 import torch.nn as nn
@@ -791,3 +792,61 @@ def run_dn_image_es(
     )
 
     return best_arm, best_objectives
+
+
+def rf_parameter_list_generator(num_iter):
+    n_estimators = [100, 200, 300, 400, 500]  # number of trees in the random forest
+    max_features = [
+        "sqrt",
+        "log2",
+    ]  # number of features in consideration at every split
+    max_depth = [
+        int(x) for x in np.linspace(10, 120, num=12)
+    ]  # maximum number of levels allowed in each decision tree
+    min_samples_split = [2, 6, 10]  # minimum sample number to split a node
+    max_leaf_nodes = [
+        int(x) for x in np.linspace(25, 125, num=5)
+    ]  # maximum number of nodes that a tree can possess
+    n_jobs = [-1]
+
+    param_grid = {
+        "n_estimators": n_estimators,
+        "max_features": max_features,
+        "max_depth": max_depth,
+        "min_samples_split": min_samples_split,
+        "max_leaf_nodes": max_leaf_nodes,
+        "n_jobs": n_jobs,
+    }
+
+    param_list = list(ParameterSampler(param_grid, n_iter=num_iter))
+
+    return param_list
+
+
+def gb_parameter_list_generator(num_iter):
+    n_estimators = [100, 200, 300, 400, 500]  # number of trees in the random forest
+    max_features = [
+        "sqrt",
+        "log2",
+    ]  # number of features in consideration at every split
+    max_depth = [
+        int(x) for x in np.linspace(10, 120, num=12)
+    ]  # maximum number of levels allowed in each decision tree
+    min_samples_split = [2, 6, 10]  # minimum sample number to split a node
+    max_leaf_nodes = [
+        int(x) for x in np.linspace(25, 125, num=5)
+    ]  # maximum number of nodes that a tree can possess
+    n_jobs = [-1]
+
+    param_grid = {
+        "n_estimators": n_estimators,
+        "max_features": max_features,
+        "max_depth": max_depth,
+        "min_samples_split": min_samples_split,
+        "max_leaf_nodes": max_leaf_nodes,
+        "n_jobs": n_jobs,
+    }
+
+    param_list = list(ParameterSampler(param_grid, n_iter=num_iter))
+
+    return param_list

@@ -9,12 +9,12 @@ import argparse
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import scale
-from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
+from xgboost import XGBClassifier
 
 logger = logging.getLogger(tune.__name__)
 logger.setLevel(
@@ -35,9 +35,10 @@ def run_naive_rf():
 
         # cohen_kappa vs num training samples (naive_rf)
         for samples in samples_space:
-            RF = RandomForestClassifier(n_estimators=100, n_jobs=-1)
+            rf = RandomForestClassifier()
+            rf.set_params(**rf_chosen_params_dict[(classes, samples)])
             cohen_kappa, ece, train_time, test_time = run_rf_image_set(
-                RF,
+                rf,
                 cifar_train_images,
                 cifar_train_labels,
                 cifar_test_images,
@@ -55,6 +56,116 @@ def run_naive_rf():
     write_result(prefix + "naive_rf_ece.txt", naive_rf_ece)
     write_result(prefix + "naive_rf_train_time.txt", naive_rf_train_time)
     write_result(prefix + "naive_rf_test_time.txt", naive_rf_test_time)
+
+
+def tune_naive_rf():
+    # only tuning on accuracy, regardless of training time
+    naive_rf_accuracy = []
+    naive_rf_tune_time = []
+    naive_rf_param_dict = {}
+    for classes in classes_space:
+
+        for samples in samples_space:
+            # specify how many random combinations we are going to test out
+            num_iter = 10
+            candidate_param_list = rf_parameter_list_generator(num_iter)
+
+            for params in candidate_param_list:
+                rf = RandomForestClassifier()
+                rf.set_params(**params)
+                accuracy, train_time, val_time = tune_rf_image_set(
+                    rf,
+                    cifar_train_images,
+                    cifar_train_labels,
+                    cifar_val_images,
+                    cifar_val_labels,
+                    samples,
+                    classes,
+                )
+                naive_rf_accuracy.append(accuracy)
+                naive_rf_tune_time.append(train_time + val_time)
+
+            max_accuracy = max(naive_rf_accuracy)
+            max_index = naive_rf_accuracy.index(max_accuracy)
+            naive_rf_param_dict[(classes, samples)] = candidate_param_list[max_index]
+
+    print("naive_rf tuning finished")
+    write_result(prefix + "naive_rf_bestparams.txt", naive_rf_param_dict)
+    write_result(prefix + "naive_rf_tune_time.txt", naive_rf_tune_time)
+    write_result(prefix + "naive_rf_tune_accuracy.txt", naive_rf_accuracy)
+
+    return naive_rf_param_dict
+
+
+def run_gbdt():
+    gbdt_kappa = []
+    gbdt_ece = []
+    gbdt_train_time = []
+    gbdt_test_time = []
+    for classes in classes_space:
+
+        # cohen_kappa vs num training samples (gbdt)
+        for samples in samples_space:
+            gbdt = XGBClassifier()
+            gbdt.set_params(**gbdt_chosen_params_dict[(classes, samples)])
+            cohen_kappa, ece, train_time, test_time = run_rf_image_set(
+                gbdt,
+                cifar_train_images,
+                cifar_train_labels,
+                cifar_test_images,
+                cifar_test_labels,
+                samples,
+                classes,
+            )
+            gbdt_kappa.append(cohen_kappa)
+            gbdt_ece.append(ece)
+            gbdt_train_time.append(train_time)
+            gbdt_test_time.append(test_time)
+
+    print("gbdt finished")
+    write_result(prefix + "gbdt_kappa.txt", gbdt_kappa)
+    write_result(prefix + "gbdt_ece.txt", gbdt_ece)
+    write_result(prefix + "gbdt_train_time.txt", gbdt_train_time)
+    write_result(prefix + "gbdt_test_time.txt", gbdt_test_time)
+
+
+def tune_gbdt():
+    # only tuning on accuracy, regardless of training time
+    gbdt_accuracy = []
+    gbdt_tune_time = []
+    gbdt_param_dict = {}
+    for classes in classes_space:
+
+        for samples in samples_space:
+            # specify how many random combinations we are going to test out
+            num_iter = 10
+            candidate_param_list = gb_parameter_list_generator(num_iter)
+
+            for params in candidate_param_list:
+                gbdt = XGBClassifier()
+                gbdt.set_params(**params)
+                accuracy, train_time, val_time = tune_rf_image_set(
+                    gbdt,
+                    cifar_train_images,
+                    cifar_train_labels,
+                    cifar_val_images,
+                    cifar_val_labels,
+                    samples,
+                    classes,
+                )
+                gbdt_accuracy.append(accuracy)
+                gbdt_tune_time.append(train_time + val_time)
+
+            max_accuracy = max(gbdt_accuracy)
+            max_index = gbdt_accuracy.index(max_accuracy)
+            gbdt_param_dict[(classes, samples)] = candidate_param_list[max_index]
+
+    print("gbdt tuning finished")
+    write_result(prefix + "gbdt_bestparams.txt", gbdt_param_dict)
+    write_result(prefix + "gbdt_tune_time.txt", gbdt_tune_time)
+    write_result(prefix + "gbdt_tune_accuracy.txt", gbdt_accuracy)
+
+    return gbdt_param_dict
 
 
 def run_cnn32():
@@ -378,24 +489,66 @@ if __name__ == "__main__":
     # scale = np.mean(np.arange(0, 256))
     # normalize = lambda x: (x - scale) / scale
 
-    # # train data
-    # cifar_train_set = datasets.CIFAR10(
+    # """
+    # CIFAR10 has a train:test ratio of 5:1, containing 50000 and 10000 images.
+    # Split the data into a 2:1:1 ratio.
+    # """
+    # # train data (50000)
+    # cifar_trainset = datasets.CIFAR10(
     #     root="./", train=True, download=True, transform=None
     # )
-    # cifar_train_images = normalize(cifar_train_set.data)
-    # cifar_train_labels = np.array(cifar_train_set.targets)
-
-    # # test data
-    # cifar_test_set = datasets.CIFAR10(
+    # cifar_train_images = normalize(cifar_trainset.data)
+    # cifar_train_labels = np.array(cifar_trainset.targets)
+    #
+    # # test data (10000)
+    # cifar_testset = datasets.CIFAR10(
     #     root="./", train=False, download=True, transform=None
     # )
-    # cifar_test_images = normalize(cifar_test_set.data)
-    # cifar_test_labels = np.array(cifar_test_set.targets)
-
+    # cifar_test_images = normalize(cifar_testset.data)
+    # cifar_test_labels = np.array(cifar_testset.targets)
+    #
+    # # Combine all data into whole set
+    # cifar_whole_images = np.concatenate((cifar_train_images, cifar_test_images))
+    # cifar_whole_labels = np.concatenate(
+    #     (cifar_train_labels, cifar_test_labels)
+    # )
+    #
+    # # Separate whole set into training set & valid set & test set with 2:1:1 ratio
+    # (
+    #     cifar_train_valid_images,
+    #     cifar_test_images,
+    #     cifar_train_valid_labels,
+    #     cifar_test_labels,
+    # ) = train_test_split(
+    #     cifar_whole_images,
+    #     cifar_whole_labels,
+    #     test_size=0.25,
+    #     stratify=cifar_whole_labels,
+    # )
+    # (
+    #     cifar_valid_images,
+    #     cifar_train_images,
+    #     cifar_valid_labels,
+    #     cifar_train_labels,
+    # ) = train_test_split(
+    #     cifar_train_valid_images,
+    #     cifar_train_valid_labels,
+    #     test_size=0.67,
+    #     stratify=cifar_train_valid_labels,
+    # )
+    #
     # cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
+    # cifar_val_images = cifar_val_images.reshape(-1, 32 * 32 * 3)
     # cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
-
+    #
+    # # tuning + find the best parameters
+    # rf_chosen_params_dict = tune_naive_rf()
+    #
     # run_naive_rf()
+
+    # gbdt_chosen_params_dict = tune_naive_rf()
+    #
+    # run_gbdt()
 
     data_transforms = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
@@ -458,7 +611,41 @@ if __name__ == "__main__":
     cifar_train_set.targets = cifar_train_labels
 
     run_cnn32()
+
+    # Create new datasets
+    cifar_train_valid_set = deepcopy(cifar_train_set)
+    cifar_train_valid_set.data = cifar_train_valid_images
+    cifar_train_valid_set.targets = cifar_train_valid_labels
+
+    cifar_valid_set = deepcopy(cifar_train_set)
+    cifar_valid_set.data = cifar_valid_images
+    cifar_valid_set.targets = cifar_valid_labels
+
+    cifar_test_set = deepcopy(cifar_train_set)
+    cifar_test_set.data = cifar_test_images
+    cifar_test_set.targets = cifar_test_labels
+
+    cifar_train_set.data = cifar_train_images
+    cifar_train_set.targets = cifar_train_labels
+
     run_cnn32_2l()
+
+    # Create new datasets
+    cifar_train_valid_set = deepcopy(cifar_train_set)
+    cifar_train_valid_set.data = cifar_train_valid_images
+    cifar_train_valid_set.targets = cifar_train_valid_labels
+
+    cifar_valid_set = deepcopy(cifar_train_set)
+    cifar_valid_set.data = cifar_valid_images
+    cifar_valid_set.targets = cifar_valid_labels
+
+    cifar_test_set = deepcopy(cifar_train_set)
+    cifar_test_set.data = cifar_test_images
+    cifar_test_set.targets = cifar_test_labels
+
+    cifar_train_set.data = cifar_train_images
+    cifar_train_set.targets = cifar_train_labels
+
     run_cnn32_5l()
 
     data_transforms = transforms.Compose(
