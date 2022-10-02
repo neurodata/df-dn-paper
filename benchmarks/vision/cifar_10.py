@@ -68,25 +68,28 @@ def tune_naive_rf():
         for samples in samples_space:
             # specify how many random combinations we are going to test out
             num_iter = 10
+            naive_rf_accuracy_temp = []
             candidate_param_list = rf_parameter_list_generator(num_iter)
 
             for params in candidate_param_list:
                 rf = RandomForestClassifier()
                 rf.set_params(**params)
-                accuracy, train_time, val_time = tune_rf_image_set(
+                accuracy, train_time, valid_time = run_rf_image_set(
                     rf,
                     cifar_train_images,
                     cifar_train_labels,
-                    cifar_val_images,
-                    cifar_val_labels,
+                    cifar_valid_images,
+                    cifar_valid_labels,
                     samples,
                     classes,
+                    True,
                 )
+                naive_rf_accuracy_temp.append(accuracy)
                 naive_rf_accuracy.append(accuracy)
-                naive_rf_tune_time.append(train_time + val_time)
+                naive_rf_tune_time.append(train_time + valid_time)
 
-            max_accuracy = max(naive_rf_accuracy)
-            max_index = naive_rf_accuracy.index(max_accuracy)
+            max_accuracy = max(naive_rf_accuracy_temp)
+            max_index = naive_rf_accuracy_temp.index(max_accuracy)
             naive_rf_param_dict[(classes, samples)] = candidate_param_list[max_index]
 
     print("naive_rf tuning finished")
@@ -144,17 +147,18 @@ def tune_gbdt():
             for params in candidate_param_list:
                 gbdt = XGBClassifier()
                 gbdt.set_params(**params)
-                accuracy, train_time, val_time = tune_rf_image_set(
+                accuracy, train_time, valid_time = run_rf_image_set(
                     gbdt,
                     cifar_train_images,
                     cifar_train_labels,
-                    cifar_val_images,
-                    cifar_val_labels,
+                    cifar_valid_images,
+                    cifar_valid_labels,
                     samples,
                     classes,
+                    True,
                 )
                 gbdt_accuracy.append(accuracy)
-                gbdt_tune_time.append(train_time + val_time)
+                gbdt_tune_time.append(train_time + valid_time)
 
             max_accuracy = max(gbdt_accuracy)
             max_index = gbdt_accuracy.index(max_accuracy)
@@ -486,33 +490,88 @@ if __name__ == "__main__":
     classes_space = list(combinations_45(nums, n_classes))
 
     # normalize
-    # scale = np.mean(np.arange(0, 256))
-    # normalize = lambda x: (x - scale) / scale
+    scale = np.mean(np.arange(0, 256))
+    normalize = lambda x: (x - scale) / scale
 
-    # """
-    # CIFAR10 has a train:test ratio of 5:1, containing 50000 and 10000 images.
-    # Split the data into a 2:1:1 ratio.
-    # """
-    # # train data (50000)
-    # cifar_trainset = datasets.CIFAR10(
-    #     root="./", train=True, download=True, transform=None
-    # )
-    # cifar_train_images = normalize(cifar_trainset.data)
-    # cifar_train_labels = np.array(cifar_trainset.targets)
+    """
+    CIFAR10 has a train:test ratio of 5:1, containing 50000 and 10000 images.
+    Split the data into a 2:1:1 ratio.
+    """
+    # train data (50000)
+    cifar_trainset = datasets.CIFAR10(
+        root="./", train=True, download=True, transform=None
+    )
+    cifar_train_images = normalize(cifar_trainset.data)
+    cifar_train_labels = np.array(cifar_trainset.targets)
+
+    # test data (10000)
+    cifar_testset = datasets.CIFAR10(
+        root="./", train=False, download=True, transform=None
+    )
+    cifar_test_images = normalize(cifar_testset.data)
+    cifar_test_labels = np.array(cifar_testset.targets)
+
+    # Combine all data into whole set
+    cifar_whole_images = np.concatenate((cifar_train_images, cifar_test_images))
+    cifar_whole_labels = np.concatenate((cifar_train_labels, cifar_test_labels))
+
+    # Separate whole set into training set & valid set & test set with 2:1:1 ratio
+    (
+        cifar_train_valid_images,
+        cifar_test_images,
+        cifar_train_valid_labels,
+        cifar_test_labels,
+    ) = train_test_split(
+        cifar_whole_images,
+        cifar_whole_labels,
+        test_size=0.2,
+        stratify=cifar_whole_labels,
+    )
+    (
+        cifar_valid_images,
+        cifar_train_images,
+        cifar_valid_labels,
+        cifar_train_labels,
+    ) = train_test_split(
+        cifar_train_valid_images,
+        cifar_train_valid_labels,
+        test_size=0.75,
+        stratify=cifar_train_valid_labels,
+    )
+
+    cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
+    cifar_valid_images = cifar_valid_images.reshape(-1, 32 * 32 * 3)
+    cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
+
+    # tuning + find the best parameters
+    rf_chosen_params_dict = tune_naive_rf()
+
+    run_naive_rf()
+
+    # gbdt_chosen_params_dict = tune_naive_rf()
     #
-    # # test data (10000)
-    # cifar_testset = datasets.CIFAR10(
-    #     root="./", train=False, download=True, transform=None
+    # run_gbdt()
+
+    # data_transforms = transforms.Compose(
+    #     [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     # )
-    # cifar_test_images = normalize(cifar_testset.data)
-    # cifar_test_labels = np.array(cifar_testset.targets)
-    #
+
+    # # train data
+    # cifar_train_set = datasets.CIFAR10(
+    #     root="./", train=True, download=True, transform=data_transforms
+    # )
+
+    # # test data
+    # cifar_test_set = datasets.CIFAR10(
+    #     root="./", train=False, download=True, transform=data_transforms
+    # )
+
     # # Combine all data into whole set
-    # cifar_whole_images = np.concatenate((cifar_train_images, cifar_test_images))
+    # cifar_whole_images = np.concatenate((cifar_train_set.data, cifar_test_set.data))
     # cifar_whole_labels = np.concatenate(
-    #     (cifar_train_labels, cifar_test_labels)
+    #     (np.array(cifar_train_set.targets), np.array(cifar_test_set.targets))
     # )
-    #
+
     # # Separate whole set into training set & valid set & test set with 2:1:1 ratio
     # (
     #     cifar_train_valid_images,
@@ -522,7 +581,7 @@ if __name__ == "__main__":
     # ) = train_test_split(
     #     cifar_whole_images,
     #     cifar_whole_labels,
-    #     test_size=0.25,
+    #     test_size=0.2,
     #     stratify=cifar_whole_labels,
     # )
     # (
@@ -533,182 +592,125 @@ if __name__ == "__main__":
     # ) = train_test_split(
     #     cifar_train_valid_images,
     #     cifar_train_valid_labels,
-    #     test_size=0.67,
+    #     test_size=0.75,
     #     stratify=cifar_train_valid_labels,
     # )
-    #
-    # cifar_train_images = cifar_train_images.reshape(-1, 32 * 32 * 3)
-    # cifar_val_images = cifar_val_images.reshape(-1, 32 * 32 * 3)
-    # cifar_test_images = cifar_test_images.reshape(-1, 32 * 32 * 3)
-    #
-    # # tuning + find the best parameters
-    # rf_chosen_params_dict = tune_naive_rf()
-    #
-    # run_naive_rf()
 
-    # gbdt_chosen_params_dict = tune_naive_rf()
-    #
-    # run_gbdt()
+    # # Create new datasets
+    # cifar_train_valid_set = deepcopy(cifar_train_set)
+    # cifar_train_valid_set.data = cifar_train_valid_images
+    # cifar_train_valid_set.targets = cifar_train_valid_labels
 
-    data_transforms = transforms.Compose(
-        [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
-    )
+    # cifar_valid_set = deepcopy(cifar_train_set)
+    # cifar_valid_set.data = cifar_valid_images
+    # cifar_valid_set.targets = cifar_valid_labels
 
-    # train data
-    cifar_train_set = datasets.CIFAR10(
-        root="./", train=True, download=True, transform=data_transforms
-    )
+    # cifar_test_set = deepcopy(cifar_train_set)
+    # cifar_test_set.data = cifar_test_images
+    # cifar_test_set.targets = cifar_test_labels
 
-    # test data
-    cifar_test_set = datasets.CIFAR10(
-        root="./", train=False, download=True, transform=data_transforms
-    )
+    # cifar_train_set.data = cifar_train_images
+    # cifar_train_set.targets = cifar_train_labels
 
-    # Combine all data into whole set
-    cifar_whole_images = np.concatenate((cifar_train_set.data, cifar_test_set.data))
-    cifar_whole_labels = np.concatenate(
-        (np.array(cifar_train_set.targets), np.array(cifar_test_set.targets))
-    )
+    # run_cnn32()
 
-    # Separate whole set into training set & valid set & test set with 2:1:1 ratio
-    (
-        cifar_train_valid_images,
-        cifar_test_images,
-        cifar_train_valid_labels,
-        cifar_test_labels,
-    ) = train_test_split(
-        cifar_whole_images,
-        cifar_whole_labels,
-        test_size=0.25,
-        stratify=cifar_whole_labels,
-    )
-    (
-        cifar_valid_images,
-        cifar_train_images,
-        cifar_valid_labels,
-        cifar_train_labels,
-    ) = train_test_split(
-        cifar_train_valid_images,
-        cifar_train_valid_labels,
-        test_size=0.67,
-        stratify=cifar_train_valid_labels,
-    )
+    # # Create new datasets
+    # cifar_train_valid_set = deepcopy(cifar_train_set)
+    # cifar_train_valid_set.data = cifar_train_valid_images
+    # cifar_train_valid_set.targets = cifar_train_valid_labels
 
-    # Create new datasets
-    cifar_train_valid_set = deepcopy(cifar_train_set)
-    cifar_train_valid_set.data = cifar_train_valid_images
-    cifar_train_valid_set.targets = cifar_train_valid_labels
+    # cifar_valid_set = deepcopy(cifar_train_set)
+    # cifar_valid_set.data = cifar_valid_images
+    # cifar_valid_set.targets = cifar_valid_labels
 
-    cifar_valid_set = deepcopy(cifar_train_set)
-    cifar_valid_set.data = cifar_valid_images
-    cifar_valid_set.targets = cifar_valid_labels
+    # cifar_test_set = deepcopy(cifar_train_set)
+    # cifar_test_set.data = cifar_test_images
+    # cifar_test_set.targets = cifar_test_labels
 
-    cifar_test_set = deepcopy(cifar_train_set)
-    cifar_test_set.data = cifar_test_images
-    cifar_test_set.targets = cifar_test_labels
+    # cifar_train_set.data = cifar_train_images
+    # cifar_train_set.targets = cifar_train_labels
 
-    cifar_train_set.data = cifar_train_images
-    cifar_train_set.targets = cifar_train_labels
+    # run_cnn32_2l()
 
-    run_cnn32()
+    # # Create new datasets
+    # cifar_train_valid_set = deepcopy(cifar_train_set)
+    # cifar_train_valid_set.data = cifar_train_valid_images
+    # cifar_train_valid_set.targets = cifar_train_valid_labels
 
-    # Create new datasets
-    cifar_train_valid_set = deepcopy(cifar_train_set)
-    cifar_train_valid_set.data = cifar_train_valid_images
-    cifar_train_valid_set.targets = cifar_train_valid_labels
+    # cifar_valid_set = deepcopy(cifar_train_set)
+    # cifar_valid_set.data = cifar_valid_images
+    # cifar_valid_set.targets = cifar_valid_labels
 
-    cifar_valid_set = deepcopy(cifar_train_set)
-    cifar_valid_set.data = cifar_valid_images
-    cifar_valid_set.targets = cifar_valid_labels
+    # cifar_test_set = deepcopy(cifar_train_set)
+    # cifar_test_set.data = cifar_test_images
+    # cifar_test_set.targets = cifar_test_labels
 
-    cifar_test_set = deepcopy(cifar_train_set)
-    cifar_test_set.data = cifar_test_images
-    cifar_test_set.targets = cifar_test_labels
+    # cifar_train_set.data = cifar_train_images
+    # cifar_train_set.targets = cifar_train_labels
 
-    cifar_train_set.data = cifar_train_images
-    cifar_train_set.targets = cifar_train_labels
+    # run_cnn32_5l()
 
-    run_cnn32_2l()
+    # data_transforms = transforms.Compose(
+    #     [
+    #         transforms.ToTensor(),
+    #         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+    #     ]
+    # )
 
-    # Create new datasets
-    cifar_train_valid_set = deepcopy(cifar_train_set)
-    cifar_train_valid_set.data = cifar_train_valid_images
-    cifar_train_valid_set.targets = cifar_train_valid_labels
+    # # train data
+    # cifar_train_set = datasets.CIFAR10(
+    #     root="./", train=True, download=True, transform=data_transforms
+    # )
 
-    cifar_valid_set = deepcopy(cifar_train_set)
-    cifar_valid_set.data = cifar_valid_images
-    cifar_valid_set.targets = cifar_valid_labels
+    # # test data
+    # cifar_test_set = datasets.CIFAR10(
+    #     root="./", train=False, download=True, transform=data_transforms
+    # )
 
-    cifar_test_set = deepcopy(cifar_train_set)
-    cifar_test_set.data = cifar_test_images
-    cifar_test_set.targets = cifar_test_labels
+    # # Combine all data into whole set
+    # cifar_whole_images = np.concatenate((cifar_train_set.data, cifar_test_set.data))
+    # cifar_whole_labels = np.concatenate(
+    #     (np.array(cifar_train_set.targets), np.array(cifar_test_set.targets))
+    # )
 
-    cifar_train_set.data = cifar_train_images
-    cifar_train_set.targets = cifar_train_labels
+    # # Separate whole set into training set & valid set & test set with 2:1:1 ratio
+    # (
+    #     cifar_train_valid_images,
+    #     cifar_test_images,
+    #     cifar_train_valid_labels,
+    #     cifar_test_labels,
+    # ) = train_test_split(
+    #     cifar_whole_images,
+    #     cifar_whole_labels,
+    #     test_size=0.2,
+    #     stratify=cifar_whole_labels,
+    # )
+    # (
+    #     cifar_valid_images,
+    #     cifar_train_images,
+    #     cifar_valid_labels,
+    #     cifar_train_labels,
+    # ) = train_test_split(
+    #     cifar_train_valid_images,
+    #     cifar_train_valid_labels,
+    #     test_size=0.75,
+    #     stratify=cifar_train_valid_labels,
+    # )
 
-    run_cnn32_5l()
+    # # Create new datasets
+    # cifar_train_valid_set = deepcopy(cifar_train_set)
+    # cifar_train_valid_set.data = cifar_train_valid_images
+    # cifar_train_valid_set.targets = cifar_train_valid_labels
 
-    data_transforms = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-        ]
-    )
+    # cifar_valid_set = deepcopy(cifar_train_set)
+    # cifar_valid_set.data = cifar_valid_images
+    # cifar_valid_set.targets = cifar_valid_labels
 
-    # train data
-    cifar_train_set = datasets.CIFAR10(
-        root="./", train=True, download=True, transform=data_transforms
-    )
+    # cifar_test_set = deepcopy(cifar_train_set)
+    # cifar_test_set.data = cifar_test_images
+    # cifar_test_set.targets = cifar_test_labels
 
-    # test data
-    cifar_test_set = datasets.CIFAR10(
-        root="./", train=False, download=True, transform=data_transforms
-    )
+    # cifar_train_set.data = cifar_train_images
+    # cifar_train_set.targets = cifar_train_labels
 
-    # Combine all data into whole set
-    cifar_whole_images = np.concatenate((cifar_train_set.data, cifar_test_set.data))
-    cifar_whole_labels = np.concatenate(
-        (np.array(cifar_train_set.targets), np.array(cifar_test_set.targets))
-    )
-
-    # Separate whole set into training set & valid set & test set with 2:1:1 ratio
-    (
-        cifar_train_valid_images,
-        cifar_test_images,
-        cifar_train_valid_labels,
-        cifar_test_labels,
-    ) = train_test_split(
-        cifar_whole_images,
-        cifar_whole_labels,
-        test_size=0.25,
-        stratify=cifar_whole_labels,
-    )
-    (
-        cifar_valid_images,
-        cifar_train_images,
-        cifar_valid_labels,
-        cifar_train_labels,
-    ) = train_test_split(
-        cifar_train_valid_images,
-        cifar_train_valid_labels,
-        test_size=0.67,
-        stratify=cifar_train_valid_labels,
-    )
-
-    # Create new datasets
-    cifar_train_valid_set = deepcopy(cifar_train_set)
-    cifar_train_valid_set.data = cifar_train_valid_images
-    cifar_train_valid_set.targets = cifar_train_valid_labels
-
-    cifar_valid_set = deepcopy(cifar_train_set)
-    cifar_valid_set.data = cifar_valid_images
-    cifar_valid_set.targets = cifar_valid_labels
-
-    cifar_test_set = deepcopy(cifar_train_set)
-    cifar_test_set.data = cifar_test_images
-    cifar_test_set.targets = cifar_test_labels
-
-    cifar_train_set.data = cifar_train_images
-    cifar_train_set.targets = cifar_train_labels
-
-    run_resnet18()
+    # run_resnet18()

@@ -191,6 +191,7 @@ def run_rf_image_set(
     test_labels,
     samples,
     classes,
+    tune=False,
 ):
     """
     Peforms multiclass predictions for a random forest classifier
@@ -237,6 +238,13 @@ def run_rf_image_set(
     test_time = end_time - start_time
 
     test_probs = model.predict_proba(test_images)
+
+    if tune:
+        return (
+            accuracy_score(test_labels, test_preds),
+            train_time,
+            test_time,
+        )
 
     return (
         cohen_kappa_score(test_labels, test_preds),
